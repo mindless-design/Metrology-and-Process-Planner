@@ -7,6 +7,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+from metrology_process_planner.app.diagnostics_action_dispatch import (
+    DiagnosticsActionContext,
+    DiagnosticsActionDispatcher,
+)
+from metrology_process_planner.app.diagnostics_action_results import DiagnosticsActionResult
 from metrology_process_planner.app.diagnostics_actions import diagnostics_actions
 from metrology_process_planner.app.diagnostics_summary import (
     diagnostics_summary_rows,
@@ -73,6 +78,8 @@ class AdvancedDiagnosticsController:
         self.active_session: Optional[SessionRecord] = None
         self.active_paths: Optional[SessionPaths] = None
         self._editor_document_provider = editor_document_provider
+        self._action_dispatcher = DiagnosticsActionDispatcher(sink)
+        self.last_action_result: DiagnosticsActionResult | None = None
 
     def set_active_session(
         self,
@@ -129,6 +136,7 @@ class AdvancedDiagnosticsController:
         if registry_result.window is not None:
             result = _with_open_window_rows(result, open_windows_summary(self._window_registry))
             self._shell.render(registry_result.window, result, recent_events)
+            self._shell.set_action_callback(registry_result.window, self.route_action)
         return DiagnosticsOpenResult(
             "raised" if registry_result.status is WindowOpenStatus.RAISED else result.status,
             result.message,
@@ -150,6 +158,22 @@ class AdvancedDiagnosticsController:
             output_path,
             self.active_paths,
         )
+
+    def route_action(self, action_id: str) -> DiagnosticsActionResult:
+        """Dispatch an action from the modeless diagnostics shell."""
+
+        if self.active_session is None:
+            return DiagnosticsActionResult(action_id, "unavailable", "No active session is loaded.")
+        context = DiagnosticsActionContext(
+            self.active_session,
+            self.active_paths,
+            self._sink.recent(100),
+            self._mode_registry,
+            self._service,
+        )
+        self.last_action_result = self._action_dispatcher.dispatch(action_id, context)
+        self.open_current()
+        return self.last_action_result
 
     def _current_editor_document(self) -> SessionDocument | None:
         if self._editor_document_provider is None:

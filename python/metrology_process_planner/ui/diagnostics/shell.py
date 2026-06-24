@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any, Protocol
 
 from metrology_process_planner.infrastructure.diagnostics import DiagnosticEvent
@@ -22,6 +23,13 @@ class DiagnosticsWidgetFactory(Protocol):
 
     def set_actions(self, window: Any, actions: tuple[EditorActionViewModel, ...]) -> None:
         """Render advanced diagnostics action labels."""
+
+    def set_action_callback(
+        self,
+        window: Any,
+        callback: Callable[[str], object],
+    ) -> None:
+        """Attach the generic diagnostics action callback."""
 
     def show(self, window: Any) -> None:
         """Show the diagnostics window."""
@@ -57,6 +65,15 @@ class DiagnosticsShell:
         self._factory.set_events(window, recent_events)
         self._factory.set_actions(window, getattr(result, "actions", ()))
 
+    def set_action_callback(
+        self,
+        window: Any,
+        callback: Callable[[str], object],
+    ) -> None:
+        """Expose diagnostics action dispatch to the backend widget."""
+
+        self._factory.set_action_callback(window, callback)
+
 
 class InMemoryDiagnosticsWidgetFactory:
     """Widget factory used by tests and pure smoke checks."""
@@ -89,6 +106,15 @@ class InMemoryDiagnosticsWidgetFactory:
         """Mark the in-memory window as shown."""
 
         window["shown"] = True
+
+    def set_action_callback(
+        self,
+        window: dict[str, Any],
+        callback: Callable[[str], object],
+    ) -> None:
+        """Store the diagnostics action callback for tests."""
+
+        window["on_action"] = callback
 
 
 def _summary_rows(result: Any) -> tuple[tuple[str, str], ...]:

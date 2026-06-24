@@ -1,9 +1,11 @@
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 from metrology_process_planner.app.bootstrap import build_app_services
 from metrology_process_planner.app.commands import CommandId
+from metrology_process_planner.domains.session import ArtifactStatus, WarningRecord
 from metrology_process_planner.persistence.paths import SessionPaths
 from tests.editor_render_fixtures import session_without_pending
 
@@ -51,6 +53,85 @@ class DiagnosticsActionTests(unittest.TestCase):
         self.assertTrue(actions["CopyCommandTrace"].enabled)
         self.assertTrue(actions["OpenSessionFolder"].enabled)
         self.assertTrue(actions["ScanArtifacts"].enabled)
+
+    def test_diagnostics_action_callback_prepares_trace_and_folder_handoff(self) -> None:
+        services = build_app_services()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = SessionPaths.for_folder(Path(temp_dir))
+            services.diagnostics_controller.set_active_session(session_without_pending(), paths)
+            services.command_router.route(CommandId.OPEN_SETUP_GUIDE)
+            result = services.diagnostics_controller.open_current()
+
+            trace = result.window["on_action"]("CopyCommandTrace")
+            folder = result.window["on_action"]("OpenSessionFolder")
+
+        self.assertEqual("success", trace.status)
+        self.assertIn("open_setup_guide", trace.output_text)
+        self.assertEqual("success", folder.status)
+        self.assertTrue(folder.output_path.endswith(temp_dir))
+
+    def test_diagnostics_action_callback_exports_bundle(self) -> None:
+        services = build_app_services()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = SessionPaths.for_folder(Path(temp_dir) / "session")
+            services.diagnostics_controller.set_active_session(session_without_pending(), paths)
+            result = services.diagnostics_controller.open_current()
+
+            exported = result.window["on_action"]("ExportDiagnosticsBundle")
+
+            bundle = Path(exported.output_path)
+            self.assertTrue((bundle / "session.json").exists())
+            self.assertTrue((bundle / "diagnostics" / "events.jsonl").exists())
+        self.assertEqual("success", exported.status)
+
+    def test_diagnostics_validation_actions_return_structured_warnings(self) -> None:
+        services = build_app_services()
+        source = _session_with_warning_artifact()
+        services.diagnostics_controller.set_active_session(source)
+        result = services.diagnostics_controller.open_current()
+
+        session_result = result.window["on_action"]("ValidateSession")
+        mode_result = result.window["on_action"]("ValidateModes")
+
+        self.assertEqual("warning", session_result.status)
+        self.assertIn("persisted warning", session_result.message)
+        self.assertEqual("success", mode_result.status)
+        self.assertIn("Mode validation: ok.", mode_result.message)
+
+    def test_diagnostics_action_failure_is_recorded(self) -> None:
+        services = build_app_services()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            blocked = Path(temp_dir) / "not-a-folder"
+            blocked.write_text("blocked", encoding="utf-8")
+            services.diagnostics_controller.set_active_session(session_without_pending())
+            result = services.diagnostics_controller.open_current()
+
+            failed = result.window["on_action"](f"ExportDiagnosticsBundle:{blocked}")
+
+        self.assertEqual("error", failed.status)
+        self.assertTrue(
+            any(
+                event.event_name == "DiagnosticsActionFailed"
+                for event in services.diagnostics_sink.recent(10)
+            )
+        )
+
+
+def _session_with_warning_artifact():
+    source = session_without_pending()
+    artifact_id, artifact = next(iter(source.artifacts.items()))
+    return replace(
+        source,
+        artifacts={artifact_id: replace(artifact, status=ArtifactStatus.MISSING)},
+        warnings=(
+            WarningRecord(
+                "artifact-missing",
+                "Missing crop",
+                code="artifact_missing",
+                related_artifact_refs=(artifact_id,),
+            ),
+        ),
+    )
 
 
 if __name__ == "__main__":

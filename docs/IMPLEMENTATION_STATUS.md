@@ -52,6 +52,10 @@ Last updated: 2026-06-24
   diagnostics bundle, copying command trace, opening the session folder, scanning artifacts,
   validating the session, and validating modes. Actions carry disabled reasons when no trace or
   session folder is available.
+- Advanced Diagnostics actions now dispatch through a typed controller service. Shells receive a
+  generic action callback, action attempts emit diagnostics events, command-trace/folder/export/
+  validation actions return structured modeless results, and action failures are captured as
+  exception diagnostics instead of escaping from widget callbacks.
 - Explicit pure UI state-machine evaluators now summarize session UI, capture interaction, pending review, measurement workflow, recipe context, and artifact repair state for editor headers, diagnostics, and future Qt widgets.
 - Built-in workflow modes are represented by declarative `ModeDefinition` records in a pure `ModeRegistry`; definitions now use typed policy blocks for capabilities, setup, capture, metadata, measurements, artifacts, process, editor, and reporting. External JSON mode definition folders can be loaded as inert data, and diagnostics reads loaded modes from the registry.
 - Profilometry Planner and Ellipsometry Planner are now registered as declarative process-aware compound modes. Their built-in definitions live separately from the registry contract, and the shared workflow supports site-then-line and site-then-point pending composites.

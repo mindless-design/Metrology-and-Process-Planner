@@ -92,6 +92,12 @@ Setup guide cards expose `SetupActionViewModel` rows for primary, secondary, and
 Those rows carry command ID, label, enabled state, and disabled reason, so card widgets can show
 available and blocked actions without hard-coded command labels or modal fallback prompts.
 
+Advanced Diagnostics actions follow the same modeless pattern. The shell renders
+controller-provided `EditorActionViewModel` rows and stores a generic action callback; dispatch
+returns a typed result with status, message, optional text, and optional output path. Diagnostics
+actions should resolve paths or validation summaries for the shell, not open modal file browsers or
+launch external applications directly.
+
 Disabled editor actions carry `disabled_reason` in the same view model as their command ID. UI
 shells should render disabled actions with that reason, and dispatch should return the same reason
 as a structured `unavailable` result rather than silently doing nothing.
