@@ -38,7 +38,7 @@ class CommandRouter:
         """Dispatch one command and return a structured route result."""
 
         try:
-            self._registry.dispatch(command_id)
+            routed = self._registry.dispatch(command_id)
         except NotImplementedError as exc:
             result = CommandRouteResult(
                 command_id,
@@ -75,7 +75,7 @@ class CommandRouter:
             )
             self._emit(result, exc)
             return result
-        result = CommandRouteResult(command_id, "success", next_ui_hint="Command completed.")
+        result = _route_result(command_id, routed)
         self._emit(result, None)
         return result
 
@@ -106,7 +106,7 @@ def _command_payload(
 ) -> dict[str, object]:
     message = f"Command routed: {result.command_id.value} -> {result.status}"
     if exc is None:
-        return {"message": message, "severity": "info"}
+        return {"message": message, "severity": _severity_for_status(result.status)}
     severity = "warning" if result.status in {"blocked", "unavailable"} else "error"
     return exception_payload(
         exc,
@@ -117,3 +117,17 @@ def _command_payload(
         operation=result.command_id.value,
         remediation_hint="Open diagnostics and review the command handler failure.",
     )
+
+
+def _route_result(command_id: CommandId, routed: object) -> CommandRouteResult:
+    if isinstance(routed, CommandRouteResult):
+        return routed
+    return CommandRouteResult(command_id, "success", next_ui_hint="Command completed.")
+
+
+def _severity_for_status(status: str) -> str:
+    if status == "error":
+        return "error"
+    if status in {"blocked", "unavailable", "warning"}:
+        return "warning"
+    return "info"

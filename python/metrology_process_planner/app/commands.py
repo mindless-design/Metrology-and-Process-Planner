@@ -35,14 +35,14 @@ class CommandRegistry:
             raise KeyError(f"Unknown command id: {command_id}")
         self._handlers[command_id] = handler
 
-    def dispatch(self, command_id: CommandId) -> None:
+    def dispatch(self, command_id: CommandId) -> object:
         """Run the handler registered for a command."""
 
         try:
             handler = self._handlers[command_id]
         except KeyError as exc:
             raise RuntimeError(f"No handler registered for command: {command_id.value}") from exc
-        handler()
+        return handler()
 
 
 def build_default_registry() -> CommandRegistry:

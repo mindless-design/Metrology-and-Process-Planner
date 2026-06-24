@@ -20,9 +20,11 @@ Last updated: 2026-06-24
   unavailable result if the action is routed anyway.
 - Session editor callbacks must rerender through the shell contract after dispatch, using the rebuilt `SessionDocument`; model updates without visible shell refresh are considered stale UI bugs.
 - Session editor header actions split by responsibility: document mutations remain in
-  `EditorActionDispatcher`, while window/lifecycle intents such as reopen setup and close route
-  through the app `CommandRouter` so menus and editor buttons share diagnostics and blocked-result
-  behavior.
+  `EditorActionDispatcher`, but header entrypoints route through app commands where the command
+  catalog owns the user intent. `SaveSessionEdits` delegates to the active editor dispatcher and
+  returns document/selection metadata, while window/lifecycle intents such as reopen setup and
+  close route through the app `CommandRouter` so menus and editor buttons share diagnostics and
+  blocked-result behavior.
 - Output-folder opening is a shell handoff, not workflow-side process launching. The editor
   dispatcher returns the resolved session folder via `EditorActionResult.output_path`; UI adapters
   decide how to reveal it.
@@ -106,6 +108,9 @@ Last updated: 2026-06-24
   session surfaces and clears capture arming only when there are no pending captures or dirty
   editor edits; otherwise it raises a typed blocked command condition so the router can show inline
   guidance and diagnostics can record a warning rather than a silent no-op.
+- Command handlers may return `CommandRouteResult` when they have richer workflow context. The
+  router preserves those statuses and emits warning/error diagnostics for returned unavailable,
+  blocked, warning, or error outcomes even when no exception escaped the workflow boundary.
 
 ## Child Measurement Slice
 

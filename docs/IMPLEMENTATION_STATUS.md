@@ -12,7 +12,10 @@ Last updated: 2026-06-24
 - The session editor controller now rerenders the active shell window after selection and mutating action callbacks, so navigator selection, preview rows, inspector fields, actions, and status text stay synchronized with the rebuilt `SessionDocument`.
 - The session editor header/status presenter now surfaces session name, mode, output folder, setup state, capture state, selected item state, dirty state, warning count, and process-context state from the document/state-machine spine.
 - The session editor header now exposes primary command-shaped actions for save, resume pending capture, reopen setup, attach/validate process context, export CSV, build report, open output folder, and close through the same `EditorAction` callback path as inspector actions.
-- Session editor header window/lifecycle intents now bridge to the shared `CommandRouter`: `Reopen Setup` opens the setup guide for the active editor session, and `Close` routes through `EndActiveSession` so pending/dirty blockers surface inline and diagnostics record the command.
+- Session editor header actions now bridge to the shared `CommandRouter` for app-owned intents:
+  `Save Edits` routes through `SaveSessionEdits` before delegating to the editor dispatcher,
+  `Reopen Setup` opens the setup guide for the active editor session, and `Close` routes through
+  `EndActiveSession` so pending/dirty blockers surface inline and diagnostics record the command.
 - `Open Output Folder` now returns a typed modeless path handoff through `EditorActionResult.output_path` when session paths are configured; workflow code does not launch an external file browser directly, and missing paths return a structured unavailable result.
 - Generic capture start/cancel commands now route through a shared app-level capture command service. `StartCapture`, `StartBoxCapture`, `StartLineCapture`, `StartPointCapture`, and `CancelCapture` update durable workflow arming state, reuse `CanvasInteractionEngine`, refresh the active editor document, and mirror active setup-guide session state when both surfaces inspect the same session.
 - `EndActiveSession` now routes through a modeless session lifecycle service. It closes and clears safe editor/setup/diagnostics session surfaces and capture arming, while dirty editor edits or pending capture review items return structured blocked command results instead of silently closing or doing nothing.
@@ -120,9 +123,10 @@ Last updated: 2026-06-24
 - Registry-first tests now assert explicit canonical owner refs and artifact records rather than hydrated capture image/drawing compatibility fields.
 - Canvas session models, canvas interaction, overlay restore/selection, and pending capture lifecycle.
 - Unified editor document building, store/dispatcher actions, shell controller, and render bridge failure handling.
-- Session editor command-bridge tests covering primary header `Reopen Setup` and `Close` routing
-  through `CommandRouter`, active-session setup guide handoff, successful end-session close, and
-  blocked pending-review close behavior.
+- Session editor command-bridge tests covering primary header `Save Edits`, `Reopen Setup`, and
+  `Close` routing through `CommandRouter`, active-session setup guide handoff, successful
+  command-backed session save, direct no-active-session save handling, successful end-session
+  close, and blocked pending-review close behavior.
 - Session editor dispatcher tests covering `Open Output Folder` path handoff and no-session-folder
   unavailable behavior.
 - Rendering pipelines, drawing persistence, SVG output, and fake rasterizer export paths.

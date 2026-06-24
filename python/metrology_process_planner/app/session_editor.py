@@ -60,6 +60,7 @@ class SessionEditorController:
         self.current_window: Optional[Any] = None
         self._callbacks: Optional[SessionEditorCallbacks] = None
         self._command_router: Optional[CommandRouter] = None
+        self._dispatcher: Optional[EditorActionDispatcher] = None
 
     def set_command_router(self, command_router: Optional[CommandRouter]) -> None:
         """Set the app command router used for editor window/lifecycle intents."""
@@ -80,14 +81,15 @@ class SessionEditorController:
         """Open an already-built document in the unified editor shell."""
 
         dispatcher = EditorActionDispatcher(paths=paths)
+        self._dispatcher = dispatcher
         self.current_document = document
 
         def on_select(item_id: str) -> None:
             action = EditorAction(EditorActionType.SELECT_ITEM, "Select", item_id)
-            self._dispatch(dispatcher, action)
+            self.dispatch_current_action(action)
 
         def on_action(action: EditorAction) -> None:
-            self._dispatch(dispatcher, action)
+            self.dispatch_current_action(action)
 
         callbacks = SessionEditorCallbacks(on_select_item=on_select, on_action=on_action)
         self._callbacks = callbacks
@@ -116,21 +118,24 @@ class SessionEditorController:
             return SessionEditorOpenResult("unavailable", "No active session is loaded.")
         return self.open_document(self.current_document)
 
-    def _dispatch(self, dispatcher: EditorActionDispatcher, action: EditorAction) -> None:
+    def dispatch_current_action(
+        self,
+        action: EditorAction,
+        *,
+        allow_app_route: bool = True,
+    ) -> Optional[EditorActionResult]:
+        """Dispatch an editor action against the active document and rerender."""
+
         if self.current_document is None:
-            return
-        if self._route_app_command(action):
-            return
+            return None
+        if allow_app_route and self._route_app_command(action):
+            return self.last_action_result
+        dispatcher = self._dispatcher if self._dispatcher is not None else EditorActionDispatcher()
         result = dispatcher.dispatch(self.current_document, action)
         self.current_document = result.document
         self.last_action_result = result
-        if self.current_window is not None and self._callbacks is not None:
-            self._shell.render(
-                self.current_window,
-                self.current_document,
-                self._adapter,
-                self._callbacks,
-            )
+        self._render_current()
+        return result
 
     def _route_app_command(self, action: EditorAction) -> bool:
         command_id = _command_for_action(action)
@@ -139,14 +144,21 @@ class SessionEditorController:
         self.last_command_result = self._command_router.route(command_id)
         if self.current_document is None:
             return True
-        if self.current_window is not None and self._callbacks is not None:
+        self._render_current()
+        return True
+
+    def _render_current(self) -> None:
+        if (
+            self.current_document is not None
+            and self.current_window is not None
+            and self._callbacks is not None
+        ):
             self._shell.render(
                 self.current_window,
                 self.current_document,
                 self._adapter,
                 self._callbacks,
             )
-        return True
 
 
 def _default_shell() -> SessionEditorShell:
@@ -160,6 +172,8 @@ def _window_key(document: SessionDocument) -> str:
 def _command_for_action(action: EditorAction) -> Optional[CommandId]:
     if action.action_type is EditorActionType.REOPEN_SETUP:
         return CommandId.OPEN_SETUP_GUIDE
+    if action.action_type is EditorActionType.SAVE_EDITS:
+        return CommandId.SAVE_SESSION_EDITS
     if action.action_type is EditorActionType.EXIT_SESSION:
         return CommandId.END_ACTIVE_SESSION
     return None

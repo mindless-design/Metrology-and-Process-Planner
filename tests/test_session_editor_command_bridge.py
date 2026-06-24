@@ -1,12 +1,18 @@
+import json
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from metrology_process_planner.app.bootstrap import build_app_services
+from metrology_process_planner.app.commands import CommandId
+from metrology_process_planner.persistence.paths import SessionPaths
 from metrology_process_planner.workflows.editor import (
     EditorAction,
     EditorActionType,
     SessionDocumentBuilder,
+    mark_metadata_edit,
 )
-from tests.editor_render_fixtures import session, session_without_pending
+from tests.editor_render_fixtures import empty_session, session, session_without_pending
 
 
 class SessionEditorCommandBridgeTests(unittest.TestCase):
@@ -49,6 +55,36 @@ class SessionEditorCommandBridgeTests(unittest.TestCase):
         self.assertIsNotNone(routed)
         self.assertEqual("blocked", routed.status)
         self.assertIsNotNone(services.session_editor_controller.current_document)
+
+    def test_save_primary_action_routes_through_session_command(self) -> None:
+        services = build_app_services()
+        with TemporaryDirectory() as temp_dir:
+            paths = SessionPaths.for_folder(Path(temp_dir))
+            document = SessionDocumentBuilder().build(empty_session())
+            document = mark_metadata_edit(document, "dashboard", "name", "Renamed")
+            result = services.session_editor_controller.open_document(document, paths)
+
+            action = _primary_action(result.window, EditorActionType.SAVE_EDITS)
+            result.window["on_primary_action"](action)
+
+            routed = services.session_editor_controller.last_command_result
+            self.assertIsNotNone(routed)
+            self.assertEqual(CommandId.SAVE_SESSION_EDITS, routed.command_id)
+            self.assertEqual("success", routed.status)
+            self.assertEqual("session-001", routed.updated_document_id)
+            current = services.session_editor_controller.current_document
+            self.assertIsNotNone(current)
+            self.assertFalse(current.dirty_state.is_dirty)
+            payload = json.loads(paths.session_json.read_text(encoding="utf-8"))
+            self.assertEqual("Renamed", payload["session"]["name"])
+
+    def test_save_session_command_reports_unavailable_without_active_document(self) -> None:
+        services = build_app_services()
+
+        routed = services.command_router.route(CommandId.SAVE_SESSION_EDITS)
+
+        self.assertEqual("unavailable", routed.status)
+        self.assertIn("No active session editor document", routed.message)
 
 
 def _primary_action(window, action_type: EditorActionType) -> EditorAction:

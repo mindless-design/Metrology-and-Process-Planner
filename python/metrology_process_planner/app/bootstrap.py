@@ -6,6 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import NamedTuple
 
+from metrology_process_planner.app import session_editor_commands
 from metrology_process_planner.app.capture_commands import (
     CaptureCommandService,
     active_capture_session,
@@ -99,6 +100,8 @@ def build_app_services() -> AppServices:
     _register_primary_command_handlers(command_registry, ui, session_lifecycle)
     _register_modeless_command_handlers(command_registry, ui)
     register_capture_command_handlers(command_registry, capture_commands)
+    register_editor_handlers = session_editor_commands.register_session_editor_command_handlers
+    register_editor_handlers(command_registry, ui.session_editor)
     register_setup_command_handlers(command_registry, setup_commands)
     command_router = CommandRouter(command_registry, diagnostics_sink)
     ui.setup_guide.set_command_router(command_router)
@@ -215,4 +218,3 @@ def _open_setup_guide(ui: UiControllers) -> None:
 
 def _open_session_editor(controller: SessionEditorController) -> None:
     controller.open_current_session()
-
