@@ -13,6 +13,13 @@ class SetupStageViewModel:
     label: str
     status: str = "pending"
     next_action: str = ""
+    stage_type: str = ""
+    required: bool = True
+    description: str = ""
+    primary_action: str = ""
+    secondary_actions: tuple[str, ...] = ()
+    disabled_reason: str = ""
+    warning_count: int = 0
 
 
 @dataclass(frozen=True)
@@ -24,6 +31,10 @@ class SetupGuideViewModel:
     stages: tuple[SetupStageViewModel, ...]
     available_commands: tuple[str, ...]
     status: str = "ready"
+    mode_display_name: str = ""
+    current_stage_label: str = ""
+    next_action: str = ""
+    warning_count: int = 0
 
 
 @dataclass(frozen=True)
