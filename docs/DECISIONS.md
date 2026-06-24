@@ -67,6 +67,8 @@ Last updated: 2026-06-24
 - Material detail edits are command-routed with payload-bearing `EditMaterial` action IDs. Core
   fields stay on `Material`, while material category/notes remain in recipe metadata extension
   blocks so the current recipe schema does not grow ad hoc wrapper fields.
+- Inline recipe validation messages expose selection action IDs rather than launching dialogs. The
+  shell can dispatch the existing `SelectRecipeCard` command to reveal the related card detail.
 - Process-step detail edits are command-routed with payload-bearing `EditProcessStep` action IDs.
   Editable fields are applied to typed `ProcessStep` data or its parameter map, keeping generated
   summaries and solver-facing recipe data in sync without widget-side mutation.

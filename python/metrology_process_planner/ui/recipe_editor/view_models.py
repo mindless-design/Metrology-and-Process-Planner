@@ -92,6 +92,7 @@ class RecipeValidationMessageViewModel:
     message: str
     related_card_id: str = ""
     repair_suggestion: str = ""
+    action_id: str = ""
 
 
 @dataclass(frozen=True)

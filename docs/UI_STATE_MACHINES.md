@@ -77,6 +77,10 @@ Recipe material detail edits use `EditMaterial:<material_id>:<field>:<value>` ac
 fields update the selected `Material`; category and notes update the recipe metadata extension
 blocks. The workflow marks the recipe dirty and returns inline errors for malformed payloads.
 
+Recipe validation rows are clickable modeless view models. When a validation message can be tied to
+a material, step, or layer card, it exposes `SelectRecipeCard:<card_id>` so the shell can select the
+related detail panel without opening a validation dialog.
+
 Recipe process-step actions also stay inline: duplicate, delete, move up/down, enable, and disable
 mutate the in-memory recipe, mark it dirty, and keep the affected step selected. Boundary moves
 return structured `blocked` results.

@@ -111,6 +111,7 @@ class RecipeEditorCardsTests(unittest.TestCase):
             if "metal is unused" in message.message
         ][0]
         self.assertEqual("material:metal", unused.related_card_id)
+        self.assertEqual("SelectRecipeCard:material:metal", unused.action_id)
         self.assertIn("assign it", unused.repair_suggestion)
 
     def test_summary_tab_tracks_unused_materials_and_disabled_steps(self) -> None:

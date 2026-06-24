@@ -161,6 +161,8 @@ Last updated: 2026-06-24
   session process context, dirty-recipe blocking, and no-active-session unavailable results.
 - Recipe editor card tests covering selected material and process-step detail-panel fields and
   actions.
+- Recipe editor validation-card tests covering related-card links and dispatchable selection
+  actions for inline validation rows.
 - Recipe editor action tests covering blocked deletion of used materials and safe in-memory deletion
   of unused materials.
 - Recipe editor material-action tests covering add, duplicate, visibility toggle, and usage lookup.

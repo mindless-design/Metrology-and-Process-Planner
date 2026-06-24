@@ -21,10 +21,12 @@ def validation_messages(recipe: ProcessRecipe) -> tuple[RecipeValidationMessageV
             "warning",
             _validation_source(message),
             message,
-            _related_card_id(message, recipe),
+            related_card_id,
             _repair_suggestion(message),
+            _select_action(related_card_id),
         )
         for index, message in enumerate(messages, start=1)
+        for related_card_id in (_related_card_id(message, recipe),)
     )
 
 
@@ -105,3 +107,9 @@ def _repair_suggestion(message: str) -> str:
     if "requires a thickness" in message:
         return "Enter a target thickness or process window."
     return "Review the related card and fix the highlighted field."
+
+
+def _select_action(related_card_id: str) -> str:
+    if not related_card_id:
+        return ""
+    return f"SelectRecipeCard:{related_card_id}"
