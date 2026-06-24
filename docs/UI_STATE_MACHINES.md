@@ -91,6 +91,8 @@ should not become widget-local logic or blocking prompts.
 Setup guide cards expose `SetupActionViewModel` rows for primary, secondary, and footer actions.
 Those rows carry command ID, label, enabled state, and disabled reason, so card widgets can show
 available and blocked actions without hard-coded command labels or modal fallback prompts.
+Cards also expose `requirement_badge` and `artifact_badge`; shells should render those fields
+directly instead of rechecking setup metadata or artifact registry records.
 
 Advanced Diagnostics actions follow the same modeless pattern. The shell renders
 controller-provided `EditorActionViewModel` rows and stores a generic action callback; dispatch

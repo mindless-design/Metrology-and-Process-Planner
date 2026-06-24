@@ -58,6 +58,8 @@ class SetupStageSnapshot:
     primary_action: SetupGuideAction | None = None
     secondary_actions: tuple[SetupGuideAction, ...] = ()
     warning_ids: tuple[str, ...] = ()
+    requirement_badge: str = "required"
+    artifact_badge: str = "none"
 
 
 @dataclass(frozen=True)

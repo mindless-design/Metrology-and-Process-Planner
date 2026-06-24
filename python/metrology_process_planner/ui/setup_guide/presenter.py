@@ -70,6 +70,8 @@ def _stage_view(stage: SetupStageSnapshot) -> SetupStageViewModel:
         len(stage.warning_ids),
         _action_view(stage.primary_action) if stage.primary_action is not None else None,
         tuple(_action_view(action) for action in stage.secondary_actions),
+        _requirement_badge(stage),
+        stage.artifact_badge,
     )
 
 
@@ -100,6 +102,14 @@ def _disabled_reason(action: SetupGuideAction | None) -> str:
     if action is None or action.enabled:
         return ""
     return action.disabled_reason
+
+
+def _requirement_badge(stage: SetupStageSnapshot) -> str:
+    if stage.requirement_badge:
+        if not stage.required and stage.requirement_badge == "required":
+            return "optional"
+        return stage.requirement_badge
+    return "required" if stage.required else "optional"
 
 
 def _warning_count(snapshot: SetupGuideSnapshot) -> int:

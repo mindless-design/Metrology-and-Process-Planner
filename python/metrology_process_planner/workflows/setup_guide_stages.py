@@ -9,6 +9,7 @@ from metrology_process_planner.domains.session import (
     SessionRecord,
     SetupItemRecord,
 )
+from metrology_process_planner.workflows.setup_guide_artifacts import artifact_badge
 from metrology_process_planner.workflows.setup_guide_models import (
     SetupGuideAction,
     SetupStageSnapshot,
@@ -23,26 +24,29 @@ def setup_stages(
     """Return setup cards from session items, mode policy, or defaults."""
 
     if session.setup.items:
-        return tuple(_stage_from_item(item) for item in session.setup.items)
+        return tuple(_stage_from_item(item, session) for item in session.setup.items)
     stage_types = mode.setup.stage_types if mode is not None else ()
     if mode is not None and stage_types:
         return tuple(_mode_stage(session, stage_type, mode) for stage_type in stage_types)
     return _default_stages(session)
 
 
-def _stage_from_item(item: SetupItemRecord) -> SetupStageSnapshot:
+def _stage_from_item(item: SetupItemRecord, session: SessionRecord) -> SetupStageSnapshot:
     metadata = item.metadata or {}
     primary = _action_from_metadata(metadata, "primary_action", "primary_action_label")
+    required = bool(metadata.get("required", True))
     return SetupStageSnapshot(
         item.id,
         item.item_type,
         item.label or _label_for_type(item.item_type),
         _status_from_text(item.status),
-        required=bool(metadata.get("required", True)),
+        required=required,
         description=str(metadata.get("description", "")),
         primary_action=primary,
         secondary_actions=_secondary_actions(metadata),
         warning_ids=item.warning_ids,
+        requirement_badge=_requirement_badge(required),
+        artifact_badge=artifact_badge(item.artifact_refs, session.artifacts),
     )
 
 
@@ -139,6 +143,10 @@ def _generic_stage(
     status: SetupStageStatus,
 ) -> SetupStageSnapshot:
     return SetupStageSnapshot(stage_type, stage_type, label, status)
+
+
+def _requirement_badge(required: bool) -> str:
+    return "required" if required else "optional"
 
 
 def _status_from_text(value: str) -> SetupStageStatus:

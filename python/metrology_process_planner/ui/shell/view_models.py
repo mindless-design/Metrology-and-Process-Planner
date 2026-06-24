@@ -32,6 +32,8 @@ class SetupStageViewModel:
     warning_count: int = 0
     primary_action_view: SetupActionViewModel | None = None
     secondary_action_views: tuple[SetupActionViewModel, ...] = ()
+    requirement_badge: str = "required"
+    artifact_badge: str = "none"
 
 
 @dataclass(frozen=True)

@@ -65,6 +65,9 @@ Last updated: 2026-06-24
 - Setup guide cards must render from action view models, not command-name guesses. Primary,
   secondary, and footer actions carry labels and disabled reasons from the setup state/policy
   layer so unavailable setup choices can be shown inline.
+- Setup guide cards must also render requirement and artifact badges from presenter view models.
+  Widgets should not inspect `SetupItemRecord.artifact_refs` or artifact registry state directly;
+  the presenter supplies a compact artifact availability badge from canonical session data.
 - Render refresh failures upsert failed owner/role SVG artifacts with repair metadata, so retries update one canonical repair target instead of piling up warnings or hidden error state.
 - Live KLayout line-capture coverage is an opt-in batch probe that drives `KLayoutCaptureGestureAdapter` inside `pya` against a real layout and asserts source shapes are unchanged.
 - Profilometry child-line capture reuses the same KLayout line gesture adapter and `LineCaptureTool`; durable workflow state decides whether line release creates a measurement child or a profilometry compound feature.

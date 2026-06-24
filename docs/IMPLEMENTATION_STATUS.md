@@ -42,6 +42,9 @@ Last updated: 2026-06-24
 - Setup guide cards now preserve command labels, enabled state, and disabled reasons through
   `SetupActionViewModel` rows for primary, secondary, and footer actions, so widgets can render
   card buttons directly from the presenter without inferring labels or prompt logic.
+- Setup guide stage cards now expose explicit `requirement_badge` and `artifact_badge` fields.
+  Required/optional state is derived from setup policy/state, and setup-item artifact references
+  summarize central registry status as present, missing, stale, failed, mixed, or none.
 - Rendering and annotation pipelines use editable scene specs, SVG as canonical output, optional rasterizer injection, drawing persistence, and editor/render bridge refresh hooks.
 - Drawing export now returns canonical `ArtifactRecord` sets directly; capture, measurement, and process-owned drawings update the central registry plus owner `artifact_refs` without mirrored image/drawing wrappers.
 - Canvas pending-crop artifacts are now created, promoted, or removed explicitly by workflow commands rather than synthesized during `SessionRecord` construction.
