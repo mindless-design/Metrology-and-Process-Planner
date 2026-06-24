@@ -35,6 +35,8 @@ class CommandId(str, Enum):
     VALIDATE_PROCESS_CONTEXT = "validate_process_context"
     REGENERATE_ARTIFACT = "regenerate_artifact"
     REGENERATE_PROCESS_OUTPUT = "regenerate_process_output"
+    EXPORT_CSV = "export_csv"
+    OPEN_OUTPUT_FOLDER = "open_output_folder"
     SAVE_SESSION_EDITS = "save_session_edits"
     DISCARD_UNSAVED_EDITS = "discard_unsaved_edits"
     END_ACTIVE_SESSION = "end_active_session"

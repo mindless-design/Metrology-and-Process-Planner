@@ -71,6 +71,8 @@ _WORKFLOW_ROWS = (
     (CommandId.VALIDATE_PROCESS_CONTEXT, "Validate Process Context", CommandGroup.PROCESS),
     (CommandId.REGENERATE_ARTIFACT, "Regenerate Artifact", CommandGroup.ARTIFACT),
     (CommandId.REGENERATE_PROCESS_OUTPUT, "Regenerate Process Output", CommandGroup.PROCESS),
+    (CommandId.EXPORT_CSV, "Export CSV", CommandGroup.SESSION),
+    (CommandId.OPEN_OUTPUT_FOLDER, "Open Output Folder", CommandGroup.SESSION),
     (CommandId.SAVE_SESSION_EDITS, "Save Session Edits", CommandGroup.SESSION),
     (CommandId.DISCARD_UNSAVED_EDITS, "Discard Unsaved Edits", CommandGroup.SESSION),
 )

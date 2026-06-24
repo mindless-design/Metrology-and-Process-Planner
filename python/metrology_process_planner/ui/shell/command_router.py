@@ -21,6 +21,7 @@ class CommandRouteResult:
     selected_item_id: str = ""
     warning_ids: tuple[str, ...] = ()
     next_ui_hint: str = ""
+    output_path: str = ""
 
 
 class CommandRouter:

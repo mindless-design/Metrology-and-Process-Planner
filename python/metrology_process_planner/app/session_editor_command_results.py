@@ -31,6 +31,7 @@ def command_result(command_id: CommandId, result: EditorActionResult) -> Command
         updated_document_id=document.session.id,
         selected_item_id=document.selection.selected_item_id,
         next_ui_hint=_next_hint(command_id, result.status),
+        output_path=str(result.output_path or ""),
     )
 
 

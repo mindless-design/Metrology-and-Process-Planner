@@ -56,6 +56,10 @@ returns `unavailable` and leaves the document unchanged.
 folder into `EditorActionResult.output_path`; UI adapters may reveal that path, but workflow code
 does not launch external applications or block on missing folders.
 
+`ExportCSV` and `OpenOutputFolder` now enter through app commands before reaching the editor
+dispatcher. Their path handoffs are mirrored on `CommandRouteResult.output_path`, so future Qt
+shells can expose the path without bypassing command tracing or diagnostics.
+
 Generic capture commands use the same modeless command route as setup actions. `StartCapture`
 aliases box capture; explicit box, line, and point commands arm `CanvasInteractionEngine`, write
 durable `WorkflowState` on the active session, and refresh any open editor/setup surfaces for that

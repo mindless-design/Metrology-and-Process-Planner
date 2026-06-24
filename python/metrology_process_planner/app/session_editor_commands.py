@@ -192,6 +192,9 @@ def register_session_editor_command_handlers(
     from metrology_process_planner.app.session_editor_completion_commands import (
         register_completion_command_handlers,
     )
+    from metrology_process_planner.app.session_editor_export_commands import (
+        register_export_command_handlers,
+    )
     from metrology_process_planner.app.session_editor_process_commands import (
         register_process_editor_command_handlers,
     )
@@ -211,4 +214,5 @@ def register_session_editor_command_handlers(
     registry.register(CommandId.DISCARD_MEASUREMENT, service.discard_measurement)
     registry.register(CommandId.REGENERATE_ARTIFACT, service.regenerate_artifact)
     register_completion_command_handlers(registry, controller)
+    register_export_command_handlers(registry, controller)
     register_process_editor_command_handlers(registry, controller)

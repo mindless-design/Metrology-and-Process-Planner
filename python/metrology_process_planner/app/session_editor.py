@@ -200,6 +200,8 @@ _EDITOR_COMMANDS: dict[EditorActionType, CommandId] = {
     EditorActionType.DETACH_RECIPE: CommandId.DETACH_RECIPE,
     EditorActionType.DISCARD_MEASUREMENT: CommandId.DISCARD_MEASUREMENT,
     EditorActionType.EXIT_SESSION: CommandId.END_ACTIVE_SESSION,
+    EditorActionType.EXPORT_CSV: CommandId.EXPORT_CSV,
+    EditorActionType.OPEN_OUTPUT_FOLDER: CommandId.OPEN_OUTPUT_FOLDER,
     EditorActionType.PENDING_DISCARD: CommandId.DISCARD_PENDING_CAPTURE,
     EditorActionType.PENDING_RETAKE: CommandId.RETAKE_PENDING_CAPTURE,
     EditorActionType.PENDING_SAVE: CommandId.SAVE_PENDING_CAPTURE,
@@ -215,5 +217,4 @@ _EDITOR_COMMANDS: dict[EditorActionType, CommandId] = {
 
 def _paths_for(path_or_folder: PathInput) -> SessionPaths:
     path = Path(path_or_folder)
-    folder = path if path.is_dir() else path.parent
-    return SessionPaths.for_folder(folder)
+    return SessionPaths.for_folder(path if path.is_dir() else path.parent)

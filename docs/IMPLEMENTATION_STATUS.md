@@ -20,6 +20,9 @@ Last updated: 2026-06-24
   pending save/retake/discard, composite save/retake, add/save/retake/discard measurement,
   regenerate artifact, regenerate process output, and discard unsaved edits all route through
   `CommandRouter` before delegating to the editor dispatcher.
+- Editor export and shell-handoff actions now have app command IDs too. `ExportCSV` and
+  `OpenOutputFolder` route through `CommandRouter`, delegate to the editor dispatcher, and preserve
+  returned output paths on `CommandRouteResult.output_path` for UI adapters.
 - Process-context editor commands now use the same bridge for attach, detach, validate, and
   regenerate process output. Payload-bearing editor actions such as attach-recipe with a selected
   recipe path preserve their payload while still routing through `CommandRouter`; direct attach
@@ -146,6 +149,8 @@ Last updated: 2026-06-24
   `CommandRouter`, plus direct validate/detach commands against the active editor document.
 - Session editor completion-command tests cover `TakeAnotherMeasurement` rearming the same parent
   capture from the active editor document and the no-saved-measurement unavailable result.
+- Session editor export-command tests cover primary-action `ExportCSV` routing, output-folder path
+  handoff, and no-active-document unavailable handling.
 - Session editor dispatcher tests covering `Open Output Folder` path handoff and no-session-folder
   unavailable behavior.
 - Rendering pipelines, drawing persistence, SVG output, and fake rasterizer export paths.

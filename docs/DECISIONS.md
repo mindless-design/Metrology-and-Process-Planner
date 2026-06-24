@@ -40,6 +40,9 @@ Last updated: 2026-06-24
 - Output-folder opening is a shell handoff, not workflow-side process launching. The editor
   dispatcher returns the resolved session folder via `EditorActionResult.output_path`; UI adapters
   decide how to reveal it.
+- Export/path handoffs should still be commands. `ExportCSV` and `OpenOutputFolder` route through
+  `CommandRouter` and preserve the dispatcher output path on `CommandRouteResult.output_path`,
+  keeping diagnostics and shell handoff behavior on the same path.
 - Canvas visuals are durable `CanvasObject` records and overlay commands; KLayout source layouts remain read-only.
 - Selection sync flows through `SelectionCoordinator` and document canvas-object indexes.
 - KLayout capture gestures are normalized at the infrastructure boundary and routed through the shared capture tools; overlay restoration goes through `CanvasOverlayManager`, never source-layout shape insertion.
