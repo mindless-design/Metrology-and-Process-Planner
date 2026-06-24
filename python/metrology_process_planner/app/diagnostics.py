@@ -6,6 +6,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+from metrology_process_planner.app.window_registry import (
+    WindowOpenStatus,
+    WindowRegistry,
+)
 from metrology_process_planner.domains.session import (
     ArtifactStatus,
     ModeRegistry,
@@ -46,6 +50,7 @@ class AdvancedDiagnosticsController:
         service: DiagnosticsService,
         shell: DiagnosticsShell | None = None,
         mode_registry: ModeRegistry | None = None,
+        window_registry: WindowRegistry[object] | None = None,
     ) -> None:
         self._sink = sink
         self._service = service
@@ -53,6 +58,9 @@ class AdvancedDiagnosticsController:
             InMemoryDiagnosticsWidgetFactory()
         )
         self._mode_registry = mode_registry or built_in_mode_registry()
+        self._window_registry = (
+            window_registry if window_registry is not None else WindowRegistry(diagnostic_sink=sink)
+        )
         self.active_session: Optional[SessionRecord] = None
         self.active_paths: Optional[SessionPaths] = None
 
@@ -81,14 +89,25 @@ class AdvancedDiagnosticsController:
             recent_event_count=len(recent_events),
             summary_rows=summary_rows,
         )
-        window = self._shell.open(result, recent_events)
+        registry_result = self._window_registry.open_or_raise(
+            _diagnostics_window_key(self.active_session),
+            "Advanced Diagnostics",
+            lambda: self._shell.open(result, recent_events),
+            refresh_existing=lambda window: self._shell.render(
+                window,
+                result,
+                recent_events,
+            ),
+        )
+        if registry_result.status is WindowOpenStatus.FAILED:
+            return DiagnosticsOpenResult("failed", registry_result.message)
         return DiagnosticsOpenResult(
-            result.status,
+            "raised" if registry_result.status is WindowOpenStatus.RAISED else result.status,
             result.message,
             result.warning_count,
             result.missing_artifact_count,
             result.recent_event_count,
-            window,
+            registry_result.window,
             result.summary_rows,
         )
 
@@ -165,3 +184,7 @@ def _recent_commands(events: tuple[DiagnosticEvent, ...]) -> str:
 
 def _recent_event_names(events: tuple[DiagnosticEvent, ...]) -> str:
     return ", ".join(event.event_name for event in events[-5:]) if events else "none"
+
+
+def _diagnostics_window_key(session: SessionRecord) -> str:
+    return f"advanced-diagnostics:{session.id}"

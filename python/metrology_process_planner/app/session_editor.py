@@ -6,6 +6,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional, Union
 
+from metrology_process_planner.app.window_registry import (
+    WindowOpenStatus,
+    WindowRegistry,
+)
 from metrology_process_planner.persistence.paths import SessionPaths
 from metrology_process_planner.ui.session_editor import (
     InMemorySessionEditorWidgetFactory,
@@ -40,10 +44,14 @@ class SessionEditorController:
         document_store: Optional[SessionDocumentStore] = None,
         shell: Optional[SessionEditorShell] = None,
         adapter: Optional[DefaultSessionModeAdapter] = None,
+        window_registry: Optional[WindowRegistry[Any]] = None,
     ) -> None:
         self._store = document_store if document_store is not None else SessionDocumentStore()
         self._shell = shell if shell is not None else _default_shell()
         self._adapter = adapter if adapter is not None else DefaultSessionModeAdapter()
+        self._window_registry = (
+            window_registry if window_registry is not None else WindowRegistry()
+        )
         self.current_document: Optional[SessionDocument] = None
         self.last_action_result: Optional[EditorActionResult] = None
         self.current_window: Optional[Any] = None
@@ -74,9 +82,23 @@ class SessionEditorController:
 
         callbacks = SessionEditorCallbacks(on_select_item=on_select, on_action=on_action)
         self._callbacks = callbacks
-        window = self._shell.open(document, self._adapter, callbacks)
+        registry_result = self._window_registry.open_or_raise(
+            _window_key(document),
+            f"Session Editor - {document.session.name}",
+            lambda: self._shell.open(document, self._adapter, callbacks),
+            refresh_existing=lambda window: self._shell.render(
+                window,
+                document,
+                self._adapter,
+                callbacks,
+            ),
+        )
+        if registry_result.status is WindowOpenStatus.FAILED:
+            return SessionEditorOpenResult("failed", registry_result.message, document=document)
+        window = registry_result.window
         self.current_window = window
-        return SessionEditorOpenResult("opened", document=document, window=window)
+        status = "raised" if registry_result.status is WindowOpenStatus.RAISED else "opened"
+        return SessionEditorOpenResult(status, document=document, window=window)
 
     def open_current_session(self) -> SessionEditorOpenResult:
         """Resolve the editor command when no active session provider exists yet."""
@@ -102,6 +124,10 @@ class SessionEditorController:
 
 def _default_shell() -> SessionEditorShell:
     return SessionEditorShell(InMemorySessionEditorWidgetFactory())
+
+
+def _window_key(document: SessionDocument) -> str:
+    return f"session-editor:{document.session.id}"
 
 
 def _paths_for(path_or_folder: PathInput) -> SessionPaths:

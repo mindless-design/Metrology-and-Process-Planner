@@ -72,6 +72,20 @@ class SessionEditorShellControllerTests(unittest.TestCase):
             )
         )
 
+    def test_controller_raises_existing_window_for_same_session(self) -> None:
+        document = SessionDocumentBuilder().build(rich_session())
+        controller = SessionEditorController(
+            shell=SessionEditorShell(InMemorySessionEditorWidgetFactory())
+        )
+
+        first = controller.open_document(document)
+        second = controller.open_document(document)
+
+        self.assertEqual("opened", first.status)
+        self.assertEqual("raised", second.status)
+        self.assertIs(first.window, second.window)
+        self.assertEqual(1, second.window["raised"])
+
     def test_controller_rerenders_shell_after_mutating_action_callback(self) -> None:
         document = SessionDocumentBuilder().build(rich_session())
         controller = SessionEditorController(

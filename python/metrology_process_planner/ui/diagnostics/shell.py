@@ -40,6 +40,18 @@ class DiagnosticsShell:
         """Build and show the diagnostics shell."""
 
         window = self._factory.create_window("Advanced Diagnostics")
+        self.render(window, result, recent_events)
+        self._factory.show(window)
+        return window
+
+    def render(
+        self,
+        window: Any,
+        result: Any,
+        recent_events: tuple[DiagnosticEvent, ...],
+    ) -> None:
+        """Render diagnostics content into an existing shell window."""
+
         self._factory.set_summary(window, _summary_rows(result))
         self._factory.set_events(window, recent_events)
         self._factory.set_actions(
@@ -52,8 +64,6 @@ class DiagnosticsShell:
                 "Clear Runtime Events",
             ),
         )
-        self._factory.show(window)
-        return window
 
 
 class InMemoryDiagnosticsWidgetFactory:

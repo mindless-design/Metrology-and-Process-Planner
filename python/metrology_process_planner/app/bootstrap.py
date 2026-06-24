@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import NamedTuple
 
 from metrology_process_planner.app.commands import (
     CommandId,
@@ -14,6 +15,7 @@ from metrology_process_planner.app.diagnostics import AdvancedDiagnosticsControl
 from metrology_process_planner.app.recipe_editor import RecipeEditorController
 from metrology_process_planner.app.session_editor import SessionEditorController
 from metrology_process_planner.app.setup_guide import SetupGuideController
+from metrology_process_planner.app.window_registry import WindowRegistry
 from metrology_process_planner.infrastructure.diagnostics import (
     DiagnosticsService,
     InMemoryDiagnosticSink,
@@ -47,6 +49,17 @@ class AppServices:
     diagnostics_sink: InMemoryDiagnosticSink
     diagnostics_service: DiagnosticsService
     diagnostics_controller: AdvancedDiagnosticsController
+    window_registry: WindowRegistry[object]
+
+
+class UiControllers(NamedTuple):
+    """Modeless UI controllers that share a single window registry."""
+
+    diagnostics: AdvancedDiagnosticsController
+    setup_guide: SetupGuideController
+    recipe_editor: RecipeEditorController
+    session_editor: SessionEditorController
+    window_registry: WindowRegistry[object]
 
 
 def build_app_services() -> AppServices:
@@ -55,26 +68,23 @@ def build_app_services() -> AppServices:
     command_registry = build_default_registry()
     diagnostics_sink = InMemoryDiagnosticSink()
     diagnostics_service = DiagnosticsService(diagnostics_sink)
-    diagnostics_controller = AdvancedDiagnosticsController(diagnostics_sink, diagnostics_service)
-    setup_guide_controller = SetupGuideController()
-    recipe_editor_controller = RecipeEditorController()
-    session_editor_controller = SessionEditorController()
+    ui = _build_ui_controllers(diagnostics_sink, diagnostics_service)
     command_registry.register(
         CommandId.START_OR_RESUME_SETUP,
-        lambda: _open_setup_guide(setup_guide_controller),
+        lambda: _open_setup_guide(ui.setup_guide),
     )
     command_registry.register(
         CommandId.OPEN_SESSION_EDITOR,
-        lambda: _open_session_editor(session_editor_controller),
+        lambda: _open_session_editor(ui.session_editor),
     )
     command_registry.register(
         CommandId.EDIT_RECIPE,
-        lambda: _open_recipe_editor(recipe_editor_controller),
+        lambda: _open_recipe_editor(ui.recipe_editor),
     )
     command_registry.register(CommandId.END_ACTIVE_SESSION, _end_active_session)
     command_registry.register(
         CommandId.OPEN_DIAGNOSTICS,
-        lambda: _open_diagnostics(diagnostics_controller),
+        lambda: _open_diagnostics(ui.diagnostics),
     )
     command_router = CommandRouter(command_registry, diagnostics_sink)
     return AppServices(
@@ -90,12 +100,31 @@ def build_app_services() -> AppServices:
             manager,
             diagnostic_sink=diagnostics_sink,
         ),
-        session_editor_controller=session_editor_controller,
-        setup_guide_controller=setup_guide_controller,
-        recipe_editor_controller=recipe_editor_controller,
+        session_editor_controller=ui.session_editor,
+        setup_guide_controller=ui.setup_guide,
+        recipe_editor_controller=ui.recipe_editor,
         diagnostics_sink=diagnostics_sink,
         diagnostics_service=diagnostics_service,
-        diagnostics_controller=diagnostics_controller,
+        diagnostics_controller=ui.diagnostics,
+        window_registry=ui.window_registry,
+    )
+
+
+def _build_ui_controllers(
+    diagnostics_sink: InMemoryDiagnosticSink,
+    diagnostics_service: DiagnosticsService,
+) -> UiControllers:
+    window_registry: WindowRegistry[object] = WindowRegistry(diagnostic_sink=diagnostics_sink)
+    return UiControllers(
+        diagnostics=AdvancedDiagnosticsController(
+            diagnostics_sink,
+            diagnostics_service,
+            window_registry=window_registry,
+        ),
+        setup_guide=SetupGuideController(),
+        recipe_editor=RecipeEditorController(),
+        session_editor=SessionEditorController(window_registry=window_registry),
+        window_registry=window_registry,
     )
 
 

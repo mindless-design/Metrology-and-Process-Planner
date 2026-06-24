@@ -109,6 +109,19 @@ class DiagnosticsPipelineTests(unittest.TestCase):
         self.assertEqual("opened", result.status)
         self.assertIsNotNone(result.window)
 
+    def test_advanced_diagnostics_controller_raises_existing_window(self) -> None:
+        sink = InMemoryDiagnosticSink()
+        controller = AdvancedDiagnosticsController(sink, DiagnosticsService(sink))
+        controller.set_active_session(session_without_pending())
+
+        first = controller.open_current()
+        second = controller.open_current()
+
+        self.assertEqual("opened", first.status)
+        self.assertEqual("raised", second.status)
+        self.assertIs(first.window, second.window)
+        self.assertEqual(1, second.window["raised"])
+
     def test_diagnostics_summary_shows_session_modes_artifacts_and_commands(self) -> None:
         services = build_app_services()
         source = _session_with_missing_artifact()
