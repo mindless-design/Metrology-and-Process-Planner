@@ -16,6 +16,10 @@ Last updated: 2026-06-24
   `Save Edits` routes through `SaveSessionEdits` before delegating to the editor dispatcher,
   `Reopen Setup` opens the setup guide for the active editor session, and `Close` routes through
   `EndActiveSession` so pending/dirty blockers surface inline and diagnostics record the command.
+- Active editor commands now also cover selected-item workflows through the same bridge:
+  pending save/retake/discard, composite save/retake, add/save/retake/discard measurement,
+  regenerate artifact, regenerate process output, and discard unsaved edits all route through
+  `CommandRouter` before delegating to the editor dispatcher.
 - `Open Output Folder` now returns a typed modeless path handoff through `EditorActionResult.output_path` when session paths are configured; workflow code does not launch an external file browser directly, and missing paths return a structured unavailable result.
 - Generic capture start/cancel commands now route through a shared app-level capture command service. `StartCapture`, `StartBoxCapture`, `StartLineCapture`, `StartPointCapture`, and `CancelCapture` update durable workflow arming state, reuse `CanvasInteractionEngine`, refresh the active editor document, and mirror active setup-guide session state when both surfaces inspect the same session.
 - `EndActiveSession` now routes through a modeless session lifecycle service. It closes and clears safe editor/setup/diagnostics session surfaces and capture arming, while dirty editor edits or pending capture review items return structured blocked command results instead of silently closing or doing nothing.
@@ -127,6 +131,9 @@ Last updated: 2026-06-24
   `Close` routing through `CommandRouter`, active-session setup guide handoff, successful
   command-backed session save, direct no-active-session save handling, successful end-session
   close, and blocked pending-review close behavior.
+- Session editor selected-item command tests cover inspector pending-save routing through
+  `SavePendingCapture`, direct `AddMeasurement` dispatch from the selected capture, and
+  `DiscardUnsavedEdits` dirty-state cleanup.
 - Session editor dispatcher tests covering `Open Output Folder` path handoff and no-session-folder
   unavailable behavior.
 - Rendering pipelines, drawing persistence, SVG output, and fake rasterizer export paths.

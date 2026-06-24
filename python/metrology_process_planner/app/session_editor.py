@@ -137,6 +137,12 @@ class SessionEditorController:
         self._render_current()
         return result
 
+    def replace_current_document(self, document: SessionDocument) -> None:
+        """Replace the active document after an app-owned command update."""
+
+        self.current_document = document
+        self._render_current()
+
     def _route_app_command(self, action: EditorAction) -> bool:
         command_id = _command_for_action(action)
         if command_id is None or self._command_router is None:
@@ -170,13 +176,26 @@ def _window_key(document: SessionDocument) -> str:
 
 
 def _command_for_action(action: EditorAction) -> Optional[CommandId]:
-    if action.action_type is EditorActionType.REOPEN_SETUP:
-        return CommandId.OPEN_SETUP_GUIDE
-    if action.action_type is EditorActionType.SAVE_EDITS:
-        return CommandId.SAVE_SESSION_EDITS
-    if action.action_type is EditorActionType.EXIT_SESSION:
-        return CommandId.END_ACTIVE_SESSION
-    return None
+    return _EDITOR_COMMANDS.get(action.action_type)
+
+
+_EDITOR_COMMANDS: dict[EditorActionType, CommandId] = {
+    EditorActionType.ADD_MEASUREMENT: CommandId.ADD_MEASUREMENT,
+    EditorActionType.COMPOSITE_RETAKE_INNER: CommandId.RETAKE_INNER_FEATURE,
+    EditorActionType.COMPOSITE_RETAKE_PARENT: CommandId.RETAKE_PARENT_CAPTURE,
+    EditorActionType.COMPOSITE_SAVE: CommandId.SAVE_COMPOSITE_CAPTURE,
+    EditorActionType.DISCARD_MEASUREMENT: CommandId.DISCARD_MEASUREMENT,
+    EditorActionType.EXIT_SESSION: CommandId.END_ACTIVE_SESSION,
+    EditorActionType.PENDING_DISCARD: CommandId.DISCARD_PENDING_CAPTURE,
+    EditorActionType.PENDING_RETAKE: CommandId.RETAKE_PENDING_CAPTURE,
+    EditorActionType.PENDING_SAVE: CommandId.SAVE_PENDING_CAPTURE,
+    EditorActionType.REGENERATE_ARTIFACT: CommandId.REGENERATE_ARTIFACT,
+    EditorActionType.REGENERATE_PROCESS_OUTPUT: CommandId.REGENERATE_PROCESS_OUTPUT,
+    EditorActionType.REOPEN_SETUP: CommandId.OPEN_SETUP_GUIDE,
+    EditorActionType.RETAKE_MEASUREMENT_LINE: CommandId.RETAKE_MEASUREMENT_LINE,
+    EditorActionType.SAVE_EDITS: CommandId.SAVE_SESSION_EDITS,
+    EditorActionType.SAVE_MEASUREMENT: CommandId.SAVE_MEASUREMENT,
+}
 
 
 def _paths_for(path_or_folder: PathInput) -> SessionPaths:

@@ -34,6 +34,13 @@ the updated document/selection IDs. `Reopen Setup` maps to `OpenSetupGuide` afte
 active editor session to the setup guide, and editor `Close` maps to `EndActiveSession` so the
 same blocked/diagnostic behavior is used from menus and editor buttons.
 
+Selected-item editor commands use the same bridge. Commands such as `SavePendingCapture`,
+`RetakePendingCapture`, `DiscardPendingCapture`, `SaveCompositeCapture`, `AddMeasurement`,
+`SaveMeasurement`, `RetakeMeasurementLine`, `DiscardMeasurement`, `RegenerateArtifact`, and
+`RegenerateProcessOutput` resolve the active `SessionDocument` selection, delegate to the matching
+editor action, then return command metadata for the refreshed document and selected item. This
+keeps future menus, shortcut handlers, and widget buttons on one modeless command path.
+
 `Open Output Folder` is a modeless shell handoff. The dispatcher resolves the configured session
 folder into `EditorActionResult.output_path`; UI adapters may reveal that path, but workflow code
 does not launch external applications or block on missing folders.

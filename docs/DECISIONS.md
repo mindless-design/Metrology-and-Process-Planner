@@ -25,6 +25,11 @@ Last updated: 2026-06-24
   returns document/selection metadata, while window/lifecycle intents such as reopen setup and
   close route through the app `CommandRouter` so menus and editor buttons share diagnostics and
   blocked-result behavior.
+- Selected-item editor workflow commands are active-session commands, not widget-private logic.
+  Pending capture, composite capture, measurement, artifact regeneration, process-output
+  regeneration, and discard-unsaved-edits commands resolve the current `SessionDocument` selection
+  and delegate to the existing editor dispatcher. The command layer owns routing/status metadata;
+  the workflow layer still owns state transitions.
 - Output-folder opening is a shell handoff, not workflow-side process launching. The editor
   dispatcher returns the resolved session folder via `EditorActionResult.output_path`; UI adapters
   decide how to reveal it.
