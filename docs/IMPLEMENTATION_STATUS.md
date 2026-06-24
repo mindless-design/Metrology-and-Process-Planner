@@ -92,6 +92,9 @@ Last updated: 2026-06-24
 - `SaveRecipeAs:<path>` uses the same modeless save service, writes the recipe to the supplied
   path, records `metadata.recipe_path`, clears dirty state on success, and returns a structured
   unavailable result when no path is supplied.
+- `NewRecipe`, `NewRecipe:discard`, `OpenRecipe:<path>`, and `OpenRecipe:discard:<path>` now route
+  through modeless controller helpers. New/open blocks on dirty recipes until discard is explicitly
+  confirmed, and opened recipes record `metadata.recipe_path`.
 - Recipe editor view models now include a selected-card detail panel for materials, steps, and
   layer references. Material details expose category/color/visibility/notes fields and material
   actions; step details expose operation/material/mask/thickness/notes fields and step actions.
@@ -152,6 +155,8 @@ Last updated: 2026-06-24
 - Recipe editor callback tests covering modeless window action dispatch and close behavior through
   the window registry.
 - Recipe editor dirty-close tests covering blocked close and confirmed discard close behavior.
+- Recipe editor opening tests covering new recipe, path-backed open, dirty-switch blocking,
+  discard-confirmed switching, missing paths, and bad files.
 - Recipe editor card tests covering selected material and process-step detail-panel fields and
   actions.
 - Recipe editor action tests covering blocked deletion of used materials and safe in-memory deletion

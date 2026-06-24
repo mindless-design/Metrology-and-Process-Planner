@@ -70,6 +70,9 @@ Last updated: 2026-06-24
 - Recipe JSON persistence lives behind `ProcessRecipeJsonStore`. The recipe editor controller may
   call it for `SaveRecipe` when a recipe path is known, or `SaveRecipeAs:<path>` when a shell
   supplies a new destination, but widgets and pure dispatchers do not write recipe files directly.
+- Recipe switching is also controller-owned. `NewRecipe` and `OpenRecipe:<path>` block when the
+  current recipe is dirty, and only `NewRecipe:discard` / `OpenRecipe:discard:<path>` replace the
+  active recipe after an explicit confirmation.
 
 ## Child Measurement Slice
 

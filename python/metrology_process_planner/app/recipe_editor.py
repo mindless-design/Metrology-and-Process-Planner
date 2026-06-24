@@ -6,6 +6,11 @@ from dataclasses import dataclass
 from typing import Any
 
 from metrology_process_planner.app.command_types import CommandId
+from metrology_process_planner.app.recipe_editor_opening import (
+    dirty_switch_block,
+    new_recipe,
+    open_recipe,
+)
 from metrology_process_planner.app.recipe_editor_saving import save_recipe
 from metrology_process_planner.app.window_registry import WindowOpenStatus, WindowRegistry
 from metrology_process_planner.domains.process import ProcessRecipe
@@ -76,6 +81,11 @@ class RecipeEditorController:
 
         if action_id.startswith("CloseRecipeEditor"):
             return self.close_current(force_discard=action_id.endswith(":discard"))
+        if action_id.startswith("NewRecipe"):
+            return self.new_current(force_discard=action_id.endswith(":discard"))
+        if action_id.startswith("OpenRecipe"):
+            force_discard, payload = _discard_payload(action_id)
+            return self.open_recipe_path(payload, force_discard)
         if action_id == "SaveRecipe":
             return self.save_current()
         if action_id.startswith("SaveRecipeAs"):
@@ -111,6 +121,26 @@ class RecipeEditorController:
         self.last_action_result = result
         return result
 
+    def new_current(self, force_discard: bool = False) -> RecipeEditorActionResult:
+        """Create a new in-memory recipe or block on unsaved edits."""
+
+        recipe = self.current_recipe
+        if _is_dirty(recipe) and not force_discard and recipe is not None:
+            return self._remember(dirty_switch_block(CommandId.NEW_RECIPE, recipe))
+        return self._replace_current(new_recipe())
+
+    def open_recipe_path(
+        self,
+        path_text: str,
+        force_discard: bool = False,
+    ) -> RecipeEditorActionResult:
+        """Open a recipe path or block on unsaved edits."""
+
+        recipe = self.current_recipe
+        if _is_dirty(recipe) and not force_discard and recipe is not None:
+            return self._remember(dirty_switch_block(CommandId.OPEN_RECIPE, recipe))
+        return self._replace_current(open_recipe(path_text, self._recipe_store))
+
     def save_current(
         self,
         path_override: str = "",
@@ -137,6 +167,13 @@ class RecipeEditorController:
     def _remember(self, result: RecipeEditorActionResult) -> RecipeEditorActionResult:
         self.last_action_result = result
         return result
+
+    def _replace_current(self, result: RecipeEditorActionResult) -> RecipeEditorActionResult:
+        if result.recipe is not None:
+            self._window_registry.close(_window_key(self.current_recipe))
+            self.current_recipe = result.recipe
+            self.open_current()
+        return self._remember(result)
 
 
 def _window_key(recipe: ProcessRecipe | None) -> str:
@@ -168,3 +205,10 @@ def _action_payload(action_id: str) -> str:
     if ":" not in action_id:
         return ""
     return action_id.split(":", 1)[1]
+
+
+def _discard_payload(action_id: str) -> tuple[bool, str]:
+    payload = _action_payload(action_id)
+    if payload.startswith("discard:"):
+        return True, payload.removeprefix("discard:")
+    return False, payload

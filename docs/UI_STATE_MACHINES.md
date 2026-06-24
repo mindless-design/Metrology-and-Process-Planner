@@ -57,6 +57,10 @@ memory.
 after a successful save. The eventual file-picker UI should dispatch the path-bearing command
 instead of writing files itself.
 
+`NewRecipe` and `OpenRecipe:<path>` are dirty-safe modeless switch actions. If the current recipe
+has unsaved edits, they return a structured `blocked` result. A confirmation widget may dispatch
+`NewRecipe:discard` or `OpenRecipe:discard:<path>` after the user accepts losing unsaved edits.
+
 Recipe editor selection should render through `selected_detail` on `RecipeEditorViewModel`.
 Material, process-step, and layer cards expose their own field/action models there, keeping card
 selection and detail editing on the same modeless view-model spine.
