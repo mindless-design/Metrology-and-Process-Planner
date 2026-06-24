@@ -149,10 +149,36 @@ def _material_actions(material_id: str) -> tuple[EditorActionViewModel, ...]:
 
 def _step_actions(step_id: str) -> tuple[EditorActionViewModel, ...]:
     return (
-        EditorActionViewModel("DuplicateProcessStep", "Duplicate Step", f"step:{step_id}"),
-        EditorActionViewModel("DeleteProcessStep", "Delete Step", f"step:{step_id}"),
-        EditorActionViewModel("MoveProcessStepUp", "Move Up", f"step:{step_id}"),
-        EditorActionViewModel("MoveProcessStepDown", "Move Down", f"step:{step_id}"),
+        EditorActionViewModel(
+            f"DuplicateProcessStep:{step_id}",
+            "Duplicate Step",
+            f"step:{step_id}",
+        ),
+        EditorActionViewModel(
+            f"DeleteProcessStep:{step_id}",
+            "Delete Step",
+            f"step:{step_id}",
+        ),
+        EditorActionViewModel(
+            f"MoveProcessStepUp:{step_id}",
+            "Move Up",
+            f"step:{step_id}",
+        ),
+        EditorActionViewModel(
+            f"MoveProcessStepDown:{step_id}",
+            "Move Down",
+            f"step:{step_id}",
+        ),
+        EditorActionViewModel(
+            f"DisableProcessStep:{step_id}",
+            "Disable Step",
+            f"step:{step_id}",
+        ),
+        EditorActionViewModel(
+            f"EnableProcessStep:{step_id}",
+            "Enable Step",
+            f"step:{step_id}",
+        ),
     )
 
 

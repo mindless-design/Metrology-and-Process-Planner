@@ -52,6 +52,10 @@ Recipe material deletion is handled as an inline action result: unused materials
 from the in-memory recipe and mark it dirty, while materials referenced by process steps return a
 structured `blocked` result with warning IDs and repair guidance.
 
+Recipe process-step actions also stay inline: duplicate, delete, move up/down, enable, and disable
+mutate the in-memory recipe, mark it dirty, and keep the affected step selected. Boundary moves
+return structured `blocked` results.
+
 ## Blocking Dialog Policy
 
 Normal setup, capture review, recipe validation, missing artifact handling, and process-context warnings stay modeless. The only normal workflow prompt still allowed is the post-measurement completion choice:

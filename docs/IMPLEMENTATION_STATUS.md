@@ -88,6 +88,9 @@ Last updated: 2026-06-24
 - Recipe material deletion is now an inline, modeless action. Unused materials are removed from
   the in-memory recipe and mark it dirty; materials referenced by process steps return a structured
   blocked result with warning IDs and repair guidance instead of prompting or silently deleting.
+- Recipe process-step detail actions now support modeless duplicate, delete, move up/down,
+  enable, and disable behavior through structured dispatcher results. Step reordering blocks at
+  list boundaries with inline guidance instead of doing nothing.
 - Post-measurement completion is represented as an explicit prompt result and pure workflow
   choice handler; final Qt prompt rendering remains deferred.
 
@@ -139,6 +142,7 @@ Last updated: 2026-06-24
   actions.
 - Recipe editor action tests covering blocked deletion of used materials and safe in-memory deletion
   of unused materials.
+- Recipe editor step-action tests covering duplicate, move, disable, and blocked boundary moves.
 - Modeless setup-guide controller tests covering shared-window reuse, command-router action
   callbacks, structured unavailable setup actions, and close behavior through the window registry.
 - Setup guide command tests covering origin point arming, alignment box arming, capture-status

@@ -13,6 +13,12 @@ from metrology_process_planner.domains.process import (
 )
 from metrology_process_planner.workflows.recipe_editor_materials import delete_material
 from metrology_process_planner.workflows.recipe_editor_results import RecipeEditorActionResult
+from metrology_process_planner.workflows.recipe_editor_steps import (
+    delete_step,
+    duplicate_step,
+    move_step,
+    set_step_enabled,
+)
 
 
 class RecipeEditorActionDispatcher:
@@ -40,6 +46,18 @@ class RecipeEditorActionDispatcher:
             return _add_step_template(recipe, action_id, command_id)
         if command_id is CommandId.DELETE_MATERIAL:
             return delete_material(recipe, action_id, command_id)
+        if command_id is CommandId.DUPLICATE_PROCESS_STEP:
+            return duplicate_step(recipe, action_id, command_id)
+        if command_id is CommandId.DELETE_PROCESS_STEP:
+            return delete_step(recipe, action_id, command_id)
+        if command_id is CommandId.MOVE_PROCESS_STEP_UP:
+            return move_step(recipe, action_id, command_id, -1)
+        if command_id is CommandId.MOVE_PROCESS_STEP_DOWN:
+            return move_step(recipe, action_id, command_id, 1)
+        if command_id is CommandId.ENABLE_PROCESS_STEP:
+            return set_step_enabled(recipe, action_id, command_id, True)
+        if command_id is CommandId.DISABLE_PROCESS_STEP:
+            return set_step_enabled(recipe, action_id, command_id, False)
         if command_id is CommandId.VALIDATE_RECIPE:
             return _validate(recipe, command_id)
         return RecipeEditorActionResult(
