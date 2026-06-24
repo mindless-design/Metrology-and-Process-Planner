@@ -6,6 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from metrology_process_planner.ui.session_editor.header import header_entries, status_text
 from metrology_process_planner.workflows.editor.adapters import SessionModeAdapter
 from metrology_process_planner.workflows.editor.document import SessionDocument
 from metrology_process_planner.workflows.editor.view_models import EditorAction
@@ -90,7 +91,7 @@ class SessionEditorShell:
         """Render a document into an existing editor shell window."""
 
         selected = document.items_by_id[document.selection.selected_item_id]
-        self._factory.set_header(window, _header_entries(document))
+        self._factory.set_header(window, header_entries(document))
         self._factory.set_navigator(
             window,
             _navigator_groups(document),
@@ -104,7 +105,7 @@ class SessionEditorShell:
             adapter.actions(document.session, selected),
             callbacks.on_action,
         )
-        self._factory.set_status(window, _status_text(document))
+        self._factory.set_status(window, status_text(document))
 
 
 class InMemorySessionEditorWidgetFactory:
@@ -162,16 +163,6 @@ class InMemorySessionEditorWidgetFactory:
         window["shown"] = True
 
 
-def _header_entries(document: SessionDocument) -> tuple[tuple[str, str], ...]:
-    dirty = "Unsaved" if document.dirty_state.is_dirty else "Saved"
-    return (
-        ("Session", document.session.name),
-        ("Mode", document.session.mode.value),
-        ("Dirty", dirty),
-        ("Warnings", str(len(document.warning_view_models))),
-    )
-
-
 def _navigator_groups(document: SessionDocument) -> NavigatorRows:
     rows = []
     for group in document.navigator_groups:
@@ -200,9 +191,3 @@ def _metadata_rows(
         (field.key, field.label, field.value)
         for field in adapter.metadata_fields(document.session, item)
     )
-
-
-def _status_text(document: SessionDocument) -> str:
-    if document.warning_view_models:
-        return f"{len(document.warning_view_models)} warning(s)"
-    return "Ready"

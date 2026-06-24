@@ -35,6 +35,12 @@ class SessionEditorShellControllerTests(unittest.TestCase):
 
         self.assertTrue(window["shown"])
         self.assertIn(("Session", "Demo"), window["header"])
+        self.assertIn(("Output Folder", "."), window["header"])
+        self.assertIn(("Setup", "origin_point_required"), window["header"])
+        self.assertIn(("Capture", "idle"), window["header"])
+        self.assertIn(("Selected", "Demo (ready)"), window["header"])
+        self.assertIn(("Process Context", "none"), window["header"])
+        self.assertEqual("Ready; selected Demo", window["status"])
         self.assertTrue(window["navigator"])
         self.assertTrue(window["preview"])
         self.assertTrue(window["fields"])
@@ -64,6 +70,11 @@ class SessionEditorShellControllerTests(unittest.TestCase):
 
         self.assertEqual("capture:cap-001", controller.current_document.selection.selected_item_id)
         self.assertEqual("capture:cap-001", result.window["selected_item_id"])
+        self.assertIn(("Selected", "Site 1 (ready)"), result.window["header"])
+        self.assertEqual(
+            "Pending capture review is waiting in the editor.",
+            result.window["status"],
+        )
         self.assertIn(("label", "Label", "Site 1"), result.window["fields"])
         self.assertTrue(
             any(
