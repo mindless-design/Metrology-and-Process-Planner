@@ -23,6 +23,9 @@ Last updated: 2026-06-24
   `EditorActionDispatcher`, while window/lifecycle intents such as reopen setup and close route
   through the app `CommandRouter` so menus and editor buttons share diagnostics and blocked-result
   behavior.
+- Output-folder opening is a shell handoff, not workflow-side process launching. The editor
+  dispatcher returns the resolved session folder via `EditorActionResult.output_path`; UI adapters
+  decide how to reveal it.
 - Canvas visuals are durable `CanvasObject` records and overlay commands; KLayout source layouts remain read-only.
 - Selection sync flows through `SelectionCoordinator` and document canvas-object indexes.
 - KLayout capture gestures are normalized at the infrastructure boundary and routed through the shared capture tools; overlay restoration goes through `CanvasOverlayManager`, never source-layout shape insertion.

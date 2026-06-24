@@ -65,6 +65,14 @@ def _export_csv_action(
     return dispatcher._export_csv(document)
 
 
+def _open_output_folder_action(
+    dispatcher: EditorActionDispatcher,
+    document: SessionDocument,
+    _action: EditorAction,
+) -> EditorActionResult:
+    return dispatcher._open_output_folder(document)
+
+
 def _select_item_action(
     dispatcher: EditorActionDispatcher,
     document: SessionDocument,
@@ -156,6 +164,7 @@ def _refresh_recipe_fingerprint_action(
 _ACTION_HANDLERS: dict[EditorActionType, ActionHandler] = {
     EditorActionType.SAVE_EDITS: _save_action,
     EditorActionType.EXPORT_CSV: _export_csv_action,
+    EditorActionType.OPEN_OUTPUT_FOLDER: _open_output_folder_action,
     EditorActionType.SELECT_ITEM: _select_item_action,
     EditorActionType.SELECT_CANVAS_OBJECT: _select_canvas_action,
     EditorActionType.PENDING_SAVE: _pending_save_action,

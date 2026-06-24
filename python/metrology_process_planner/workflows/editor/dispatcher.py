@@ -103,6 +103,16 @@ class EditorActionDispatcher:
         destination = self._csv.export(document.session, self._paths.capture_csv)
         return EditorActionResult("success", document, "Exported capture CSV.", destination)
 
+    def _open_output_folder(self, document: SessionDocument) -> EditorActionResult:
+        if self._paths is None:
+            return EditorActionResult("unavailable", document, "No session folder is configured.")
+        return EditorActionResult(
+            "success",
+            document,
+            "Output folder path resolved.",
+            self._paths.folder,
+        )
+
     def _select_item(self, document: SessionDocument, item_id: str) -> EditorActionResult:
         selected = select_item(document, item_id)
         canvas_ids = selected.selection.selected_canvas_object_ids

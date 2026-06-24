@@ -15,7 +15,7 @@ Last updated: 2026-06-24
 ### UI
 
 - The editor dispatches commands, but the minimal Qt shell is not yet a complete production review UI.
-- Some deferred actions still intentionally return unavailable results: PowerPoint build, setup reopen, output folder open, and some repair/export flows.
+- Some deferred actions still intentionally return unavailable results: PowerPoint build and some repair/export flows.
 - Pending composite review actions now exist in the unified editor action layer for save, retake inner feature, retake site box, discard, and exit.
 - KLayout-boundary line measurement, profilometry child-line capture, and ellipsometry child-point capture are covered with pure adapter smoke tests and opt-in live KLayout batch probes. The live lane passed against `C:\Users\edmun\AppData\Roaming\KLayout\klayout_app.exe` with `KLAYOUT_EXE` configured.
 

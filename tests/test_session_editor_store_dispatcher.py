@@ -89,6 +89,10 @@ class SessionEditorStoreDispatcherTests(unittest.TestCase):
                 _document(),
                 EditorAction(EditorActionType.EXPORT_CSV, "CSV"),
             )
+            opened = dispatcher.dispatch(
+                _document(),
+                EditorAction(EditorActionType.OPEN_OUTPUT_FOLDER, "Open Output Folder"),
+            )
             unavailable = dispatcher.dispatch(
                 _document(),
                 EditorAction(EditorActionType.BUILD_POWERPOINT, "Build PowerPoint"),
@@ -96,7 +100,18 @@ class SessionEditorStoreDispatcherTests(unittest.TestCase):
 
         self.assertEqual("success", exported.status)
         self.assertEqual(paths.capture_csv, exported.output_path)
+        self.assertEqual("success", opened.status)
+        self.assertEqual(paths.folder, opened.output_path)
         self.assertEqual("unavailable", unavailable.status)
+
+    def test_open_output_folder_without_paths_returns_structured_unavailable(self) -> None:
+        result = EditorActionDispatcher().dispatch(
+            _document(),
+            EditorAction(EditorActionType.OPEN_OUTPUT_FOLDER, "Open Output Folder"),
+        )
+
+        self.assertEqual("unavailable", result.status)
+        self.assertIn("No session folder", result.message)
 
 
 class FailingStore:

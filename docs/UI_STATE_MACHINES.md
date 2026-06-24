@@ -33,6 +33,10 @@ window/lifecycle intents are bridged into the app command router. `Reopen Setup`
 maps to `EndActiveSession` so the same blocked/diagnostic behavior is used from menus and editor
 buttons.
 
+`Open Output Folder` is a modeless shell handoff. The dispatcher resolves the configured session
+folder into `EditorActionResult.output_path`; UI adapters may reveal that path, but workflow code
+does not launch external applications or block on missing folders.
+
 Generic capture commands use the same modeless command route as setup actions. `StartCapture`
 aliases box capture; explicit box, line, and point commands arm `CanvasInteractionEngine`, write
 durable `WorkflowState` on the active session, and refresh any open editor/setup surfaces for that

@@ -13,6 +13,7 @@ Last updated: 2026-06-24
 - The session editor header/status presenter now surfaces session name, mode, output folder, setup state, capture state, selected item state, dirty state, warning count, and process-context state from the document/state-machine spine.
 - The session editor header now exposes primary command-shaped actions for save, resume pending capture, reopen setup, attach/validate process context, export CSV, build report, open output folder, and close through the same `EditorAction` callback path as inspector actions.
 - Session editor header window/lifecycle intents now bridge to the shared `CommandRouter`: `Reopen Setup` opens the setup guide for the active editor session, and `Close` routes through `EndActiveSession` so pending/dirty blockers surface inline and diagnostics record the command.
+- `Open Output Folder` now returns a typed modeless path handoff through `EditorActionResult.output_path` when session paths are configured; workflow code does not launch an external file browser directly, and missing paths return a structured unavailable result.
 - Generic capture start/cancel commands now route through a shared app-level capture command service. `StartCapture`, `StartBoxCapture`, `StartLineCapture`, `StartPointCapture`, and `CancelCapture` update durable workflow arming state, reuse `CanvasInteractionEngine`, refresh the active editor document, and mirror active setup-guide session state when both surfaces inspect the same session.
 - `EndActiveSession` now routes through a modeless session lifecycle service. It closes and clears safe editor/setup/diagnostics session surfaces and capture arming, while dirty editor edits or pending capture review items return structured blocked command results instead of silently closing or doing nothing.
 - The modeless setup guide now attaches action callbacks to its shell window and routes setup-stage commands through the shared `CommandRouter`. Setup capture commands arm shared canvas primitives and durable workflow state, setup-state commands update canonical setup fields, optional explicit setup stages can be skipped without prompts, recipe-context validation persists structured warnings, implemented modeless actions such as close update the shared `WindowRegistry`, and still-deferred setup actions return structured unavailable results.
@@ -122,6 +123,8 @@ Last updated: 2026-06-24
 - Session editor command-bridge tests covering primary header `Reopen Setup` and `Close` routing
   through `CommandRouter`, active-session setup guide handoff, successful end-session close, and
   blocked pending-review close behavior.
+- Session editor dispatcher tests covering `Open Output Folder` path handoff and no-session-folder
+  unavailable behavior.
 - Rendering pipelines, drawing persistence, SVG output, and fake rasterizer export paths.
 - UI command routing and KLayout boundary/import isolation.
 - Hybrid process solver pure fixtures, although solver integration is not the current alpha priority.
