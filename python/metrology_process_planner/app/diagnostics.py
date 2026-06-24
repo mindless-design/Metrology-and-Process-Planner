@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+from metrology_process_planner.app.diagnostics_windows import open_windows_summary
 from metrology_process_planner.app.window_registry import (
     WindowOpenStatus,
     WindowRegistry,
@@ -80,7 +81,12 @@ class AdvancedDiagnosticsController:
         if self.active_session is None:
             return DiagnosticsOpenResult("unavailable", "No active session is loaded.")
         recent_events = self._sink.recent(100)
-        summary_rows = _summary_rows(self.active_session, recent_events, self._mode_registry)
+        summary_rows = _summary_rows(
+            self.active_session,
+            recent_events,
+            self._mode_registry,
+            self._window_registry,
+        )
         result = DiagnosticsOpenResult(
             status="opened",
             message="Advanced diagnostics resolved.",
@@ -101,6 +107,9 @@ class AdvancedDiagnosticsController:
         )
         if registry_result.status is WindowOpenStatus.FAILED:
             return DiagnosticsOpenResult("failed", registry_result.message)
+        if registry_result.window is not None:
+            result = _with_open_window_rows(result, open_windows_summary(self._window_registry))
+            self._shell.render(registry_result.window, result, recent_events)
         return DiagnosticsOpenResult(
             "raised" if registry_result.status is WindowOpenStatus.RAISED else result.status,
             result.message,
@@ -127,6 +136,7 @@ def _summary_rows(
     session: SessionRecord,
     recent_events: tuple[DiagnosticEvent, ...],
     mode_registry: ModeRegistry,
+    window_registry: WindowRegistry[object] | None = None,
 ) -> tuple[tuple[str, str], ...]:
     return (
         ("Status", "opened"),
@@ -141,6 +151,7 @@ def _summary_rows(
         ("Recent Commands", _recent_commands(recent_events)),
         ("Recent Events", _recent_event_names(recent_events)),
         ("Recent Event Count", str(len(recent_events))),
+        ("Open Windows", open_windows_summary(window_registry)),
     )
 
 
@@ -188,3 +199,22 @@ def _recent_event_names(events: tuple[DiagnosticEvent, ...]) -> str:
 
 def _diagnostics_window_key(session: SessionRecord) -> str:
     return f"advanced-diagnostics:{session.id}"
+
+
+def _with_open_window_rows(
+    result: DiagnosticsOpenResult,
+    open_windows: str,
+) -> DiagnosticsOpenResult:
+    rows = tuple(
+        (key, open_windows) if key == "Open Windows" else (key, value)
+        for key, value in result.summary_rows
+    )
+    return DiagnosticsOpenResult(
+        result.status,
+        result.message,
+        result.warning_count,
+        result.missing_artifact_count,
+        result.recent_event_count,
+        result.window,
+        rows,
+    )

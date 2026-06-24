@@ -68,6 +68,22 @@ class WindowRegistryTests(unittest.TestCase):
         assert record is not None
         self.assertEqual({"id": 1}, record.window)
 
+    def test_lifecycle_methods_refresh_raise_close_and_report_open_state(self) -> None:
+        registry: WindowRegistry[dict[str, object]] = WindowRegistry()
+        registry.open_or_raise("recipe-editor:demo", "Recipe Editor", lambda: {"id": 1})
+
+        refreshed = registry.refresh(
+            "recipe-editor:demo",
+            lambda window: window.update({"view_model": "fresh"}),
+        )
+        raised = registry.bring_to_front("recipe-editor:demo")
+        closed = registry.close("recipe-editor:demo")
+
+        self.assertTrue(refreshed)
+        self.assertEqual(WindowOpenStatus.RAISED, raised.status)
+        self.assertTrue(closed)
+        self.assertFalse(registry.is_open("recipe-editor:demo"))
+
 
 class _Backend(WindowLifecycleBackend[dict[str, object]]):
     def __init__(

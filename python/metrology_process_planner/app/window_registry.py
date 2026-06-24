@@ -2,57 +2,23 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from dataclasses import dataclass
-from enum import Enum
-from typing import Generic, Protocol, TypeVar
+from collections.abc import Callable, Iterator
+from typing import Generic, TypeVar
 
+from metrology_process_planner.app.window_registry_support import (
+    emit_window_event,
+    refresh_and_raise,
+)
+from metrology_process_planner.app.window_registry_types import (
+    WindowLifecycleBackend,
+    WindowOpenResult,
+    WindowOpenStatus,
+    WindowRecord,
+)
 from metrology_process_planner.infrastructure.diagnostics_exceptions import emit_exception_event
-from metrology_process_planner.infrastructure.diagnostics_models import DiagnosticEvent
 from metrology_process_planner.infrastructure.diagnostics_sinks import DiagnosticSink
-from metrology_process_planner.infrastructure.trace_context import TraceContext
 
 WindowT = TypeVar("WindowT")
-WindowContra = TypeVar("WindowContra", contravariant=True)
-
-
-class WindowOpenStatus(str, Enum):
-    """Outcome for a modeless window open request."""
-
-    CREATED = "created"
-    RAISED = "raised"
-    FAILED = "failed"
-
-
-@dataclass(frozen=True)
-class WindowRecord(Generic[WindowT]):
-    """One tracked modeless application window."""
-
-    key: str
-    title: str
-    window: WindowT
-    revision: int = 1
-
-
-@dataclass(frozen=True)
-class WindowOpenResult(Generic[WindowT]):
-    """Result returned after opening or raising a modeless window."""
-
-    status: WindowOpenStatus
-    key: str
-    title: str = ""
-    window: WindowT | None = None
-    message: str = ""
-
-
-class WindowLifecycleBackend(Protocol[WindowContra]):
-    """Backend hooks for existing UI toolkits to manage top-level windows."""
-
-    def is_alive(self, window: WindowContra) -> bool:
-        """Return whether a tracked window can still be reused."""
-
-    def raise_window(self, window: WindowContra) -> None:
-        """Bring an existing window to the front."""
 
 
 class DefaultWindowLifecycleBackend:
@@ -94,7 +60,12 @@ class WindowRegistry(Generic[WindowT]):
 
         existing = self._records.get(key)
         if existing is not None and self._backend.is_alive(existing.window):
-            return self._refresh_and_raise(existing, refresh_existing)
+            return refresh_and_raise(
+                self._backend,
+                self._diagnostic_sink,
+                existing,
+                refresh_existing,
+            )
         self._records.pop(key, None)
         try:
             window = create()
@@ -117,12 +88,13 @@ class WindowRegistry(Generic[WindowT]):
             )
         record = WindowRecord(key, title, window)
         self._records[key] = record
-        self._emit(
+        emit_window_event(
+            self._diagnostic_sink,
             "WindowOpened",
             key,
             title,
             f"Opened modeless window '{title}'.",
-            status=WindowOpenStatus.CREATED.value,
+            WindowOpenStatus.CREATED.value,
         )
         return WindowOpenResult(WindowOpenStatus.CREATED, key, title, window)
 
@@ -130,7 +102,43 @@ class WindowRegistry(Generic[WindowT]):
         """Stop tracking a window key after an external close notification."""
 
         if self._records.pop(key, None) is not None:
-            self._emit("WindowForgotten", key, key, f"Stopped tracking '{key}'.")
+            emit_window_event(
+                self._diagnostic_sink,
+                "WindowForgotten",
+                key,
+                key,
+                f"Stopped tracking '{key}'.",
+            )
+
+    def close(self, key: str) -> bool:
+        """Close or forget a modeless window key."""
+
+        existed = key in self._records
+        self.forget(key)
+        return existed
+
+    def is_open(self, key: str) -> bool:
+        """Return whether a live window exists for a logical key."""
+
+        record = self._records.get(key)
+        return bool(record is not None and self._backend.is_alive(record.window))
+
+    def bring_to_front(self, key: str) -> WindowOpenResult[WindowT]:
+        """Raise an existing modeless window without creating a new one."""
+
+        record = self._records.get(key)
+        if record is None or not self._backend.is_alive(record.window):
+            return WindowOpenResult(WindowOpenStatus.FAILED, key, message="Window is not open.")
+        return refresh_and_raise(self._backend, self._diagnostic_sink, record, None)
+
+    def refresh(self, key: str, render: Callable[[WindowT], None]) -> bool:
+        """Render fresh view-model state into an existing live window."""
+
+        record = self._records.get(key)
+        if record is None or not self._backend.is_alive(record.window):
+            return False
+        render(record.window)
+        return True
 
     def record_for(self, key: str) -> WindowRecord[WindowT] | None:
         """Return the tracked record for a logical window key."""
@@ -142,63 +150,17 @@ class WindowRegistry(Generic[WindowT]):
 
         return tuple(sorted(self._records))
 
-    def _refresh_and_raise(
-        self,
-        record: WindowRecord[WindowT],
-        refresh_existing: Callable[[WindowT], None] | None,
-    ) -> WindowOpenResult[WindowT]:
-        try:
-            if refresh_existing is not None:
-                refresh_existing(record.window)
-            self._backend.raise_window(record.window)
-        except Exception as exc:  # noqa: BLE001 - diagnostics must capture UI failures.
-            emit_exception_event(
-                self._diagnostic_sink,
-                "WindowRaiseFailed",
-                exc,
-                f"Failed to refresh or raise modeless window '{record.title}'.",
-                source_component="app.window_registry",
-                operation="open_or_raise",
-                remediation_hint="Reopen the window after checking backend raise/render hooks.",
-                related_record_ids=(record.key,),
-            )
-            return WindowOpenResult(
-                WindowOpenStatus.FAILED,
-                record.key,
-                record.title,
-                message=f"Failed to raise {record.title}: {exc}",
-            )
-        self._emit(
-            "WindowRaised",
-            record.key,
-            record.title,
-            f"Raised existing modeless window '{record.title}'.",
-            status=WindowOpenStatus.RAISED.value,
-        )
-        return WindowOpenResult(
-            WindowOpenStatus.RAISED,
-            record.key,
-            record.title,
-            record.window,
-        )
+    def __iter__(self) -> Iterator[str]:
+        """Iterate tracked window keys in deterministic order."""
 
-    def _emit(
-        self,
-        event_name: str,
-        key: str,
-        title: str,
-        message: str,
-        *,
-        status: str = "",
-    ) -> DiagnosticEvent:
-        return TraceContext.new(sink=self._diagnostic_sink).emit(
-            event_name,
-            {
-                "message": message,
-                "category": "ui",
-                "source_component": "app.window_registry",
-                "operation": "window_registry",
-                "related_record_ids": (key,),
-                "after_state_summary": {"key": key, "title": title, "status": status},
-            },
-        )
+        return iter(self.keys())
+
+
+__all__ = [
+    "DefaultWindowLifecycleBackend",
+    "WindowLifecycleBackend",
+    "WindowOpenResult",
+    "WindowOpenStatus",
+    "WindowRecord",
+    "WindowRegistry",
+]

@@ -121,8 +121,8 @@ def _build_ui_controllers(
             diagnostics_service,
             window_registry=window_registry,
         ),
-        setup_guide=SetupGuideController(),
-        recipe_editor=RecipeEditorController(),
+        setup_guide=SetupGuideController(window_registry=window_registry),
+        recipe_editor=RecipeEditorController(window_registry=window_registry),
         session_editor=SessionEditorController(window_registry=window_registry),
         window_registry=window_registry,
     )
