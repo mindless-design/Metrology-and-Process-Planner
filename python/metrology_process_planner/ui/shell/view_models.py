@@ -83,6 +83,7 @@ class EditorActionViewModel:
     target_item_id: str = ""
     enabled: bool = True
     status: str = "available"
+    disabled_reason: str = ""
 
 
 @dataclass(frozen=True)

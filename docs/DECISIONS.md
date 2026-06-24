@@ -15,6 +15,9 @@ Last updated: 2026-06-24
 
 - The unified editor uses `SessionDocument` and dispatches explicit `EditorAction` values.
 - UI shells should not directly mutate session JSON, run solvers, generate reports, or write files.
+- Deferred or unavailable actions should set `EditorAction.enabled = False` with a
+  `disabled_reason`; UI shells render the reason and dispatch returns it as a structured
+  unavailable result if the action is routed anyway.
 - Session editor callbacks must rerender through the shell contract after dispatch, using the rebuilt `SessionDocument`; model updates without visible shell refresh are considered stale UI bugs.
 - Canvas visuals are durable `CanvasObject` records and overlay commands; KLayout source layouts remain read-only.
 - Selection sync flows through `SelectionCoordinator` and document canvas-object indexes.

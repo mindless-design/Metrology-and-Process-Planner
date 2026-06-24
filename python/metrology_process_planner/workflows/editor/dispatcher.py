@@ -76,6 +76,12 @@ class EditorActionDispatcher:
     def dispatch(self, document: SessionDocument, action: EditorAction) -> EditorActionResult:
         """Dispatch one editor action and return the updated document result."""
 
+        if not action.enabled:
+            return EditorActionResult(
+                "unavailable",
+                document,
+                action.disabled_reason or f"{action.label} is currently unavailable.",
+            )
         if routed := dispatch_mapped_action(self, document, action):
             return routed
         if (warning_result := warning_action_result(self, document, action)) is not None:

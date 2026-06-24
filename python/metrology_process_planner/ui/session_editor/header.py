@@ -49,7 +49,13 @@ def primary_actions(document: SessionDocument) -> tuple[EditorAction, ...]:
             EditorAction(EditorActionType.REOPEN_SETUP, "Reopen Setup", selected_id),
             *_process_actions(document, selected_id),
             EditorAction(EditorActionType.EXPORT_CSV, "Export CSV", selected_id),
-            EditorAction(EditorActionType.BUILD_POWERPOINT, "Build Report", selected_id),
+            EditorAction(
+                EditorActionType.BUILD_POWERPOINT,
+                "Build Report",
+                selected_id,
+                enabled=False,
+                disabled_reason="Report generation is not wired yet.",
+            ),
             EditorAction(EditorActionType.OPEN_OUTPUT_FOLDER, "Open Output Folder", selected_id),
             EditorAction(EditorActionType.EXIT_SESSION, "Close", selected_id),
         )

@@ -27,6 +27,10 @@ State-machine snapshots expose command-shaped action IDs. UI shells should route
 
 The KLayout Tools menu uses only the primary `MENU_COMMANDS`; setup cards, recipe cards, editor buttons, and review actions use the broader typed command catalog.
 
+Disabled editor actions carry `disabled_reason` in the same view model as their command ID. UI
+shells should render disabled actions with that reason, and dispatch should return the same reason
+as a structured `unavailable` result rather than silently doing nothing.
+
 Recipe editor card/header actions use `RecipeEditorActionDispatcher` before any widget-specific
 behavior. The dispatcher converts action IDs such as `AddProcessStep:directional_etch` to typed
 commands, applies safe in-memory recipe edits, and returns structured unavailable results for

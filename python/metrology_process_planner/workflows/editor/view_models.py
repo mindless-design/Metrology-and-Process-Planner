@@ -75,6 +75,7 @@ class EditorAction:
     item_id: str = ""
     payload: tuple[tuple[str, str], ...] = ()
     enabled: bool = True
+    disabled_reason: str = ""
 
 
 @dataclass(frozen=True)

@@ -115,7 +115,13 @@ def _measurement_actions(
 def _export_actions(item: SessionItem) -> tuple[EditorAction, ...]:
     return (
         EditorAction(EditorActionType.EXPORT_CSV, "Export CSV", item.item_id),
-        EditorAction(EditorActionType.BUILD_POWERPOINT, "Build PowerPoint", item.item_id),
+        EditorAction(
+            EditorActionType.BUILD_POWERPOINT,
+            "Build PowerPoint",
+            item.item_id,
+            enabled=False,
+            disabled_reason="PowerPoint report generation is not wired yet.",
+        ),
     )
 
 

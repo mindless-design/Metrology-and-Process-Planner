@@ -41,7 +41,14 @@ class PendingCaptureReviewPresenter:
                 for field in fields
             ),
             tuple(
-                EditorActionViewModel(action.action_type.value, action.label, action.item_id)
+                EditorActionViewModel(
+                    action.action_type.value,
+                    action.label,
+                    action.item_id,
+                    action.enabled,
+                    "available" if action.enabled else "disabled",
+                    action.disabled_reason,
+                )
                 for action in actions
             ),
         )

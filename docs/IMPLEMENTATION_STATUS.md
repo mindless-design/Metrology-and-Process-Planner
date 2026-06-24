@@ -67,6 +67,8 @@ Last updated: 2026-06-24
 - Armed capture status now has a shared presenter from durable workflow state to a
   `CaptureToolStatusViewModel`; the session editor status strip and setup guide view model
   consume the same non-blocking gesture guidance, while final Qt banner styling remains polish.
+- Editor actions now carry disabled reasons. Deferred report-building actions are rendered as
+  disabled with clear reasons, and dispatching them returns structured unavailable results.
 - Mode definitions and validation exist in tests and UI shell contracts; unknown saved mode IDs now load through a safe fallback with warning/audit records and original mode preservation in extensions. External custom-mode JSON loading exists, while app/release configuration for discovering installed mode folders remains future work.
 - Diagnostics identify seams and warning states and expose the required alpha-spine summary rows, but they are not yet a polished end-user troubleshooting dashboard.
 - KLayout integration includes a pure capture gesture adapter that routes normalized Shift-drag line events and Shift-click ellipsometry point events into shared workflow services and restores marker overlays without importing `pya` or mutating source layout data; the live KLayout batch lane passes with `KLAYOUT_EXE=C:\Users\edmun\AppData\Roaming\KLayout\klayout_app.exe`.
@@ -124,6 +126,8 @@ Last updated: 2026-06-24
 - Measurement completion prompt tests covering save-result prompt choices, rearming the same
   parent capture for another measurement, returning to the parent capture, and completing on the
   saved measurement.
+- Disabled action tests covering header actions, adapter actions, pending-review button models,
+  and dispatcher results for unavailable report generation.
 - Measurement annotation repair tests covering repeated export failures, failed artifact status, repair metadata, stable warning IDs, and preview repair actions.
 - Opt-in KLayout batch smoke coverage for `KLayoutCaptureGestureAdapter` inside a real `pya` runtime, including saved measurement line, profilometry compound child-line capture, and ellipsometry compound child-point capture, gated by `MPP_RUN_KLAYOUT_TESTS=1`; current evidence is 8 passing live KLayout integration tests.
 - Opt-in KLayout GUI automation covers real menu registration and main-window snapshot probes through `MPP_RUN_KLAYOUT_UI_TESTS=1`, `klayout_app.exe`, and GUI `-e -rm` execution; current evidence is 2 passing live KLayout UI automation tests.
