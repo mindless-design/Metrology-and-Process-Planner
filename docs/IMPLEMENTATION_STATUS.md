@@ -79,6 +79,9 @@ Last updated: 2026-06-24
 - Recipe editor card/header actions now route through a pure dispatcher. It supports safe
   in-memory card selection, validation, and add-step templates, while save/open/attach remain
   structured unavailable command results until real recipe persistence workflows are wired.
+- The modeless recipe editor window now exposes an action callback for header/card actions. Recipe
+  edits dispatch through `RecipeEditorActionDispatcher` and refresh the existing window; Close is a
+  modeless controller action that updates the shared `WindowRegistry`.
 - Post-measurement completion is represented as an explicit prompt result and pure workflow
   choice handler; final Qt prompt rendering remains deferred.
 
@@ -124,6 +127,8 @@ Last updated: 2026-06-24
 - Recipe editor action tests covering command normalization, in-memory card selection, add-step
   template dirty state, modeless controller refresh, validation warning IDs, and deferred save
   actions returning structured unavailable results.
+- Recipe editor callback tests covering modeless window action dispatch and close behavior through
+  the window registry.
 - Modeless setup-guide controller tests covering shared-window reuse, command-router action
   callbacks, structured unavailable setup actions, and close behavior through the window registry.
 - Setup guide command tests covering origin point arming, alignment box arming, capture-status

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from metrology_process_planner.app.command_types import CommandId
 from metrology_process_planner.app.window_registry import WindowOpenStatus, WindowRegistry
 from metrology_process_planner.domains.process import ProcessRecipe
 from metrology_process_planner.ui.modeless import (
@@ -63,18 +64,40 @@ class RecipeEditorController:
         )
         if registry_result.status is WindowOpenStatus.FAILED:
             return RecipeEditorOpenResult("failed", view_model, registry_result.message)
+        if registry_result.window is not None:
+            self._attach_action_callback(registry_result.window)
         status = _status(registry_result.status, self.current_recipe)
         return RecipeEditorOpenResult(status, view_model, window=registry_result.window)
 
     def dispatch_action(self, action_id: str) -> RecipeEditorActionResult:
         """Dispatch a recipe editor action and refresh the modeless window."""
 
+        if action_id == "CloseRecipeEditor":
+            return self.close_current()
         result = self._dispatcher.dispatch(self.current_recipe, action_id)
         self.last_action_result = result
         if result.recipe is not None:
             self.current_recipe = result.recipe
         self.open_current()
         return result
+
+    def close_current(self) -> RecipeEditorActionResult:
+        """Close the modeless recipe editor without mutating the recipe."""
+
+        self._window_registry.close(_window_key(self.current_recipe))
+        result = RecipeEditorActionResult(
+            "success",
+            CommandId.CLOSE_RECIPE_EDITOR,
+            "Recipe editor closed.",
+            self.current_recipe,
+            next_ui_hint="Return to the session editor when ready.",
+        )
+        self.last_action_result = result
+        return result
+
+    def _attach_action_callback(self, window: Any) -> None:
+        if isinstance(window, dict):
+            window["on_action"] = self.dispatch_action
 
 
 def _window_key(recipe: ProcessRecipe | None) -> str:

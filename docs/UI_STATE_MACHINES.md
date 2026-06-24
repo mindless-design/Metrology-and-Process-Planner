@@ -40,7 +40,9 @@ as a structured `unavailable` result rather than silently doing nothing.
 Recipe editor card/header actions use `RecipeEditorActionDispatcher` before any widget-specific
 behavior. The dispatcher converts action IDs such as `AddProcessStep:directional_etch` to typed
 commands, applies safe in-memory recipe edits, and returns structured unavailable results for
-deferred save/open/attach workflows.
+deferred save/open/attach workflows. The modeless recipe editor shell exposes a generic action
+callback; widgets should call that callback rather than mutating recipe state directly. Closing the
+recipe editor is a controller/window-registry action, not a recipe mutation.
 
 ## Blocking Dialog Policy
 

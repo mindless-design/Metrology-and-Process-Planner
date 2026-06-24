@@ -62,6 +62,31 @@ class RecipeEditorActionTests(unittest.TestCase):
         self.assertEqual(2, len(view_model.step_cards))
         self.assertTrue(view_model.dirty)
 
+    def test_modeless_window_action_callback_dispatches_recipe_actions(self) -> None:
+        registry: WindowRegistry[object] = WindowRegistry()
+        controller = RecipeEditorController(window_registry=registry)
+        controller.set_recipe(_recipe())
+
+        opened = controller.open_current()
+        result = opened.window["on_action"]("AddProcessStep:blanket_deposition")
+
+        self.assertEqual("success", result.status)
+        self.assertEqual(2, len(controller.current_recipe.steps))
+        self.assertEqual(1, opened.window["render_count"])
+        self.assertEqual("step:step-002-blanket-deposition", result.selected_card_id)
+
+    def test_close_recipe_editor_action_closes_modeless_window(self) -> None:
+        registry: WindowRegistry[object] = WindowRegistry()
+        controller = RecipeEditorController(window_registry=registry)
+        controller.set_recipe(_recipe())
+        opened = controller.open_current()
+
+        result = opened.window["on_action"]("CloseRecipeEditor")
+
+        self.assertEqual("success", result.status)
+        self.assertFalse(registry.is_open("recipe-editor:recipe-001"))
+        self.assertEqual(CommandId.CLOSE_RECIPE_EDITOR, result.command_id)
+
     def test_validate_recipe_returns_clickable_warning_ids(self) -> None:
         recipe = ProcessRecipe("recipe-warning", "Warnings", (), ())
 
