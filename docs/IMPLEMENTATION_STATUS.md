@@ -170,6 +170,8 @@ Last updated: 2026-06-24
   notes, selected-card preservation, dirty state, and malformed payload errors.
 - Recipe editor step-action tests covering duplicate, move, disable, blocked boundary moves, and
   command-routed edits for common process-step fields.
+- Recipe editor preview-action tests covering full-recipe preview scope, preview-through-step
+  selection, missing-step errors, and backend-unavailable warning results.
 - Modeless setup-guide controller tests covering shared-window reuse, command-router action
   callbacks, structured unavailable setup actions, and close behavior through the window registry.
 - Setup guide command tests covering origin point arming, alignment box arming, capture-status

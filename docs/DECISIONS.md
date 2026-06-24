@@ -72,6 +72,8 @@ Last updated: 2026-06-24
 - Process-step detail edits are command-routed with payload-bearing `EditProcessStep` action IDs.
   Editable fields are applied to typed `ProcessStep` data or its parameter map, keeping generated
   summaries and solver-facing recipe data in sync without widget-side mutation.
+- Recipe preview commands may update in-memory preview scope before renderer/solver preview is
+  connected. They return structured warning results and never run the solver from the widget layer.
 - Closing a dirty recipe editor is not a silent close. The controller returns a structured blocked
   result for `CloseRecipeEditor` and only closes dirty recipes through the explicit
   `CloseRecipeEditor:discard` confirmation path.
