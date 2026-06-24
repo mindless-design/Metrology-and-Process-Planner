@@ -47,6 +47,11 @@ such as `AttachRecipe` with a recipe path, the controller preserves that action 
 `EditorActionDispatcher`. Direct command invocations without required payloads return structured
 unavailable results rather than opening modal file prompts.
 
+`TakeAnotherMeasurement` is also a command, not a widget-side continuation. The command applies the
+allowed post-measurement completion choice to the active editor document, selects the parent
+capture, and rearms measurement-line capture state. If no saved measurement is available, it
+returns `unavailable` and leaves the document unchanged.
+
 `Open Output Folder` is a modeless shell handoff. The dispatcher resolves the configured session
 folder into `EditorActionResult.output_path`; UI adapters may reveal that path, but workflow code
 does not launch external applications or block on missing folders.

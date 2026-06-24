@@ -24,6 +24,10 @@ Last updated: 2026-06-24
   regenerate process output. Payload-bearing editor actions such as attach-recipe with a selected
   recipe path preserve their payload while still routing through `CommandRouter`; direct attach
   commands without a path return structured unavailable results.
+- The required `TakeAnotherMeasurement` command now applies the existing post-measurement
+  completion workflow to the active editor document, reselects the parent capture, rearms the
+  measurement line primitive, and returns structured unavailable results when no saved measurement
+  is available.
 - `Open Output Folder` now returns a typed modeless path handoff through `EditorActionResult.output_path` when session paths are configured; workflow code does not launch an external file browser directly, and missing paths return a structured unavailable result.
 - Generic capture start/cancel commands now route through a shared app-level capture command service. `StartCapture`, `StartBoxCapture`, `StartLineCapture`, `StartPointCapture`, and `CancelCapture` update durable workflow arming state, reuse `CanvasInteractionEngine`, refresh the active editor document, and mirror active setup-guide session state when both surfaces inspect the same session.
 - `EndActiveSession` now routes through a modeless session lifecycle service. It closes and clears safe editor/setup/diagnostics session surfaces and capture arming, while dirty editor edits or pending capture review items return structured blocked command results instead of silently closing or doing nothing.
@@ -140,6 +144,8 @@ Last updated: 2026-06-24
   `DiscardUnsavedEdits` dirty-state cleanup.
 - Session editor process-command bridge tests cover attach-recipe payload preservation through
   `CommandRouter`, plus direct validate/detach commands against the active editor document.
+- Session editor completion-command tests cover `TakeAnotherMeasurement` rearming the same parent
+  capture from the active editor document and the no-saved-measurement unavailable result.
 - Session editor dispatcher tests covering `Open Output Folder` path handoff and no-session-folder
   unavailable behavior.
 - Rendering pipelines, drawing persistence, SVG output, and fake rasterizer export paths.

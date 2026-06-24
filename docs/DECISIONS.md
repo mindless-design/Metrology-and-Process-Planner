@@ -34,6 +34,9 @@ Last updated: 2026-06-24
   routing is active. This lets process actions such as attach-recipe carry a selected path through
   `CommandRouter` without adding modal file-picker logic to workflows, while direct payload-less
   command invocations remain structured unavailable results.
+- Post-measurement continuation choices are workflow commands. `TakeAnotherMeasurement` applies the
+  existing measurement-completion workflow to the active editor document and refreshes selection;
+  prompt widgets should dispatch that command instead of arming capture tools directly.
 - Output-folder opening is a shell handoff, not workflow-side process launching. The editor
   dispatcher returns the resolved session folder via `EditorActionResult.output_path`; UI adapters
   decide how to reveal it.

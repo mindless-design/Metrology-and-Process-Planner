@@ -1,0 +1,48 @@
+import tempfile
+import unittest
+from pathlib import Path
+
+from metrology_process_planner.app.bootstrap import build_app_services
+from metrology_process_planner.app.commands import CommandId
+from metrology_process_planner.domains.session import CanvasVisualFlag
+from metrology_process_planner.persistence.paths import SessionPaths
+from metrology_process_planner.workflows.editor import SessionDocumentBuilder
+from tests.editor_render_fixtures import empty_session
+from tests.measurement_child_fixtures import saved_measurement_document
+
+
+class SessionEditorCompletionCommandTests(unittest.TestCase):
+    def test_take_another_measurement_rearms_active_capture_from_command(self) -> None:
+        services = build_app_services()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = SessionPaths.for_folder(Path(temp_dir))
+            document = saved_measurement_document(paths)
+            services.session_editor_controller.open_document(document)
+
+            result = services.command_router.route(CommandId.TAKE_ANOTHER_MEASUREMENT)
+
+        current = services.session_editor_controller.current_document
+        self.assertEqual("success", result.status)
+        self.assertEqual("capture:cap-001", result.selected_item_id)
+        self.assertIsNotNone(current)
+        self.assertTrue(current.session.workflow.active)
+        self.assertEqual("measurement", current.session.workflow.active_primitive)
+        self.assertIn(
+            CanvasVisualFlag.ACTIVE_PARENT,
+            current.session.canvas_objects[0].visual_state,
+        )
+
+    def test_take_another_measurement_without_saved_measurement_is_unavailable(self) -> None:
+        services = build_app_services()
+        services.session_editor_controller.open_document(
+            SessionDocumentBuilder().build(empty_session())
+        )
+
+        result = services.command_router.route(CommandId.TAKE_ANOTHER_MEASUREMENT)
+
+        self.assertEqual("unavailable", result.status)
+        self.assertIn("No saved measurement", result.message)
+
+
+if __name__ == "__main__":
+    unittest.main()

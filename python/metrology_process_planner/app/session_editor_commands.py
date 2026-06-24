@@ -189,6 +189,9 @@ def register_session_editor_command_handlers(
 ) -> None:
     """Register command handlers owned by the unified session editor."""
 
+    from metrology_process_planner.app.session_editor_completion_commands import (
+        register_completion_command_handlers,
+    )
     from metrology_process_planner.app.session_editor_process_commands import (
         register_process_editor_command_handlers,
     )
@@ -207,4 +210,5 @@ def register_session_editor_command_handlers(
     registry.register(CommandId.RETAKE_MEASUREMENT_LINE, service.retake_measurement_line)
     registry.register(CommandId.DISCARD_MEASUREMENT, service.discard_measurement)
     registry.register(CommandId.REGENERATE_ARTIFACT, service.regenerate_artifact)
+    register_completion_command_handlers(registry, controller)
     register_process_editor_command_handlers(registry, controller)
