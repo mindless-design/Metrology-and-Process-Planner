@@ -24,6 +24,7 @@ from metrology_process_planner.app.recipe_session_attachment import (
     refresh_editor_session,
 )
 from metrology_process_planner.app.session_editor import SessionEditorController
+from metrology_process_planner.app.session_lifecycle import SessionLifecycleService
 from metrology_process_planner.app.setup_commands import (
     SetupGuideCommandService,
     register_setup_command_handlers,
@@ -55,6 +56,7 @@ class AppServices:
     drawing_store: SessionDrawingStore
     canvas_interaction: CanvasInteractionEngine
     capture_command_service: CaptureCommandService
+    session_lifecycle_service: SessionLifecycleService
     pending_capture_review: PendingCaptureReviewService
     overlay_manager_factory: Callable[[CanvasOverlayBackend], CanvasOverlayManager]
     selection_coordinator_factory: Callable[[CanvasOverlayManager], SelectionCoordinator]
@@ -85,20 +87,19 @@ def build_app_services() -> AppServices:
     diagnostics_service = DiagnosticsService(diagnostics_sink)
     ui = _build_ui_controllers(diagnostics_sink, diagnostics_service)
     canvas_interaction = CanvasInteractionEngine(diagnostics_sink)
-    capture_commands = CaptureCommandService(
-        canvas_interaction,
-        session_provider=lambda: active_capture_session(ui.session_editor, ui.setup_guide),
-        session_updater=lambda session: refresh_capture_session(
-            ui.session_editor,
-            ui.setup_guide,
-            session,
-        ),
-    )
+    capture_commands = _build_capture_commands(ui, canvas_interaction)
     setup_commands = SetupGuideCommandService(ui.setup_guide, canvas_interaction)
-    _register_primary_command_handlers(command_registry, ui)
+    session_lifecycle = SessionLifecycleService(
+        ui.session_editor,
+        ui.setup_guide,
+        ui.diagnostics,
+        capture_commands,
+        ui.window_registry,
+    )
+    _register_primary_command_handlers(command_registry, ui, session_lifecycle)
     _register_modeless_command_handlers(command_registry, ui)
     register_capture_command_handlers(command_registry, capture_commands)
-    _register_setup_command_handlers(command_registry, setup_commands)
+    register_setup_command_handlers(command_registry, setup_commands)
     command_router = CommandRouter(command_registry, diagnostics_sink)
     ui.setup_guide.set_command_router(command_router)
     return AppServices(
@@ -109,6 +110,7 @@ def build_app_services() -> AppServices:
         drawing_store=SessionDrawingStore(),
         canvas_interaction=canvas_interaction,
         capture_command_service=capture_commands,
+        session_lifecycle_service=session_lifecycle,
         pending_capture_review=PendingCaptureReviewService(diagnostics_sink),
         overlay_manager_factory=CanvasOverlayManager,
         selection_coordinator_factory=lambda manager: SelectionCoordinator(
@@ -128,6 +130,7 @@ def build_app_services() -> AppServices:
 def _register_primary_command_handlers(
     command_registry: CommandRegistry,
     ui: UiControllers,
+    session_lifecycle: SessionLifecycleService,
 ) -> None:
     command_registry.register(
         CommandId.OPEN_SETUP_GUIDE,
@@ -141,18 +144,26 @@ def _register_primary_command_handlers(
         CommandId.OPEN_RECIPE_EDITOR,
         lambda: _open_recipe_editor(ui.recipe_editor),
     )
-    command_registry.register(CommandId.END_ACTIVE_SESSION, _end_active_session)
+    command_registry.register(CommandId.END_ACTIVE_SESSION, session_lifecycle.end_active_session)
     command_registry.register(
         CommandId.OPEN_DIAGNOSTICS,
-        lambda: _open_diagnostics(ui.diagnostics),
+        lambda: ui.diagnostics.open_current(),
     )
 
 
-def _register_setup_command_handlers(
-    command_registry: CommandRegistry,
-    setup_commands: SetupGuideCommandService,
-) -> None:
-    register_setup_command_handlers(command_registry, setup_commands)
+def _build_capture_commands(
+    ui: UiControllers,
+    canvas_interaction: CanvasInteractionEngine,
+) -> CaptureCommandService:
+    return CaptureCommandService(
+        canvas_interaction,
+        session_provider=lambda: active_capture_session(ui.session_editor, ui.setup_guide),
+        session_updater=lambda session: refresh_capture_session(
+            ui.session_editor,
+            ui.setup_guide,
+            session,
+        ),
+    )
 
 
 def _register_modeless_command_handlers(
@@ -205,10 +216,3 @@ def _open_session_editor(controller: SessionEditorController) -> None:
 def _open_recipe_editor(controller: RecipeEditorController) -> None:
     controller.open_current()
 
-
-def _end_active_session() -> None:
-    return None
-
-
-def _open_diagnostics(controller: AdvancedDiagnosticsController) -> None:
-    controller.open_current()

@@ -6,6 +6,7 @@ from collections.abc import Iterable, Mapping
 
 from metrology_process_planner.app.command_catalog import ALL_COMMANDS, MENU_COMMANDS
 from metrology_process_planner.app.command_types import (
+    CommandBlockedError,
     CommandGroup,
     CommandHandler,
     CommandId,
@@ -79,6 +80,7 @@ __all__ = [
     "MENU_COMMANDS",
     "CommandGroup",
     "CommandHandler",
+    "CommandBlockedError",
     "CommandId",
     "CommandRegistry",
     "CommandSpec",

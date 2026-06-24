@@ -33,6 +33,11 @@ durable `WorkflowState` on the active session, and refresh any open editor/setup
 session. `CancelCapture` clears ephemeral interaction context and durable workflow arming without
 discarding saved records.
 
+`EndActiveSession` is a modeless lifecycle command, not a blind close. It may clear the active
+editor, setup guide, diagnostics session, and capture arming only when there are no dirty editor
+edits and no pending capture review items. Dirty or pending state returns `status="blocked"` with a
+next-action hint, and `CommandRouter` records the blocked command as a warning diagnostic.
+
 Setup guide stage actions are emitted as command IDs by the pure presenter and routed by the
 `SetupGuideController` through the shared `CommandRouter`. Setup capture commands arm shared
 canvas primitives and update durable `WorkflowState`; setup configuration commands update

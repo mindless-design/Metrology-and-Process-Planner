@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from metrology_process_planner.app.commands import CommandId, CommandRegistry
+from metrology_process_planner.app.commands import CommandBlockedError, CommandId, CommandRegistry
 from metrology_process_planner.infrastructure.diagnostics_exceptions import exception_payload
 from metrology_process_planner.infrastructure.diagnostics_models import DiagnosticEvent
 from metrology_process_planner.infrastructure.diagnostics_sinks import DiagnosticSink
@@ -45,6 +45,15 @@ class CommandRouter:
                 "unavailable",
                 str(exc),
                 next_ui_hint="This command is known but not wired to a workflow yet.",
+            )
+            self._emit(result, exc)
+            return result
+        except CommandBlockedError as exc:
+            result = CommandRouteResult(
+                command_id,
+                "blocked",
+                str(exc),
+                next_ui_hint=exc.next_ui_hint,
             )
             self._emit(result, exc)
             return result
@@ -98,7 +107,7 @@ def _command_payload(
     message = f"Command routed: {result.command_id.value} -> {result.status}"
     if exc is None:
         return {"message": message, "severity": "info"}
-    severity = "warning" if result.status == "unavailable" else "error"
+    severity = "warning" if result.status in {"blocked", "unavailable"} else "error"
     return exception_payload(
         exc,
         message,

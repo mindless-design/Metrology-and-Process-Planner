@@ -95,6 +95,10 @@ Last updated: 2026-06-24
   mode-specific handlers. The service owns only ephemeral interaction context plus durable
   workflow arming state, delegates gesture mechanics to `CanvasInteractionEngine`, and refreshes
   modeless editor/setup surfaces through session-document rebuilds.
+- End-session lifecycle behavior is conservative and modeless. `EndActiveSession` closes safe
+  session surfaces and clears capture arming only when there are no pending captures or dirty
+  editor edits; otherwise it raises a typed blocked command condition so the router can show inline
+  guidance and diagnostics can record a warning rather than a silent no-op.
 
 ## Child Measurement Slice
 

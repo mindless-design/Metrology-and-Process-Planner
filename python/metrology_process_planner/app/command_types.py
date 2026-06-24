@@ -96,7 +96,15 @@ class CoverageLane(str, Enum):
     KLAYOUT_UI = "klayout_ui"
 
 
-CommandHandler = Callable[[], None]
+CommandHandler = Callable[[], object]
+
+
+class CommandBlockedError(RuntimeError):
+    """Raised when a known command is temporarily blocked by workflow state."""
+
+    def __init__(self, message: str, next_ui_hint: str = "") -> None:
+        super().__init__(message)
+        self.next_ui_hint = next_ui_hint
 
 
 @dataclass(frozen=True)
