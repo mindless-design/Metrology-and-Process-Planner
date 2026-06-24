@@ -6,6 +6,12 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import NamedTuple
 
+from metrology_process_planner.app.capture_commands import (
+    CaptureCommandService,
+    active_capture_session,
+    refresh_capture_session,
+    register_capture_command_handlers,
+)
 from metrology_process_planner.app.commands import (
     CommandId,
     CommandRegistry,
@@ -48,6 +54,7 @@ class AppServices:
     capture_csv_exporter: CaptureCsvExporter
     drawing_store: SessionDrawingStore
     canvas_interaction: CanvasInteractionEngine
+    capture_command_service: CaptureCommandService
     pending_capture_review: PendingCaptureReviewService
     overlay_manager_factory: Callable[[CanvasOverlayBackend], CanvasOverlayManager]
     selection_coordinator_factory: Callable[[CanvasOverlayManager], SelectionCoordinator]
@@ -78,9 +85,19 @@ def build_app_services() -> AppServices:
     diagnostics_service = DiagnosticsService(diagnostics_sink)
     ui = _build_ui_controllers(diagnostics_sink, diagnostics_service)
     canvas_interaction = CanvasInteractionEngine(diagnostics_sink)
+    capture_commands = CaptureCommandService(
+        canvas_interaction,
+        session_provider=lambda: active_capture_session(ui.session_editor, ui.setup_guide),
+        session_updater=lambda session: refresh_capture_session(
+            ui.session_editor,
+            ui.setup_guide,
+            session,
+        ),
+    )
     setup_commands = SetupGuideCommandService(ui.setup_guide, canvas_interaction)
     _register_primary_command_handlers(command_registry, ui)
     _register_modeless_command_handlers(command_registry, ui)
+    register_capture_command_handlers(command_registry, capture_commands)
     _register_setup_command_handlers(command_registry, setup_commands)
     command_router = CommandRouter(command_registry, diagnostics_sink)
     ui.setup_guide.set_command_router(command_router)
@@ -91,6 +108,7 @@ def build_app_services() -> AppServices:
         capture_csv_exporter=CaptureCsvExporter(diagnostics_sink),
         drawing_store=SessionDrawingStore(),
         canvas_interaction=canvas_interaction,
+        capture_command_service=capture_commands,
         pending_capture_review=PendingCaptureReviewService(diagnostics_sink),
         overlay_manager_factory=CanvasOverlayManager,
         selection_coordinator_factory=lambda manager: SelectionCoordinator(

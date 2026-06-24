@@ -27,6 +27,12 @@ State-machine snapshots expose command-shaped action IDs. UI shells should route
 
 The KLayout Tools menu uses only the primary `MENU_COMMANDS`; setup cards, recipe cards, editor buttons, and review actions use the broader typed command catalog.
 
+Generic capture commands use the same modeless command route as setup actions. `StartCapture`
+aliases box capture; explicit box, line, and point commands arm `CanvasInteractionEngine`, write
+durable `WorkflowState` on the active session, and refresh any open editor/setup surfaces for that
+session. `CancelCapture` clears ephemeral interaction context and durable workflow arming without
+discarding saved records.
+
 Setup guide stage actions are emitted as command IDs by the pure presenter and routed by the
 `SetupGuideController` through the shared `CommandRouter`. Setup capture commands arm shared
 canvas primitives and update durable `WorkflowState`; setup configuration commands update

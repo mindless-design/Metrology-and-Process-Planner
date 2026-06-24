@@ -91,6 +91,10 @@ Last updated: 2026-06-24
   only to explicit optional `SetupItemRecord` stages in canonical setup state, while recipe-context
   validation delegates to the process-context workflow and stores warnings on the session for the
   editor/setup guide to render modelessly.
+- Generic capture arming lives in an app-level `CaptureCommandService`, not in widgets or
+  mode-specific handlers. The service owns only ephemeral interaction context plus durable
+  workflow arming state, delegates gesture mechanics to `CanvasInteractionEngine`, and refreshes
+  modeless editor/setup surfaces through session-document rebuilds.
 
 ## Child Measurement Slice
 
