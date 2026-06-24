@@ -7,6 +7,7 @@ from metrology_process_planner.domains.session import (
     SessionRecord,
     built_in_mode_registry,
 )
+from metrology_process_planner.ui.capture.status import capture_status_text
 from metrology_process_planner.ui.shell import SetupGuideViewModel, SetupStageViewModel
 from metrology_process_planner.workflows.setup_guide_state import (
     SetupGuideAction,
@@ -43,6 +44,7 @@ class SetupGuidePresenter:
             active.label,
             _next_action_label(snapshot.actions),
             _warning_count(snapshot),
+            capture_status_text(session) if session is not None else "",
         )
 
 

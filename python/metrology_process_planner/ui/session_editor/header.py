@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from metrology_process_planner.ui.capture.status import capture_status_from_session
 from metrology_process_planner.workflows.editor.document import SessionDocument
 from metrology_process_planner.workflows.editor.view_models import EditorAction, EditorActionType
 from metrology_process_planner.workflows.setup_guide_state import SetupGuideStateMachine
@@ -60,6 +61,9 @@ def status_text(document: SessionDocument) -> str:
     """Return the bottom status strip text for the selected editor item."""
 
     selected = document.items_by_id[document.selection.selected_item_id]
+    capture_status = capture_status_from_session(document.session)
+    if capture_status.armed:
+        return capture_status.message
     if document.warning_view_models:
         return f"{len(document.warning_view_models)} warning(s); selected {selected.label}"
     if document.pending_capture_item_id:

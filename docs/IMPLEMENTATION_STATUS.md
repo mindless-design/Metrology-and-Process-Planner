@@ -60,6 +60,9 @@ Last updated: 2026-06-24
 - KLayout integration remains intentionally thin; normalized line measurement gestures, profilometry child-line gestures, and ellipsometry child-point gestures route through shared capture tools, plus opt-in live KLayout batch smokes that verify a real `pya.Layout` is not mutated.
 - Measurement annotation artifact generation now produces editable spec/SVG/PNG outputs when a render bridge and rasterizer are available; export/rasterizer failures become structured warning or error results with retry-safe repair metadata.
 - Editor shell is minimal and generic; it renders view models but is not a polished production editor.
+- Armed capture status now has a shared presenter from durable workflow state to a
+  `CaptureToolStatusViewModel`; the session editor status strip and setup guide view model
+  consume the same non-blocking gesture guidance, while final Qt banner styling remains polish.
 - Mode definitions and validation exist in tests and UI shell contracts; unknown saved mode IDs now load through a safe fallback with warning/audit records and original mode preservation in extensions. External custom-mode JSON loading exists, while app/release configuration for discovering installed mode folders remains future work.
 - Diagnostics identify seams and warning states and expose the required alpha-spine summary rows, but they are not yet a polished end-user troubleshooting dashboard.
 - KLayout integration includes a pure capture gesture adapter that routes normalized Shift-drag line events and Shift-click ellipsometry point events into shared workflow services and restores marker overlays without importing `pya` or mutating source layout data; the live KLayout batch lane passes with `KLAYOUT_EXE=C:\Users\edmun\AppData\Roaming\KLayout\klayout_app.exe`.
@@ -101,6 +104,9 @@ Last updated: 2026-06-24
 - Process-output editor item tests covering solver summary fields, process-output-only previews, and output-item regeneration routing.
 - Diagnostics summary tests covering active session, mode list, artifact status counts, warning codes, and recent command/event visibility.
 - UI state-machine tests covering pending review, armed capture, live preview, child pending capture review, pending measurement review, recipe warnings, artifact repair tasks, and active workflow resume state.
+- Capture status presenter tests covering session-derived box/line/point guidance, setup-guide
+  propagation, editor status-strip precedence, unknown primitive handling, and mode-specific
+  point/line gesture hints.
 - Measurement annotation repair tests covering repeated export failures, failed artifact status, repair metadata, stable warning IDs, and preview repair actions.
 - Opt-in KLayout batch smoke coverage for `KLayoutCaptureGestureAdapter` inside a real `pya` runtime, including saved measurement line, profilometry compound child-line capture, and ellipsometry compound child-point capture, gated by `MPP_RUN_KLAYOUT_TESTS=1`; current evidence is 8 passing live KLayout integration tests.
 - Opt-in KLayout GUI automation covers real menu registration and main-window snapshot probes through `MPP_RUN_KLAYOUT_UI_TESTS=1`, `klayout_app.exe`, and GUI `-e -rm` execution; current evidence is 2 passing live KLayout UI automation tests.

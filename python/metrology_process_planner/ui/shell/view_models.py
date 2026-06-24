@@ -35,6 +35,7 @@ class SetupGuideViewModel:
     current_stage_label: str = ""
     next_action: str = ""
     warning_count: int = 0
+    capture_status_message: str = ""
 
 
 @dataclass(frozen=True)

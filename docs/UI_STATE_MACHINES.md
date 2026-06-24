@@ -48,6 +48,13 @@ Advanced Diagnostics surfaces durable state-machine outputs for:
 
 Ephemeral mouse position and window geometry are intentionally not persisted in session JSON and are not required for restore.
 
+## Capture Status Visibility
+
+Armed capture guidance is presented through a shared `CaptureToolStatusViewModel` built from
+`SessionRecord.workflow.active_primitive`. The editor status strip and setup guide should consume
+that presenter instead of formatting their own gesture text. Unknown durable primitive values become
+a modeless navigation-active warning message rather than an exception.
+
 ## Known Limitations
 
 - The Qt shell remains minimal and does not yet render polished cards for every state snapshot.

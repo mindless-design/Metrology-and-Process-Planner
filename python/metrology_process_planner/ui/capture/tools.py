@@ -40,7 +40,9 @@ class CaptureGesturePolicy:
             return gesture.gesture_type in {"drag_start", "drag_update", "drag_release"}
         if primitive in {CanvasObjectType.LINE, CanvasObjectType.MEASUREMENT}:
             return gesture.gesture_type in {"drag_start", "drag_update", "drag_release"}
-        return primitive is CanvasObjectType.POINT and gesture.gesture_type == "click"
+        if primitive in {CanvasObjectType.POINT, CanvasObjectType.ELLIPSOMETRY_POINT}:
+            return gesture.gesture_type == "click"
+        return False
 
 
 class BoxCaptureTool:
@@ -194,8 +196,8 @@ class CaptureToolPresenter:
 def _hint(primitive: str) -> str:
     if primitive == "site_box":
         return "Left Shift + drag box"
-    if primitive in {"line", "measurement"}:
+    if primitive in {"line", "measurement", "profilometry_line", "multi_line"}:
         return "Left Shift + drag line"
-    if primitive == "point":
+    if primitive in {"point", "ellipsometry_point"}:
         return "Left Shift + click point"
     return "KLayout navigation active"
