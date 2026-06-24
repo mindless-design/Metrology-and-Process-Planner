@@ -166,7 +166,8 @@ Last updated: 2026-06-24
 - Recipe editor material-action tests covering add, duplicate, visibility toggle, and usage lookup.
 - Recipe editor material-edit tests covering command-routed edits for material name, category,
   notes, selected-card preservation, dirty state, and malformed payload errors.
-- Recipe editor step-action tests covering duplicate, move, disable, and blocked boundary moves.
+- Recipe editor step-action tests covering duplicate, move, disable, blocked boundary moves, and
+  command-routed edits for common process-step fields.
 - Modeless setup-guide controller tests covering shared-window reuse, command-router action
   callbacks, structured unavailable setup actions, and close behavior through the window registry.
 - Setup guide command tests covering origin point arming, alignment box arming, capture-status

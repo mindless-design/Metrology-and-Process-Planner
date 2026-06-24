@@ -2,6 +2,7 @@ import unittest
 
 from metrology_process_planner.app.command_types import CommandId
 from metrology_process_planner.domains.process import (
+    MaskPolarity,
     Material,
     ProcessRecipe,
     ProcessStep,
@@ -48,6 +49,58 @@ class RecipeEditorStepActionTests(unittest.TestCase):
         self.assertEqual(CommandId.MOVE_PROCESS_STEP_UP, result.command_id)
         self.assertIn("cannot move", result.message)
         self.assertEqual("step:substrate", result.selected_card_id)
+
+    def test_edit_step_updates_name_material_and_thickness(self) -> None:
+        named = RecipeEditorActionDispatcher().dispatch(
+            _two_step_recipe(),
+            "EditProcessStep:deposit:name:ILD Oxide",
+        )
+        material = RecipeEditorActionDispatcher().dispatch(
+            named.recipe,
+            "EditProcessStep:deposit:material_id:si",
+        )
+        thick = RecipeEditorActionDispatcher().dispatch(
+            material.recipe,
+            "EditProcessStep:deposit:thickness:0.125",
+        )
+
+        step = thick.recipe.steps[1]
+        self.assertEqual("success", thick.status)
+        self.assertEqual(CommandId.EDIT_PROCESS_STEP, thick.command_id)
+        self.assertEqual("ILD Oxide", step.parameters["name"])
+        self.assertEqual("si", step.material_id)
+        self.assertEqual(0.125, step.thickness.target)
+        self.assertTrue(thick.recipe.metadata["dirty"])
+        self.assertEqual("step:deposit", thick.selected_card_id)
+
+    def test_edit_step_updates_targets_stops_and_mask_polarity(self) -> None:
+        targets = RecipeEditorActionDispatcher().dispatch(
+            _two_step_recipe(),
+            "EditProcessStep:deposit:target_material_ids:oxide, si",
+        )
+        stops = RecipeEditorActionDispatcher().dispatch(
+            targets.recipe,
+            "EditProcessStep:deposit:stop_material_ids:metal",
+        )
+        polarity = RecipeEditorActionDispatcher().dispatch(
+            stops.recipe,
+            "EditProcessStep:deposit:mask_polarity:inverted",
+        )
+
+        step = polarity.recipe.steps[1]
+        self.assertEqual(("oxide", "si"), step.target_material_ids)
+        self.assertEqual(("metal",), step.stop_material_ids)
+        self.assertEqual(MaskPolarity.INVERTED, step.mask_polarity)
+
+    def test_edit_step_rejects_bad_payload_modelessly(self) -> None:
+        result = RecipeEditorActionDispatcher().dispatch(
+            _two_step_recipe(),
+            "EditProcessStep:deposit:thickness:not-a-number",
+        )
+
+        self.assertEqual("error", result.status)
+        self.assertEqual(CommandId.EDIT_PROCESS_STEP, result.command_id)
+        self.assertIn("numeric", result.message)
 
 
 def _two_step_recipe() -> ProcessRecipe:

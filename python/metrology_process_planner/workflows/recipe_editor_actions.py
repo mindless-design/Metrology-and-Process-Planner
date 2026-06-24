@@ -20,6 +20,7 @@ from metrology_process_planner.workflows.recipe_editor_materials import (
     toggle_material_visibility,
 )
 from metrology_process_planner.workflows.recipe_editor_results import RecipeEditorActionResult
+from metrology_process_planner.workflows.recipe_editor_step_edits import edit_step
 from metrology_process_planner.workflows.recipe_editor_steps import (
     delete_step,
     duplicate_step,
@@ -66,6 +67,8 @@ class RecipeEditorActionDispatcher:
             return set_step_enabled(recipe, action_id, command_id, True)
         if command_id is CommandId.DISABLE_PROCESS_STEP:
             return set_step_enabled(recipe, action_id, command_id, False)
+        if command_id is CommandId.EDIT_PROCESS_STEP:
+            return edit_step(recipe, action_id, command_id)
         if command_id is CommandId.VALIDATE_RECIPE:
             return _validate(recipe, command_id)
         return RecipeEditorActionResult(

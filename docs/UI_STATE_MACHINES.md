@@ -81,6 +81,10 @@ Recipe process-step actions also stay inline: duplicate, delete, move up/down, e
 mutate the in-memory recipe, mark it dirty, and keep the affected step selected. Boundary moves
 return structured `blocked` results.
 
+Process-step detail edits use `EditProcessStep:<step_id>:<field>:<value>` action IDs. The workflow
+updates typed recipe fields for material, target/stop materials, mask polarity, thickness, notes,
+enabled state, and display name, then refreshes dirty/selected-card metadata.
+
 `AttachRecipeToActiveSession` is a modeless bridge from the recipe editor to the session editor.
 It requires a saved, clean recipe and an active session document. The controller delegates to the
 process-context workflow, then rebuilds the session editor document so recipe status, warnings, and

@@ -67,6 +67,9 @@ Last updated: 2026-06-24
 - Material detail edits are command-routed with payload-bearing `EditMaterial` action IDs. Core
   fields stay on `Material`, while material category/notes remain in recipe metadata extension
   blocks so the current recipe schema does not grow ad hoc wrapper fields.
+- Process-step detail edits are command-routed with payload-bearing `EditProcessStep` action IDs.
+  Editable fields are applied to typed `ProcessStep` data or its parameter map, keeping generated
+  summaries and solver-facing recipe data in sync without widget-side mutation.
 - Closing a dirty recipe editor is not a silent close. The controller returns a structured blocked
   result for `CloseRecipeEditor` and only closes dirty recipes through the explicit
   `CloseRecipeEditor:discard` confirmation path.
