@@ -131,24 +131,6 @@ def preview_model(recipe: ProcessRecipe) -> RecipePreviewViewModel:
     )
 
 
-def header_actions() -> tuple[EditorActionViewModel, ...]:
-    """Return command-shaped recipe editor header actions."""
-
-    return tuple(
-        EditorActionViewModel(command, label)
-        for command, label in (
-            ("NewRecipe", "New Recipe"),
-            ("OpenRecipe", "Open Recipe"),
-            ("SaveRecipe", "Save"),
-            ("SaveRecipeAs", "Save As"),
-            ("ValidateRecipe", "Validate"),
-            ("PreviewRecipe", "Preview Build"),
-            ("AttachRecipeToActiveSession", "Attach to Active Session"),
-            ("CloseRecipeEditor", "Close"),
-        )
-    )
-
-
 def material_actions() -> tuple[EditorActionViewModel, ...]:
     """Return command-shaped material tab actions."""
 

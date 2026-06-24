@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from metrology_process_planner.domains.process import ProcessRecipe
 from metrology_process_planner.ui.recipe_editor.cards import (
-    header_actions,
     layer_cards,
     material_actions,
     material_cards,
@@ -14,6 +13,7 @@ from metrology_process_planner.ui.recipe_editor.cards import (
     summary_model,
 )
 from metrology_process_planner.ui.recipe_editor.details import selected_detail
+from metrology_process_planner.ui.recipe_editor.header import header_actions, header_model
 from metrology_process_planner.ui.recipe_editor.validation_view import validation_messages
 from metrology_process_planner.ui.recipe_editor.view_models import RecipeEditorViewModel
 from metrology_process_planner.ui.shell import (
@@ -37,9 +37,10 @@ class RecipeEditorPresenter:
                 (),
                 (WarningViewModel("recipe-unloaded", "info", "No recipe is loaded."),),
                 tabs=_tabs(),
-                header_actions=header_actions(),
+                header_actions=header_actions(None),
                 material_actions=material_actions(),
                 preview=None,
+                header=header_model(None),
             )
         metadata = dict(recipe.metadata or {})
         return RecipeEditorViewModel(
@@ -54,7 +55,7 @@ class RecipeEditorPresenter:
             _warnings(recipe),
             dirty=bool(metadata.get("dirty", False)),
             tabs=_tabs(),
-            header_actions=header_actions(),
+            header_actions=header_actions(recipe),
             material_actions=material_actions(),
             material_cards=material_cards(recipe),
             step_cards=step_cards(recipe),
@@ -65,6 +66,7 @@ class RecipeEditorPresenter:
             step_templates=step_templates(),
             selected_card_id=str(metadata.get("selected_card_id", "")),
             selected_detail=selected_detail(recipe),
+            header=header_model(recipe),
         )
 
 

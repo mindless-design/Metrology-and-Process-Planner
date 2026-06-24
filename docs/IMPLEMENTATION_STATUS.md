@@ -111,6 +111,10 @@ Last updated: 2026-06-24
 - The modeless recipe editor window now exposes an action callback for header/card actions. Recipe
   edits dispatch through `RecipeEditorActionDispatcher` and refresh the existing window; Close is a
   modeless controller action that updates the shared `WindowRegistry`.
+- Recipe editor header state now renders through `RecipeHeaderViewModel`, including recipe path,
+  dirty state, validation status, warning count, and attachment readiness. Header actions expose
+  disabled reasons for unloaded, unsaved, or dirty recipes instead of leaving shell widgets to infer
+  save/attach availability.
 - Dirty recipe-editor close now returns a structured blocked result and leaves the modeless window
   open. The explicit `CloseRecipeEditor:discard` action is the confirm-discard path for future UI
   confirmation widgets.

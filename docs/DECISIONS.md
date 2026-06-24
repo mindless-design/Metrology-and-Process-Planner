@@ -92,6 +92,9 @@ Last updated: 2026-06-24
   normalizes view-model action IDs to typed `CommandId` values, applies only safe in-memory edits
   such as card selection or adding partial step templates, and leaves file save/open operations
   explicitly unavailable until a real workflow handler is wired.
+- Recipe editor header state is a view model, not shell inference. `RecipeHeaderViewModel` carries
+  path, dirty state, validation status, warning count, and attach readiness, while header actions
+  carry disabled reasons for unavailable save/validate/preview/attach choices.
 - Recipe material card actions use explicit command IDs for add, duplicate, delete, visibility
   toggle, and usage lookup. These actions operate on in-memory `ProcessRecipe` values and return
   structured modeless results; deleting referenced materials stays blocked until a

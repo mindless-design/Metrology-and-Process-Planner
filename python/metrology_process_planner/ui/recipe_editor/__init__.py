@@ -4,6 +4,7 @@ from metrology_process_planner.ui.recipe_editor.presenter import RecipeEditorPre
 from metrology_process_planner.ui.recipe_editor.view_models import (
     RecipeDetailPanelViewModel,
     RecipeEditorViewModel,
+    RecipeHeaderViewModel,
     RecipeLayerCardViewModel,
     RecipeMaterialCardViewModel,
     RecipePreviewViewModel,
@@ -16,6 +17,7 @@ __all__ = [
     "RecipeEditorPresenter",
     "RecipeDetailPanelViewModel",
     "RecipeEditorViewModel",
+    "RecipeHeaderViewModel",
     "RecipeLayerCardViewModel",
     "RecipeMaterialCardViewModel",
     "RecipePreviewViewModel",

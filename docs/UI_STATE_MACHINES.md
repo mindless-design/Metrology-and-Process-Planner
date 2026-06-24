@@ -124,6 +124,10 @@ Recipe editor selection should render through `selected_detail` on `RecipeEditor
 Material, process-step, and layer cards expose their own field/action models there, keeping card
 selection and detail editing on the same modeless view-model spine.
 
+Recipe editor header state renders through `RecipeHeaderViewModel`. The presenter derives recipe
+path, dirty state, validation status, warning count, and attach readiness from recipe metadata and
+validation output; header buttons carry disabled reasons for unloaded, unsaved, or dirty recipes.
+
 Recipe material deletion is handled as an inline action result: unused materials may be removed
 from the in-memory recipe and mark it dirty, while materials referenced by process steps return a
 structured `blocked` result with warning IDs and repair guidance.

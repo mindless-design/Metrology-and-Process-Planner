@@ -29,6 +29,8 @@ class RecipeEditorCardsTests(unittest.TestCase):
         self.assertEqual("material:oxide", view_model.selected_card_id)
         self.assertEqual("unavailable", view_model.preview.status)
         self.assertIn("SaveRecipe", [action.action_id for action in view_model.header_actions])
+        self.assertEqual("valid", view_model.header.validation_status)
+        self.assertEqual("unsaved", view_model.header.attachment_status)
         self.assertEqual(
             ("AddMaterial",),
             tuple(action.action_id for action in view_model.material_actions),

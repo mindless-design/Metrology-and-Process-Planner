@@ -34,6 +34,21 @@ class RecipeEditorViewModel:
     step_templates: tuple[EditorActionViewModel, ...] = ()
     selected_card_id: str = ""
     selected_detail: RecipeDetailPanelViewModel | None = None
+    header: RecipeHeaderViewModel | None = None
+
+
+@dataclass(frozen=True)
+class RecipeHeaderViewModel:
+    """Header/status model for the modeless recipe editor."""
+
+    recipe_id: str
+    recipe_name: str
+    recipe_path: str = ""
+    dirty: bool = False
+    validation_status: str = "unloaded"
+    warning_count: int = 0
+    attachment_status: str = "not_loaded"
+    status_text: str = "No recipe is loaded."
 
 
 @dataclass(frozen=True)
