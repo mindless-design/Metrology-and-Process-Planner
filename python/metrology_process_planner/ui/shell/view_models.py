@@ -6,6 +6,16 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
+class SetupActionViewModel:
+    """One command button rendered by a setup-guide card or footer."""
+
+    command_id: str
+    label: str
+    enabled: bool = True
+    disabled_reason: str = ""
+
+
+@dataclass(frozen=True)
 class SetupStageViewModel:
     """One row in the modeless setup guide."""
 
@@ -20,6 +30,8 @@ class SetupStageViewModel:
     secondary_actions: tuple[str, ...] = ()
     disabled_reason: str = ""
     warning_count: int = 0
+    primary_action_view: SetupActionViewModel | None = None
+    secondary_action_views: tuple[SetupActionViewModel, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -36,6 +48,8 @@ class SetupGuideViewModel:
     next_action: str = ""
     warning_count: int = 0
     capture_status_message: str = ""
+    status_message: str = ""
+    action_views: tuple[SetupActionViewModel, ...] = ()
 
 
 @dataclass(frozen=True)

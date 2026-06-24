@@ -8,7 +8,11 @@ from metrology_process_planner.domains.session import (
     built_in_mode_registry,
 )
 from metrology_process_planner.ui.capture.status import capture_status_text
-from metrology_process_planner.ui.shell import SetupGuideViewModel, SetupStageViewModel
+from metrology_process_planner.ui.shell import (
+    SetupActionViewModel,
+    SetupGuideViewModel,
+    SetupStageViewModel,
+)
 from metrology_process_planner.workflows.setup_guide_state import (
     SetupGuideAction,
     SetupGuideSnapshot,
@@ -45,6 +49,8 @@ class SetupGuidePresenter:
             _next_action_label(snapshot.actions),
             _warning_count(snapshot),
             capture_status_text(session) if session is not None else "",
+            snapshot.status_message,
+            tuple(_action_view(action) for action in snapshot.actions),
         )
 
 
@@ -62,6 +68,17 @@ def _stage_view(stage: SetupStageSnapshot) -> SetupStageViewModel:
         tuple(action.command_id for action in stage.secondary_actions),
         _disabled_reason(stage.primary_action),
         len(stage.warning_ids),
+        _action_view(stage.primary_action) if stage.primary_action is not None else None,
+        tuple(_action_view(action) for action in stage.secondary_actions),
+    )
+
+
+def _action_view(action: SetupGuideAction) -> SetupActionViewModel:
+    return SetupActionViewModel(
+        action.command_id,
+        action.label,
+        action.enabled,
+        action.disabled_reason,
     )
 
 

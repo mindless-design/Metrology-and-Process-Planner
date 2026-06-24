@@ -161,14 +161,31 @@ def _action_from_metadata(
     command_id = str(metadata.get(command_key, ""))
     if not command_id:
         return None
-    return SetupGuideAction(command_id, str(metadata.get(label_key, command_id)))
+    return SetupGuideAction(
+        command_id,
+        str(metadata.get(label_key, command_id)),
+        bool(metadata.get(f"{command_key}_enabled", True)),
+        str(metadata.get(f"{command_key}_disabled_reason", "")),
+    )
 
 
 def _secondary_actions(metadata: Mapping[str, object]) -> tuple[SetupGuideAction, ...]:
     raw = metadata.get("secondary_actions", ())
     if not isinstance(raw, (list, tuple)):
         return ()
-    return tuple(SetupGuideAction(str(item), str(item)) for item in raw)
+    return tuple(_secondary_action(item) for item in raw)
+
+
+def _secondary_action(item: object) -> SetupGuideAction:
+    if isinstance(item, Mapping):
+        command_id = str(item.get("command_id", item.get("id", "")))
+        return SetupGuideAction(
+            command_id,
+            str(item.get("label", command_id)),
+            bool(item.get("enabled", True)),
+            str(item.get("disabled_reason", "")),
+        )
+    return SetupGuideAction(str(item), str(item))
 
 
 def _label_for_type(stage_type: str) -> str:

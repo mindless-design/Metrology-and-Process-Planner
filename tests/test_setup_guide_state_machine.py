@@ -85,6 +85,37 @@ class SetupGuideStateMachineTests(unittest.TestCase):
         self.assertEqual("StartAlignmentCapture", view_model.stages[0].primary_action)
         self.assertEqual(("SkipOptionalSetupStage",), view_model.stages[0].secondary_actions)
 
+    def test_setup_cards_preserve_action_labels_and_disabled_reasons(self) -> None:
+        stage = SetupGuidePresenter().build(_disabled_action_session()).stages[0]
+
+        self.assertIsNotNone(stage.primary_action_view)
+        assert stage.primary_action_view is not None
+        self.assertEqual("Validate Recipe", stage.primary_action_view.label)
+        self.assertFalse(stage.primary_action_view.enabled)
+        self.assertEqual("Attach a recipe first.", stage.primary_action_view.disabled_reason)
+        self.assertEqual(
+            ("Attach Recipe", "Mark Ready"),
+            tuple(action.label for action in stage.secondary_action_views),
+        )
+        self.assertFalse(stage.secondary_action_views[1].enabled)
+        self.assertEqual(
+            "Validation is required.",
+            stage.secondary_action_views[1].disabled_reason,
+        )
+
+    def test_setup_guide_exposes_footer_action_view_models(self) -> None:
+        view_model = SetupGuidePresenter().build(session())
+
+        actions = {action.command_id: action for action in view_model.action_views}
+
+        self.assertEqual("Start Origin Capture", actions["StartOriginPointCapture"].label)
+        self.assertEqual("Return to Editor", actions["ReturnToEditor"].label)
+        self.assertEqual("Close", actions["CloseSetupGuide"].label)
+        self.assertEqual(
+            "Capture an origin point when local coordinates are needed.",
+            view_model.status_message,
+        )
+
     def test_state_machine_reports_ready_when_setup_is_capture_ready(self) -> None:
         source = replace(session(), setup=SetupState(is_capture_ready=True))
 
@@ -92,6 +123,42 @@ class SetupGuideStateMachineTests(unittest.TestCase):
 
         self.assertEqual(SetupGuideState.SETUP_READY, snapshot.state)
         self.assertEqual(SetupStageStatus.COMPLETE, snapshot.stages[-1].status)
+
+def _disabled_action_session():
+    return replace(
+        session(),
+        setup=SetupState(
+            items=(
+                SetupItemRecord(
+                    "stage-1",
+                    "recipe_validate",
+                    "Recipe Validation",
+                    "blocked",
+                    metadata=_disabled_action_metadata(),
+                ),
+            )
+        ),
+    )
+
+
+def _disabled_action_metadata():
+    return {
+        "required": True,
+        "description": "Validate the attached process recipe.",
+        "primary_action": "ValidateRecipeContext",
+        "primary_action_label": "Validate Recipe",
+        "primary_action_enabled": False,
+        "primary_action_disabled_reason": "Attach a recipe first.",
+        "secondary_actions": [
+            {"command_id": "AttachRecipe", "label": "Attach Recipe"},
+            {
+                "command_id": "MarkSetupComplete",
+                "label": "Mark Ready",
+                "enabled": False,
+                "disabled_reason": "Validation is required.",
+            },
+        ],
+    }
 
 
 if __name__ == "__main__":

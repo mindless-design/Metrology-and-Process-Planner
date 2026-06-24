@@ -55,6 +55,9 @@ Last updated: 2026-06-24
 - Unknown saved session modes load through the built-in `simple_capture` fallback, with the requested mode preserved under `extensions.mode_validation` and surfaced as a warning/audit event.
 - UI command routing emits lightweight `CommandRouted` diagnostic events so Advanced Diagnostics can show recent command activity without coupling to concrete widgets.
 - Modeless UI state is summarized by pure state-machine evaluators before widgets render. Diagnostics, editor headers, and setup/recipe shells should consume state snapshots instead of re-inferring state from widget flags.
+- Setup guide cards must render from action view models, not command-name guesses. Primary,
+  secondary, and footer actions carry labels and disabled reasons from the setup state/policy
+  layer so unavailable setup choices can be shown inline.
 - Render refresh failures upsert failed owner/role SVG artifacts with repair metadata, so retries update one canonical repair target instead of piling up warnings or hidden error state.
 - Live KLayout line-capture coverage is an opt-in batch probe that drives `KLayoutCaptureGestureAdapter` inside `pya` against a real layout and asserts source shapes are unchanged.
 - Profilometry child-line capture reuses the same KLayout line gesture adapter and `LineCaptureTool`; durable workflow state decides whether line release creates a measurement child or a profilometry compound feature.

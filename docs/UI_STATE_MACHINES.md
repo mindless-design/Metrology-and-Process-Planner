@@ -88,6 +88,10 @@ warnings appear inline through session warnings instead of prompts. Deferred set
 return structured unavailable results; they
 should not become widget-local logic or blocking prompts.
 
+Setup guide cards expose `SetupActionViewModel` rows for primary, secondary, and footer actions.
+Those rows carry command ID, label, enabled state, and disabled reason, so card widgets can show
+available and blocked actions without hard-coded command labels or modal fallback prompts.
+
 Disabled editor actions carry `disabled_reason` in the same view model as their command ID. UI
 shells should render disabled actions with that reason, and dispatch should return the same reason
 as a structured `unavailable` result rather than silently doing nothing.
