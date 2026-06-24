@@ -11,7 +11,12 @@ from metrology_process_planner.domains.process import (
     ProcessStep,
     ProcessStepKind,
 )
-from metrology_process_planner.workflows.recipe_editor_materials import delete_material
+from metrology_process_planner.workflows.recipe_editor_materials import (
+    delete_material,
+    duplicate_material,
+    find_material_usage,
+    toggle_material_visibility,
+)
 from metrology_process_planner.workflows.recipe_editor_results import RecipeEditorActionResult
 from metrology_process_planner.workflows.recipe_editor_steps import (
     delete_step,
@@ -46,6 +51,12 @@ class RecipeEditorActionDispatcher:
             return _add_step_template(recipe, action_id, command_id)
         if command_id is CommandId.DELETE_MATERIAL:
             return delete_material(recipe, action_id, command_id)
+        if command_id is CommandId.DUPLICATE_MATERIAL:
+            return duplicate_material(recipe, action_id, command_id)
+        if command_id is CommandId.TOGGLE_MATERIAL_VISIBILITY:
+            return toggle_material_visibility(recipe, action_id, command_id)
+        if command_id is CommandId.FIND_MATERIAL_USAGE:
+            return find_material_usage(recipe, action_id, command_id)
         if command_id is CommandId.DUPLICATE_PROCESS_STEP:
             return duplicate_step(recipe, action_id, command_id)
         if command_id is CommandId.DELETE_PROCESS_STEP:

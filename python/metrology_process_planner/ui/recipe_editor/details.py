@@ -142,8 +142,16 @@ def _material_actions(material_id: str) -> tuple[EditorActionViewModel, ...]:
             "Delete Material",
             f"material:{material_id}",
         ),
-        EditorActionViewModel("ToggleVisibility", "Toggle Visibility", f"material:{material_id}"),
-        EditorActionViewModel("FindUsage", "Find Usage", f"material:{material_id}"),
+        EditorActionViewModel(
+            f"ToggleMaterialVisibility:{material_id}",
+            "Toggle Visibility",
+            f"material:{material_id}",
+        ),
+        EditorActionViewModel(
+            f"FindMaterialUsage:{material_id}",
+            "Find Usage",
+            f"material:{material_id}",
+        ),
     )
 
 

@@ -98,6 +98,8 @@ _RECIPE_ROWS = (
     (CommandId.ADD_MATERIAL, "Add Material"),
     (CommandId.DUPLICATE_MATERIAL, "Duplicate Material"),
     (CommandId.DELETE_MATERIAL, "Delete Material"),
+    (CommandId.TOGGLE_MATERIAL_VISIBILITY, "Toggle Material Visibility"),
+    (CommandId.FIND_MATERIAL_USAGE, "Find Material Usage"),
     (CommandId.EDIT_MATERIAL, "Edit Material"),
     (CommandId.ADD_PROCESS_STEP, "Add Process Step"),
     (CommandId.DUPLICATE_PROCESS_STEP, "Duplicate Process Step"),

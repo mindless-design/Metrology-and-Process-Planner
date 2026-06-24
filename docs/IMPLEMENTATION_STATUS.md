@@ -88,6 +88,9 @@ Last updated: 2026-06-24
 - Recipe material deletion is now an inline, modeless action. Unused materials are removed from
   the in-memory recipe and mark it dirty; materials referenced by process steps return a structured
   blocked result with warning IDs and repair guidance instead of prompting or silently deleting.
+- Recipe material detail actions now use target-bearing command IDs for duplicate, delete,
+  visibility toggle, and usage lookup. Duplicate/toggle mutate the in-memory recipe and mark it
+  dirty; usage lookup returns an inline step list without dirtying the recipe.
 - Recipe process-step detail actions now support modeless duplicate, delete, move up/down,
   enable, and disable behavior through structured dispatcher results. Step reordering blocks at
   list boundaries with inline guidance instead of doing nothing.
@@ -142,6 +145,7 @@ Last updated: 2026-06-24
   actions.
 - Recipe editor action tests covering blocked deletion of used materials and safe in-memory deletion
   of unused materials.
+- Recipe editor material-action tests covering duplicate, visibility toggle, and usage lookup.
 - Recipe editor step-action tests covering duplicate, move, disable, and blocked boundary moves.
 - Modeless setup-guide controller tests covering shared-window reuse, command-router action
   callbacks, structured unavailable setup actions, and close behavior through the window registry.

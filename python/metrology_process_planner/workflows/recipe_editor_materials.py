@@ -5,7 +5,14 @@ from __future__ import annotations
 from dataclasses import replace
 
 from metrology_process_planner.app.command_types import CommandId
-from metrology_process_planner.domains.process import ProcessRecipe, ProcessStep
+from metrology_process_planner.domains.process import Material, ProcessRecipe
+from metrology_process_planner.workflows.recipe_editor_material_helpers import (
+    material_id_from_action,
+    material_usage_step_ids,
+    replace_material,
+    selected_material,
+    unique_material_id,
+)
 from metrology_process_planner.workflows.recipe_editor_results import RecipeEditorActionResult
 
 
@@ -23,7 +30,7 @@ def delete_material(
             "Open or create a recipe before deleting materials.",
             next_ui_hint="Use Open Recipe or New Recipe first.",
         )
-    material_id = _material_id_from_action(recipe, action_id)
+    material_id = material_id_from_action(recipe, action_id)
     if not material_id or material_id not in {material.id for material in recipe.materials}:
         return RecipeEditorActionResult(
             "error",
@@ -32,10 +39,89 @@ def delete_material(
             recipe,
             next_ui_hint="Select a material card and retry.",
         )
-    using_steps = _material_usage_step_ids(recipe, material_id)
+    using_steps = material_usage_step_ids(recipe, material_id)
     if using_steps:
         return _blocked_delete(recipe, command_id, material_id, using_steps)
     return _delete_unused_material(recipe, command_id, material_id)
+
+
+def duplicate_material(
+    recipe: ProcessRecipe | None,
+    action_id: str,
+    command_id: CommandId,
+) -> RecipeEditorActionResult:
+    """Duplicate a selected material and keep the new card selected."""
+
+    material = selected_material(recipe, action_id, command_id, "duplicating")
+    if isinstance(material, RecipeEditorActionResult):
+        return material
+    current_recipe, source = material
+    new_id = unique_material_id(current_recipe, f"{source.id}_copy")
+    copied = Material(new_id, f"{source.name} Copy", source.color, source.visible)
+    updated = _with_metadata(
+        replace(current_recipe, materials=(*current_recipe.materials, copied)),
+        dirty=True,
+        selected_card_id=f"material:{new_id}",
+    )
+    return RecipeEditorActionResult(
+        "success",
+        command_id,
+        f"Duplicated material '{source.id}' as '{new_id}'.",
+        updated,
+        f"material:{new_id}",
+        next_ui_hint="Review the duplicated material before saving the recipe.",
+    )
+
+
+def toggle_material_visibility(
+    recipe: ProcessRecipe | None,
+    action_id: str,
+    command_id: CommandId,
+) -> RecipeEditorActionResult:
+    """Toggle the selected material's render visibility in memory."""
+
+    material = selected_material(recipe, action_id, command_id, "updating")
+    if isinstance(material, RecipeEditorActionResult):
+        return material
+    current_recipe, source = material
+    toggled = replace(source, visible=not source.visible)
+    updated = replace_material(current_recipe, toggled)
+    selected = f"material:{source.id}"
+    state = "visible" if toggled.visible else "hidden"
+    return RecipeEditorActionResult(
+        "success",
+        command_id,
+        f"Material '{source.id}' is now {state}.",
+        _with_metadata(updated, dirty=True, selected_card_id=selected),
+        selected,
+        next_ui_hint="Recipe previews will use the updated material visibility after refresh.",
+    )
+
+
+def find_material_usage(
+    recipe: ProcessRecipe | None,
+    action_id: str,
+    command_id: CommandId,
+) -> RecipeEditorActionResult:
+    """Return inline usage information for the selected material."""
+
+    material = selected_material(recipe, action_id, command_id, "finding usage for")
+    if isinstance(material, RecipeEditorActionResult):
+        return material
+    current_recipe, source = material
+    using_steps = material_usage_step_ids(current_recipe, source.id)
+    if not using_steps:
+        message = f"Material '{source.id}' is not used by any process steps."
+    else:
+        message = f"Material '{source.id}' is used by step(s): {', '.join(using_steps)}."
+    return RecipeEditorActionResult(
+        "success",
+        command_id,
+        message,
+        current_recipe,
+        f"material:{source.id}",
+        next_ui_hint="Select a listed process step to inspect or change the reference.",
+    )
 
 
 def _blocked_delete(
@@ -76,31 +162,6 @@ def _delete_unused_material(
         f"Deleted material '{material_id}'.",
         updated,
         next_ui_hint="Review the material list before saving the recipe.",
-    )
-
-
-def _material_id_from_action(recipe: ProcessRecipe, action_id: str) -> str:
-    if ":" in action_id:
-        return action_id.split(":", 1)[1]
-    selected = str(dict(recipe.metadata or {}).get("selected_card_id", ""))
-    if selected.startswith("material:"):
-        return selected.removeprefix("material:")
-    return ""
-
-
-def _material_usage_step_ids(recipe: ProcessRecipe, material_id: str) -> tuple[str, ...]:
-    return tuple(step.id for step in recipe.steps if material_id in _step_material_ids(step))
-
-
-def _step_material_ids(step: ProcessStep) -> tuple[str, ...]:
-    return tuple(
-        item
-        for item in (
-            step.material_id,
-            *step.target_material_ids,
-            *step.stop_material_ids,
-        )
-        if item
     )
 
 

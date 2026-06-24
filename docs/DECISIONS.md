@@ -60,6 +60,10 @@ Last updated: 2026-06-24
   normalizes view-model action IDs to typed `CommandId` values, applies only safe in-memory edits
   such as card selection or adding partial step templates, and leaves file save/open operations
   explicitly unavailable until a real workflow handler is wired.
+- Recipe material card actions use explicit command IDs for duplicate, delete, visibility toggle,
+  and usage lookup. These actions operate on in-memory `ProcessRecipe` values and return structured
+  modeless results; deleting referenced materials stays blocked until a destructive-confirmation
+  workflow exists.
 
 ## Child Measurement Slice
 

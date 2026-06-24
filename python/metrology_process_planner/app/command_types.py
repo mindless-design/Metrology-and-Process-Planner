@@ -57,6 +57,8 @@ class CommandId(str, Enum):
     ADD_MATERIAL = "add_material"
     DUPLICATE_MATERIAL = "duplicate_material"
     DELETE_MATERIAL = "delete_material"
+    TOGGLE_MATERIAL_VISIBILITY = "toggle_material_visibility"
+    FIND_MATERIAL_USAGE = "find_material_usage"
     EDIT_MATERIAL = "edit_material"
     ADD_PROCESS_STEP = "add_process_step"
     DUPLICATE_PROCESS_STEP = "duplicate_process_step"

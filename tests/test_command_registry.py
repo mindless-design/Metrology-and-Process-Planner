@@ -53,6 +53,10 @@ class CommandRegistryMetadataTests(unittest.TestCase):
             command_id_from_view_action("AddProcessStep:patterned_deposition"),
         )
         self.assertEqual(
+            CommandId.TOGGLE_MATERIAL_VISIBILITY,
+            command_id_from_view_action("ToggleMaterialVisibility:oxide"),
+        )
+        self.assertEqual(
             CommandId.START_ORIGIN_POINT_CAPTURE,
             command_id_from_view_action("StartOriginPointCapture"),
         )
