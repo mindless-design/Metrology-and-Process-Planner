@@ -10,6 +10,9 @@ Last updated: 2026-06-24
 - The unified editor document model normalizes dashboard, setup, pending captures, saved captures, measurements, grid datasets, process outputs, reports, artifact-backed drawing previews, and warnings.
 - Editor action dispatch routes save, CSV export, pending save/retake/discard, selection, canvas selection, and artifact regeneration through workflow services.
 - The session editor controller now rerenders the active shell window after selection and mutating action callbacks, so navigator selection, preview rows, inspector fields, actions, and status text stay synchronized with the rebuilt `SessionDocument`.
+- The session editor navigator now has transient search/warning filter state owned by the controller.
+  Filtering preserves user-facing navigator groups, hides empty groups, rerenders modelessly through
+  the shell callback, and is not stored in canonical session JSON.
 - The session editor header/status presenter now surfaces session name, mode, output folder, setup state, capture state, selected item state, dirty state, warning count, and process-context state from the document/state-machine spine.
 - The session editor header now exposes primary command-shaped actions for save, resume pending capture, reopen setup, attach/validate process context, export CSV, build report, open output folder, and close through the same `EditorAction` callback path as inspector actions.
 - Session editor header actions now bridge to the shared `CommandRouter` for app-owned intents:

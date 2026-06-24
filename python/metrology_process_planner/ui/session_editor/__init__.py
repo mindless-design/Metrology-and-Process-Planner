@@ -1,5 +1,6 @@
 """Unified session editor shell package."""
 
+from metrology_process_planner.ui.session_editor.navigator import NavigatorFilterState
 from metrology_process_planner.ui.session_editor.shell import (
     InMemorySessionEditorWidgetFactory,
     SessionEditorCallbacks,
@@ -9,6 +10,7 @@ from metrology_process_planner.ui.session_editor.shell import (
 
 __all__ = [
     "InMemorySessionEditorWidgetFactory",
+    "NavigatorFilterState",
     "SessionEditorCallbacks",
     "SessionEditorShell",
     "SessionEditorWidgetFactory",

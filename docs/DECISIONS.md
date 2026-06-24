@@ -24,6 +24,9 @@ Last updated: 2026-06-24
   `disabled_reason`; UI shells render the reason and dispatch returns it as a structured
   unavailable result if the action is routed anyway.
 - Session editor callbacks must rerender through the shell contract after dispatch, using the rebuilt `SessionDocument`; model updates without visible shell refresh are considered stale UI bugs.
+- Session editor navigator search and warning filters are transient controller/shell state. They
+  filter rendered navigator rows while preserving non-empty groups and must not be persisted into
+  canonical session JSON.
 - Session editor header actions split by responsibility: document mutations remain in
   `EditorActionDispatcher`, but header entrypoints route through app commands where the command
   catalog owns the user intent. `SaveSessionEdits` delegates to the active editor dispatcher and

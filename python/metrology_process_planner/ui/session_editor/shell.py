@@ -11,14 +11,24 @@ from metrology_process_planner.ui.session_editor.header import (
     primary_actions,
     status_text,
 )
+from metrology_process_planner.ui.session_editor.navigator import (
+    NavigatorFilterCallback,
+    NavigatorFilterState,
+    NavigatorRows,
+    navigator_groups,
+)
+from metrology_process_planner.ui.session_editor.sections import (
+    MetadataRows,
+    PreviewRows,
+    metadata_rows,
+    preview_rows,
+)
 from metrology_process_planner.workflows.editor.adapters import SessionModeAdapter
 from metrology_process_planner.workflows.editor.document import SessionDocument
 from metrology_process_planner.workflows.editor.view_models import EditorAction
 
 SelectionCallback = Callable[[str], None]
 ActionCallback = Callable[[EditorAction], None]
-NavigatorRows = tuple[tuple[str, tuple[tuple[str, str], ...]], ...]
-PreviewRows = tuple[tuple[str, str, str], ...]
 
 
 @dataclass(frozen=True)
@@ -27,6 +37,8 @@ class SessionEditorCallbacks:
 
     on_select_item: SelectionCallback
     on_action: ActionCallback
+    on_filter_navigator: NavigatorFilterCallback | None = None
+    navigator_filter: NavigatorFilterState = NavigatorFilterState()
 
 
 class SessionEditorWidgetFactory(Protocol):
@@ -52,6 +64,8 @@ class SessionEditorWidgetFactory(Protocol):
         groups: NavigatorRows,
         selected_item_id: str,
         on_select: SelectionCallback,
+        on_filter: NavigatorFilterCallback | None,
+        filter_state: NavigatorFilterState,
     ) -> None:
         """Render the left session navigator."""
 
@@ -61,7 +75,7 @@ class SessionEditorWidgetFactory(Protocol):
     def set_inspector(
         self,
         window: Any,
-        fields: tuple[tuple[str, str, str], ...],
+        fields: MetadataRows,
         actions: tuple[EditorAction, ...],
         on_action: ActionCallback,
     ) -> None:
@@ -107,14 +121,16 @@ class SessionEditorShell:
         self._factory.set_primary_actions(window, primary_actions(document), callbacks.on_action)
         self._factory.set_navigator(
             window,
-            _navigator_groups(document),
+            navigator_groups(document, callbacks.navigator_filter),
             document.selection.selected_item_id,
             callbacks.on_select_item,
+            callbacks.on_filter_navigator,
+            callbacks.navigator_filter,
         )
-        self._factory.set_preview(window, _preview_rows(document, adapter))
+        self._factory.set_preview(window, preview_rows(document, adapter))
         self._factory.set_inspector(
             window,
-            _metadata_rows(document, adapter),
+            metadata_rows(document, adapter),
             adapter.actions(document.session, selected),
             callbacks.on_action,
         )
@@ -151,12 +167,16 @@ class InMemorySessionEditorWidgetFactory:
         groups: NavigatorRows,
         selected_item_id: str,
         on_select: SelectionCallback,
+        on_filter: NavigatorFilterCallback | None,
+        filter_state: NavigatorFilterState,
     ) -> None:
         """Store rendered navigator groups and callback."""
 
         window["navigator"] = groups
         window["selected_item_id"] = selected_item_id
         window["on_select"] = on_select
+        window["navigator_filter"] = filter_state
+        window["on_filter_navigator"] = on_filter
 
     def set_preview(self, window: dict[str, Any], previews: PreviewRows) -> None:
         """Store rendered preview rows."""
@@ -166,7 +186,7 @@ class InMemorySessionEditorWidgetFactory:
     def set_inspector(
         self,
         window: dict[str, Any],
-        fields: tuple[tuple[str, str, str], ...],
+        fields: MetadataRows,
         actions: tuple[EditorAction, ...],
         on_action: ActionCallback,
     ) -> None:
@@ -185,33 +205,3 @@ class InMemorySessionEditorWidgetFactory:
         """Mark the in-memory window as shown."""
 
         window["shown"] = True
-
-
-def _navigator_groups(document: SessionDocument) -> NavigatorRows:
-    rows = []
-    for group in document.navigator_groups:
-        items = tuple((item_id, document.items_by_id[item_id].label) for item_id in group.item_ids)
-        rows.append((group.label, items))
-    return tuple(rows)
-
-
-def _preview_rows(
-    document: SessionDocument,
-    adapter: SessionModeAdapter,
-) -> PreviewRows:
-    item = document.items_by_id[document.selection.selected_item_id]
-    return tuple(
-        (preview.role, preview.label, preview.artifact_path or preview.placeholder)
-        for preview in adapter.preview_options(document.session, item)
-    )
-
-
-def _metadata_rows(
-    document: SessionDocument,
-    adapter: SessionModeAdapter,
-) -> tuple[tuple[str, str, str], ...]:
-    item = document.items_by_id[document.selection.selected_item_id]
-    return tuple(
-        (field.key, field.label, field.value)
-        for field in adapter.metadata_fields(document.session, item)
-    )

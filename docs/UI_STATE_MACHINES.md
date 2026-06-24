@@ -104,6 +104,10 @@ Disabled editor actions carry `disabled_reason` in the same view model as their 
 shells should render disabled actions with that reason, and dispatch should return the same reason
 as a structured `unavailable` result rather than silently doing nothing.
 
+The session editor navigator may be filtered by search text or warning severity, but filtering is
+modeless shell state. The shell receives grouped filtered rows and a filter callback; it should not
+mutate `SessionDocument` or persist search state into session JSON.
+
 Recipe editor card/header actions use `RecipeEditorActionDispatcher` before any widget-specific
 behavior. The dispatcher converts action IDs such as `AddProcessStep:directional_etch` to typed
 commands, applies safe in-memory recipe edits, and returns structured unavailable results for

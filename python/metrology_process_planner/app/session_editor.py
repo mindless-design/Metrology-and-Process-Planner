@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from metrology_process_planner.app.commands import CommandId
+from metrology_process_planner.app.session_editor_command_map import command_for_action
 from metrology_process_planner.app.window_registry import (
     WindowOpenStatus,
     WindowRegistry,
@@ -14,6 +14,7 @@ from metrology_process_planner.app.window_registry import (
 from metrology_process_planner.persistence.paths import SessionPaths
 from metrology_process_planner.ui.session_editor import (
     InMemorySessionEditorWidgetFactory,
+    NavigatorFilterState,
     SessionEditorCallbacks,
     SessionEditorShell,
 )
@@ -62,6 +63,7 @@ class SessionEditorController:
         self._command_router: Optional[CommandRouter] = None
         self._dispatcher: Optional[EditorActionDispatcher] = None
         self._routed_action: Optional[EditorAction] = None
+        self._navigator_filter = NavigatorFilterState()
 
     def set_command_router(self, command_router: Optional[CommandRouter]) -> None:
         """Set the app command router used for editor window/lifecycle intents."""
@@ -84,15 +86,7 @@ class SessionEditorController:
         dispatcher = EditorActionDispatcher(paths=paths)
         self._dispatcher = dispatcher
         self.current_document = document
-
-        def on_select(item_id: str) -> None:
-            action = EditorAction(EditorActionType.SELECT_ITEM, "Select", item_id)
-            self.dispatch_current_action(action)
-
-        def on_action(action: EditorAction) -> None:
-            self.dispatch_current_action(action)
-
-        callbacks = SessionEditorCallbacks(on_select_item=on_select, on_action=on_action)
+        callbacks = _callbacks_for(self, self._navigator_filter)
         self._callbacks = callbacks
         registry_result = self._window_registry.get_or_create_session_editor(
             document.session.id,
@@ -144,6 +138,14 @@ class SessionEditorController:
         self.current_document = document
         self._render_current()
 
+    def filter_navigator(self, query: str, warning_filter: str = "all") -> None:
+        """Update transient navigator filter state and rerender."""
+
+        self._navigator_filter = NavigatorFilterState(query, warning_filter)
+        if self._callbacks is not None:
+            self._callbacks = _callbacks_for(self, self._navigator_filter)
+        self._render_current()
+
     @property
     def routed_action(self) -> Optional[EditorAction]:
         """Return the editor action currently being routed through app commands."""
@@ -151,7 +153,7 @@ class SessionEditorController:
         return self._routed_action
 
     def _route_app_command(self, action: EditorAction) -> bool:
-        command_id = _command_for_action(action)
+        command_id = command_for_action(action)
         if command_id is None or self._command_router is None:
             return False
         self._routed_action = action
@@ -165,50 +167,45 @@ class SessionEditorController:
         return True
 
     def _render_current(self) -> None:
-        if (
-            self.current_document is not None
-            and self.current_window is not None
-            and self._callbacks is not None
-        ):
-            self._shell.render(
-                self.current_window,
-                self.current_document,
-                self._adapter,
-                self._callbacks,
-            )
+        _render_current(self)
 
 
 def _default_shell() -> SessionEditorShell:
     return SessionEditorShell(InMemorySessionEditorWidgetFactory())
 
 
-def _command_for_action(action: EditorAction) -> Optional[CommandId]:
-    return _EDITOR_COMMANDS.get(action.action_type)
+def _callbacks_for(
+    controller: SessionEditorController,
+    filter_state: NavigatorFilterState,
+) -> SessionEditorCallbacks:
+    def on_select(item_id: str) -> None:
+        controller.dispatch_current_action(
+            EditorAction(EditorActionType.SELECT_ITEM, "Select", item_id)
+        )
+
+    def on_action(action: EditorAction) -> None:
+        controller.dispatch_current_action(action)
+
+    return SessionEditorCallbacks(
+        on_select,
+        on_action,
+        controller.filter_navigator,
+        filter_state,
+    )
 
 
-_EDITOR_COMMANDS: dict[EditorActionType, CommandId] = {
-    EditorActionType.ADD_MEASUREMENT: CommandId.ADD_MEASUREMENT,
-    EditorActionType.ATTACH_RECIPE: CommandId.ATTACH_RECIPE,
-    EditorActionType.COMPOSITE_DISCARD: CommandId.DISCARD_PENDING_CAPTURE,
-    EditorActionType.COMPOSITE_RETAKE_INNER: CommandId.RETAKE_INNER_FEATURE,
-    EditorActionType.COMPOSITE_RETAKE_PARENT: CommandId.RETAKE_PARENT_CAPTURE,
-    EditorActionType.COMPOSITE_SAVE: CommandId.SAVE_COMPOSITE_CAPTURE,
-    EditorActionType.DETACH_RECIPE: CommandId.DETACH_RECIPE,
-    EditorActionType.DISCARD_MEASUREMENT: CommandId.DISCARD_MEASUREMENT,
-    EditorActionType.EXIT_SESSION: CommandId.END_ACTIVE_SESSION,
-    EditorActionType.EXPORT_CSV: CommandId.EXPORT_CSV,
-    EditorActionType.OPEN_OUTPUT_FOLDER: CommandId.OPEN_OUTPUT_FOLDER,
-    EditorActionType.PENDING_DISCARD: CommandId.DISCARD_PENDING_CAPTURE,
-    EditorActionType.PENDING_RETAKE: CommandId.RETAKE_PENDING_CAPTURE,
-    EditorActionType.PENDING_SAVE: CommandId.SAVE_PENDING_CAPTURE,
-    EditorActionType.REGENERATE_ARTIFACT: CommandId.REGENERATE_ARTIFACT,
-    EditorActionType.REGENERATE_PROCESS_OUTPUT: CommandId.REGENERATE_PROCESS_OUTPUT,
-    EditorActionType.REOPEN_SETUP: CommandId.OPEN_SETUP_GUIDE,
-    EditorActionType.RETAKE_MEASUREMENT_LINE: CommandId.RETAKE_MEASUREMENT_LINE,
-    EditorActionType.SAVE_EDITS: CommandId.SAVE_SESSION_EDITS,
-    EditorActionType.SAVE_MEASUREMENT: CommandId.SAVE_MEASUREMENT,
-    EditorActionType.VALIDATE_PROCESS_CONTEXT: CommandId.VALIDATE_PROCESS_CONTEXT,
-}
+def _render_current(controller: SessionEditorController) -> None:
+    if (
+        controller.current_document is not None
+        and controller.current_window is not None
+        and controller._callbacks is not None
+    ):
+        controller._shell.render(
+            controller.current_window,
+            controller.current_document,
+            controller._adapter,
+            controller._callbacks,
+        )
 
 
 def _paths_for(path_or_folder: PathInput) -> SessionPaths:
