@@ -17,6 +17,10 @@ class CommandRouteResult:
     command_id: CommandId
     status: str
     message: str = ""
+    updated_document_id: str = ""
+    selected_item_id: str = ""
+    warning_ids: tuple[str, ...] = ()
+    next_ui_hint: str = ""
 
 
 class CommandRouter:
@@ -36,18 +40,33 @@ class CommandRouter:
         try:
             self._registry.dispatch(command_id)
         except NotImplementedError as exc:
-            result = CommandRouteResult(command_id, "unavailable", str(exc))
+            result = CommandRouteResult(
+                command_id,
+                "unavailable",
+                str(exc),
+                next_ui_hint="This command is known but not wired to a workflow yet.",
+            )
             self._emit(result, exc)
             return result
         except RuntimeError as exc:
-            result = CommandRouteResult(command_id, "error", str(exc))
+            result = CommandRouteResult(
+                command_id,
+                "error",
+                str(exc),
+                next_ui_hint="Open diagnostics and review the command handler.",
+            )
             self._emit(result, exc)
             return result
         except Exception as exc:  # noqa: BLE001 - UI command boundaries must report failures.
-            result = CommandRouteResult(command_id, "error", str(exc))
+            result = CommandRouteResult(
+                command_id,
+                "error",
+                str(exc),
+                next_ui_hint="Open diagnostics and review the command handler.",
+            )
             self._emit(result, exc)
             return result
-        result = CommandRouteResult(command_id, "success")
+        result = CommandRouteResult(command_id, "success", next_ui_hint="Command completed.")
         self._emit(result, None)
         return result
 

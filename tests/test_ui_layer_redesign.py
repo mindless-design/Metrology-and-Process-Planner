@@ -1,7 +1,7 @@
 import unittest
 
 from metrology_process_planner.app.bootstrap import build_app_services
-from metrology_process_planner.app.commands import DEFAULT_COMMANDS, CommandId
+from metrology_process_planner.app.commands import MENU_COMMANDS, CommandId
 from metrology_process_planner.domains.geometry import Point
 from metrology_process_planner.domains.session import CanvasObjectType, SessionMode
 from metrology_process_planner.ui.capture import (
@@ -29,10 +29,10 @@ from tests.editor_render_fixtures import session
 class UiLayerRedesignTests(unittest.TestCase):
     def test_menu_uses_five_primary_commands_and_router_results(self) -> None:
         services = build_app_services()
-        titles = [spec.title for spec in DEFAULT_COMMANDS]
+        titles = [spec.title for spec in MENU_COMMANDS]
 
-        result = services.command_router.route(CommandId.START_OR_RESUME_SETUP)
-        unavailable = services.command_router.route(CommandId.EDIT_RECIPE)
+        result = services.command_router.route(CommandId.OPEN_SETUP_GUIDE)
+        unavailable = services.command_router.route(CommandId.OPEN_RECIPE_EDITOR)
 
         self.assertEqual(
             [
@@ -52,7 +52,7 @@ class UiLayerRedesignTests(unittest.TestCase):
         recipe = build_app_services().recipe_editor_controller.open_current()
 
         self.assertEqual("Demo", setup.session_name)
-        self.assertIn("StartOriginCapture", setup.available_commands)
+        self.assertIn("StartOriginPointCapture", setup.available_commands)
         self.assertEqual("unavailable", recipe.status)
         self.assertEqual("No recipe loaded", recipe.view_model.title)
 

@@ -61,14 +61,13 @@ def _dedupe_actions(
     actions: list[SetupGuideAction],
     stages: tuple[SetupStageSnapshot, ...],
 ) -> tuple[SetupGuideAction, ...]:
+    del stages
     seen: set[str] = set()
     deduped = []
     for action in actions:
         if action.command_id not in seen:
             deduped.append(action)
         seen.add(action.command_id)
-    if any(stage.stage_type == "origin_point_capture" for stage in stages):
-        deduped.append(SetupGuideAction("StartOriginCapture", "Start Origin Capture"))
     return tuple(deduped)
 
 

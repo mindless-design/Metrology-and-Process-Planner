@@ -127,7 +127,7 @@ class DiagnosticsPipelineTests(unittest.TestCase):
         source = _session_with_missing_artifact()
         services.diagnostics_controller.set_active_session(source)
 
-        services.command_router.route(CommandId.START_OR_RESUME_SETUP)
+        services.command_router.route(CommandId.OPEN_SETUP_GUIDE)
         result = services.diagnostics_controller.open_current()
 
         summary = dict(result.window["summary"])
@@ -136,7 +136,7 @@ class DiagnosticsPipelineTests(unittest.TestCase):
         self.assertIn("simple_capture", summary["Loaded Modes"])
         self.assertEqual("1 total; missing=1", summary["Artifacts"])
         self.assertEqual("artifact_missing", summary["Warning Codes"])
-        self.assertEqual("start_or_resume_setup", summary["Recent Commands"])
+        self.assertEqual("open_setup_guide", summary["Recent Commands"])
         self.assertIn("CommandRouted", summary["Recent Events"])
 
 

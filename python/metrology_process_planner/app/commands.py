@@ -1,113 +1,29 @@
-"""Command routing for app and adapter layers."""
+"""Public command API for app and adapter layers."""
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Mapping
-from dataclasses import dataclass
-from enum import Enum
+from collections.abc import Iterable, Mapping
 
-
-class CommandId(str, Enum):
-    """Stable identifiers for user-facing plugin commands."""
-
-    START_OR_RESUME_SETUP = "start_or_resume_setup"
-    OPEN_SESSION_EDITOR = "open_session_editor"
-    END_ACTIVE_SESSION = "end_active_session"
-    EDIT_RECIPE = "edit_recipe"
-    OPEN_DIAGNOSTICS = "open_diagnostics"
-
-
-class CommandGroup(str, Enum):
-    """Top-level product area for command coverage tracking."""
-
-    SESSION = "session"
-    RECIPE = "recipe"
-    DIAGNOSTICS = "diagnostics"
-
-
-class CoverageLane(str, Enum):
-    """Expected test lane for a command entrypoint."""
-
-    UNIT = "unit"
-    KLAYOUT_BATCH = "klayout_batch"
-    KLAYOUT_UI = "klayout_ui"
-
-
-CommandHandler = Callable[[], None]
-
-
-@dataclass(frozen=True)
-class CommandSpec:
-    """Menu and help metadata for a command."""
-
-    command_id: CommandId
-    menu_item_name: str
-    menu_path: str
-    title: str
-    description: str
-    group: CommandGroup
-    coverage_lane: CoverageLane
-
-
-DEFAULT_COMMANDS: tuple[CommandSpec, ...] = (
-    CommandSpec(
-        CommandId.START_OR_RESUME_SETUP,
-        "mpp_start_or_resume_setup",
-        "tools_menu.metrology_process_planner",
-        "Start / Resume Measurement Setup",
-        "Create or resume a guided setup and capture session.",
-        CommandGroup.SESSION,
-        CoverageLane.KLAYOUT_UI,
-    ),
-    CommandSpec(
-        CommandId.OPEN_SESSION_EDITOR,
-        "mpp_open_session_editor",
-        "tools_menu.metrology_process_planner",
-        "Session Editor",
-        "Open the saved-session editor and repair surface.",
-        CommandGroup.SESSION,
-        CoverageLane.KLAYOUT_UI,
-    ),
-    CommandSpec(
-        CommandId.EDIT_RECIPE,
-        "mpp_edit_recipe",
-        "tools_menu.metrology_process_planner",
-        "Edit Recipe",
-        "Open the process recipe editor.",
-        CommandGroup.RECIPE,
-        CoverageLane.KLAYOUT_UI,
-    ),
-    CommandSpec(
-        CommandId.END_ACTIVE_SESSION,
-        "mpp_end_active_session",
-        "tools_menu.metrology_process_planner",
-        "End Active Session",
-        "Close the current workflow after saving or discarding pending state.",
-        CommandGroup.SESSION,
-        CoverageLane.KLAYOUT_UI,
-    ),
-    CommandSpec(
-        CommandId.OPEN_DIAGNOSTICS,
-        "mpp_open_diagnostics",
-        "tools_menu.metrology_process_planner",
-        "Advanced Diagnostics",
-        "Open diagnostics for adapters, session artifacts, and exports.",
-        CommandGroup.DIAGNOSTICS,
-        CoverageLane.KLAYOUT_UI,
-    ),
+from metrology_process_planner.app.command_catalog import ALL_COMMANDS, MENU_COMMANDS
+from metrology_process_planner.app.command_types import (
+    CommandGroup,
+    CommandHandler,
+    CommandId,
+    CommandSpec,
+    CoverageLane,
 )
 
 
 class CommandRegistry:
-    """Small command registry used by UI and KLayout menu adapters."""
+    """Command registry used by UI widgets and KLayout menu adapters."""
 
-    def __init__(self, specs: Iterable[CommandSpec] = DEFAULT_COMMANDS) -> None:
+    def __init__(self, specs: Iterable[CommandSpec] = ALL_COMMANDS) -> None:
         self._specs: dict[CommandId, CommandSpec] = {spec.command_id: spec for spec in specs}
         self._handlers: dict[CommandId, CommandHandler] = {}
 
     @property
     def specs(self) -> Mapping[CommandId, CommandSpec]:
-        """Return immutable command metadata for menu registration."""
+        """Return immutable command metadata for all routable intents."""
 
         return dict(self._specs)
 
@@ -129,12 +45,24 @@ class CommandRegistry:
 
 
 def build_default_registry() -> CommandRegistry:
-    """Build a registry with placeholder handlers for early integration."""
+    """Build a registry with unavailable handlers for every command intent."""
 
     registry = CommandRegistry()
     for command_id in CommandId:
         registry.register(command_id, _missing_ui_handler(command_id))
     return registry
+
+
+def command_id_from_view_action(action_id: str) -> CommandId:
+    """Normalize view-model action IDs into typed command IDs."""
+
+    command_name = action_id.split(":", 1)[0]
+    normalized = []
+    for index, char in enumerate(command_name):
+        if char.isupper() and index:
+            normalized.append("_")
+        normalized.append(char.lower())
+    return CommandId("".join(normalized))
 
 
 def _missing_ui_handler(command_id: CommandId) -> CommandHandler:
@@ -144,3 +72,17 @@ def _missing_ui_handler(command_id: CommandId) -> CommandHandler:
         )
 
     return handler
+
+
+__all__ = [
+    "ALL_COMMANDS",
+    "MENU_COMMANDS",
+    "CommandGroup",
+    "CommandHandler",
+    "CommandId",
+    "CommandRegistry",
+    "CommandSpec",
+    "CoverageLane",
+    "build_default_registry",
+    "command_id_from_view_action",
+]

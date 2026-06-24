@@ -32,7 +32,7 @@ class SetupGuideStateMachineTests(unittest.TestCase):
 
         self.assertEqual(first.active_stage_id, reopened.active_stage_id)
         self.assertEqual("origin", first.active_stage_id)
-        self.assertIn("StartOriginCapture", first.available_commands)
+        self.assertIn("StartOriginPointCapture", first.available_commands)
         self.assertIn("ReturnToEditor", first.available_commands)
         self.assertEqual("Capture or accept origin", first.current_stage_label)
 

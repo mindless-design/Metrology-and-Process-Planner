@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 from metrology_process_planner.app.bootstrap import AppServices, build_app_services
-from metrology_process_planner.app.commands import DEFAULT_COMMANDS
+from metrology_process_planner.app.commands import MENU_COMMANDS
 
 
 class KLayoutRuntimeUnavailableError(RuntimeError):
@@ -53,11 +53,11 @@ def register_plugin(
     menu = main_window.menu()
 
     menu_name = "metrology_process_planner"
-    menu_path = DEFAULT_COMMANDS[0].menu_path
+    menu_path = MENU_COMMANDS[0].menu_path
     if not _menu_has_path(menu, menu_path):
         menu.insert_menu("tools_menu.end", menu_name, "Metrology Process Planner")
 
-    for spec in DEFAULT_COMMANDS:
+    for spec in MENU_COMMANDS:
         _register_action(
             pya,
             menu,
@@ -70,7 +70,7 @@ def register_plugin(
     return PluginRegistration(
         menu_name=menu_name,
         menu_path=menu_path,
-        command_count=len(DEFAULT_COMMANDS),
+        command_count=len(MENU_COMMANDS),
     )
 
 

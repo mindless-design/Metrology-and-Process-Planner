@@ -70,7 +70,7 @@ def build_app_services() -> AppServices:
     diagnostics_service = DiagnosticsService(diagnostics_sink)
     ui = _build_ui_controllers(diagnostics_sink, diagnostics_service)
     command_registry.register(
-        CommandId.START_OR_RESUME_SETUP,
+        CommandId.OPEN_SETUP_GUIDE,
         lambda: _open_setup_guide(ui.setup_guide),
     )
     command_registry.register(
@@ -78,7 +78,7 @@ def build_app_services() -> AppServices:
         lambda: _open_session_editor(ui.session_editor),
     )
     command_registry.register(
-        CommandId.EDIT_RECIPE,
+        CommandId.OPEN_RECIPE_EDITOR,
         lambda: _open_recipe_editor(ui.recipe_editor),
     )
     command_registry.register(CommandId.END_ACTIVE_SESSION, _end_active_session)
