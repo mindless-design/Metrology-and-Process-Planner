@@ -44,6 +44,10 @@ deferred save/open/attach workflows. The modeless recipe editor shell exposes a 
 callback; widgets should call that callback rather than mutating recipe state directly. Closing the
 recipe editor is a controller/window-registry action, not a recipe mutation.
 
+Dirty recipe close is a modeless blocked state: `CloseRecipeEditor` returns a structured result
+when unsaved edits exist and leaves the window open. A future destructive-confirmation widget may
+dispatch `CloseRecipeEditor:discard` to close after the user confirms data loss.
+
 Recipe editor selection should render through `selected_detail` on `RecipeEditorViewModel`.
 Material, process-step, and layer cards expose their own field/action models there, keeping card
 selection and detail editing on the same modeless view-model spine.

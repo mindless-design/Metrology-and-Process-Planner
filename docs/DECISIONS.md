@@ -64,6 +64,9 @@ Last updated: 2026-06-24
   toggle, and usage lookup. These actions operate on in-memory `ProcessRecipe` values and return
   structured modeless results; deleting referenced materials stays blocked until a
   destructive-confirmation workflow exists.
+- Closing a dirty recipe editor is not a silent close. The controller returns a structured blocked
+  result for `CloseRecipeEditor` and only closes dirty recipes through the explicit
+  `CloseRecipeEditor:discard` confirmation path.
 
 ## Child Measurement Slice
 

@@ -70,8 +70,8 @@ class RecipeEditorController:
     def dispatch_action(self, action_id: str) -> RecipeEditorActionResult:
         """Dispatch a recipe editor action and refresh the modeless window."""
 
-        if action_id == "CloseRecipeEditor":
-            return self.close_current()
+        if action_id.startswith("CloseRecipeEditor"):
+            return self.close_current(force_discard=action_id.endswith(":discard"))
         result = self._dispatcher.dispatch(self.current_recipe, action_id)
         self.last_action_result = result
         if result.recipe is not None:
@@ -79,14 +79,24 @@ class RecipeEditorController:
         self.open_current()
         return result
 
-    def close_current(self) -> RecipeEditorActionResult:
-        """Close the modeless recipe editor without mutating the recipe."""
+    def close_current(self, force_discard: bool = False) -> RecipeEditorActionResult:
+        """Close the modeless recipe editor or block on unsaved edits."""
 
+        if _is_dirty(self.current_recipe) and not force_discard:
+            result = RecipeEditorActionResult(
+                "blocked",
+                CommandId.CLOSE_RECIPE_EDITOR,
+                "Recipe has unsaved edits.",
+                self.current_recipe,
+                next_ui_hint="Save the recipe or confirm discard before closing.",
+            )
+            self.last_action_result = result
+            return result
         self._window_registry.close(_window_key(self.current_recipe))
         result = RecipeEditorActionResult(
             "success",
             CommandId.CLOSE_RECIPE_EDITOR,
-            "Recipe editor closed.",
+            _close_message(force_discard),
             self.current_recipe,
             next_ui_hint="Return to the session editor when ready.",
         )
@@ -105,6 +115,16 @@ def _window_key(recipe: ProcessRecipe | None) -> str:
 
 def _window_title(view_model: RecipeEditorViewModel) -> str:
     return f"Recipe Editor - {view_model.title}"
+
+
+def _is_dirty(recipe: ProcessRecipe | None) -> bool:
+    return bool(recipe is not None and dict(recipe.metadata or {}).get("dirty", False))
+
+
+def _close_message(force_discard: bool) -> str:
+    if force_discard:
+        return "Recipe editor closed and unsaved edits were discarded."
+    return "Recipe editor closed."
 
 
 def _status(status: WindowOpenStatus, recipe: ProcessRecipe | None) -> str:

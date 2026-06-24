@@ -114,6 +114,30 @@ class RecipeEditorActionTests(unittest.TestCase):
         self.assertFalse(registry.is_open("recipe-editor:recipe-001"))
         self.assertEqual(CommandId.CLOSE_RECIPE_EDITOR, result.command_id)
 
+    def test_dirty_close_returns_modeless_blocked_result(self) -> None:
+        registry: WindowRegistry[object] = WindowRegistry()
+        controller = RecipeEditorController(window_registry=registry)
+        controller.set_recipe(_recipe(metadata={"dirty": True}))
+        opened = controller.open_current()
+
+        result = opened.window["on_action"]("CloseRecipeEditor")
+
+        self.assertEqual("blocked", result.status)
+        self.assertTrue(registry.is_open("recipe-editor:recipe-001"))
+        self.assertIn("Save the recipe", result.next_ui_hint)
+
+    def test_confirmed_discard_closes_dirty_recipe_editor(self) -> None:
+        registry: WindowRegistry[object] = WindowRegistry()
+        controller = RecipeEditorController(window_registry=registry)
+        controller.set_recipe(_recipe(metadata={"dirty": True}))
+        opened = controller.open_current()
+
+        result = opened.window["on_action"]("CloseRecipeEditor:discard")
+
+        self.assertEqual("success", result.status)
+        self.assertFalse(registry.is_open("recipe-editor:recipe-001"))
+        self.assertIn("discarded", result.message)
+
     def test_validate_recipe_returns_clickable_warning_ids(self) -> None:
         recipe = ProcessRecipe("recipe-warning", "Warnings", (), ())
 
@@ -124,12 +148,13 @@ class RecipeEditorActionTests(unittest.TestCase):
         self.assertEqual(("recipe-warning-1", "recipe-warning-2"), result.warning_ids)
 
 
-def _recipe() -> ProcessRecipe:
+def _recipe(metadata: dict[str, object] | None = None) -> ProcessRecipe:
     return ProcessRecipe(
         "recipe-001",
         "Demo",
         (Material("si", "Silicon", "#aaa"),),
         (ProcessStep("substrate", ProcessStepKind.SUBSTRATE, "si"),),
+        metadata=metadata,
     )
 
 

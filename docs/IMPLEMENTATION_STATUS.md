@@ -82,6 +82,9 @@ Last updated: 2026-06-24
 - The modeless recipe editor window now exposes an action callback for header/card actions. Recipe
   edits dispatch through `RecipeEditorActionDispatcher` and refresh the existing window; Close is a
   modeless controller action that updates the shared `WindowRegistry`.
+- Dirty recipe-editor close now returns a structured blocked result and leaves the modeless window
+  open. The explicit `CloseRecipeEditor:discard` action is the confirm-discard path for future UI
+  confirmation widgets.
 - Recipe editor view models now include a selected-card detail panel for materials, steps, and
   layer references. Material details expose category/color/visibility/notes fields and material
   actions; step details expose operation/material/mask/thickness/notes fields and step actions.
@@ -141,6 +144,7 @@ Last updated: 2026-06-24
   actions returning structured unavailable results.
 - Recipe editor callback tests covering modeless window action dispatch and close behavior through
   the window registry.
+- Recipe editor dirty-close tests covering blocked close and confirmed discard close behavior.
 - Recipe editor card tests covering selected material and process-step detail-panel fields and
   actions.
 - Recipe editor action tests covering blocked deletion of used materials and safe in-memory deletion
