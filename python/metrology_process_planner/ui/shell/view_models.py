@@ -121,18 +121,6 @@ class SessionEditorViewModel:
 
 
 @dataclass(frozen=True)
-class RecipeEditorViewModel:
-    """View model for the recipe editor workflow window."""
-
-    recipe_id: str
-    title: str
-    sections: tuple[SessionNavigatorItem, ...]
-    fields: tuple[MetadataFieldViewModel, ...]
-    validation_warnings: tuple[WarningViewModel, ...] = ()
-    dirty: bool = False
-
-
-@dataclass(frozen=True)
 class CaptureToolStatusViewModel:
     """Current status of an armed or idle canvas capture tool."""
 

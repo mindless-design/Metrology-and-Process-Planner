@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from metrology_process_planner.domains.process import ProcessRecipe
 from metrology_process_planner.ui.recipe_editor import RecipeEditorPresenter
-from metrology_process_planner.ui.shell import RecipeEditorViewModel
+from metrology_process_planner.ui.recipe_editor.view_models import RecipeEditorViewModel
 
 
 @dataclass(frozen=True)
