@@ -64,11 +64,14 @@ class ModelessSurfaceRegistryTests(unittest.TestCase):
         services.setup_guide_controller.set_active_session(session())
         opened = services.setup_guide_controller.open_current()
 
-        unavailable = opened.window["on_action"]("ValidateRecipeContext")
+        validated = opened.window["on_action"]("ValidateRecipeContext")
         closed = opened.window["on_action"]("CloseSetupGuide")
 
-        self.assertEqual("unavailable", unavailable.status)
-        self.assertIn("not wired", unavailable.next_ui_hint)
+        self.assertEqual("success", validated.status)
+        self.assertIn(
+            "warn-process_recipe_missing",
+            services.setup_guide_controller.active_session.process_context.warning_ids,
+        )
         self.assertEqual("success", closed.status)
         self.assertFalse(services.window_registry.is_open("setup-guide:session-001"))
         self.assertEqual(closed, services.setup_guide_controller.last_action_result)

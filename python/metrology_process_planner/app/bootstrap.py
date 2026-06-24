@@ -18,7 +18,10 @@ from metrology_process_planner.app.recipe_session_attachment import (
     refresh_editor_session,
 )
 from metrology_process_planner.app.session_editor import SessionEditorController
-from metrology_process_planner.app.setup_commands import SetupGuideCommandService
+from metrology_process_planner.app.setup_commands import (
+    SetupGuideCommandService,
+    register_setup_command_handlers,
+)
 from metrology_process_planner.app.setup_guide import SetupGuideController
 from metrology_process_planner.app.window_registry import WindowRegistry
 from metrology_process_planner.infrastructure.diagnostics import (
@@ -131,31 +134,7 @@ def _register_setup_command_handlers(
     command_registry: CommandRegistry,
     setup_commands: SetupGuideCommandService,
 ) -> None:
-    command_registry.register(
-        CommandId.USE_GLOBAL_COORDINATES,
-        setup_commands.use_global_coordinates,
-    )
-    command_registry.register(
-        CommandId.USE_ORIGIN_COORDINATES,
-        setup_commands.use_origin_coordinates,
-    )
-    command_registry.register(
-        CommandId.START_ORIGIN_POINT_CAPTURE,
-        setup_commands.start_origin_point_capture,
-    )
-    command_registry.register(
-        CommandId.START_ORIGIN_REFERENCE_CAPTURE,
-        setup_commands.start_origin_reference_capture,
-    )
-    command_registry.register(
-        CommandId.START_ALIGNMENT_CAPTURE,
-        setup_commands.start_alignment_capture,
-    )
-    command_registry.register(
-        CommandId.START_SEM_ALIGNMENT_CAPTURE,
-        setup_commands.start_sem_alignment_capture,
-    )
-    command_registry.register(CommandId.MARK_SETUP_COMPLETE, setup_commands.mark_setup_complete)
+    register_setup_command_handlers(command_registry, setup_commands)
 
 
 def _register_modeless_command_handlers(

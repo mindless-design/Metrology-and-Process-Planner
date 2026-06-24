@@ -4,14 +4,18 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+from metrology_process_planner.app.command_types import CommandId
+from metrology_process_planner.app.commands import CommandRegistry
 from metrology_process_planner.app.setup_guide import SetupGuideController
 from metrology_process_planner.domains.session import (
     CanvasObjectType,
     SessionRecord,
+    SetupItemRecord,
     SetupState,
 )
 from metrology_process_planner.domains.session.workflow import WorkflowState
 from metrology_process_planner.workflows import CanvasInteractionEngine, InteractionContext
+from metrology_process_planner.workflows.process_context import validate_process_context
 
 
 class SetupGuideCommandService:
@@ -64,6 +68,19 @@ class SetupGuideCommandService:
         self.context = self._canvas_engine.disarm_capture(self.context)
         self._set_session(replace(self._session(), setup=setup, workflow=WorkflowState()))
 
+    def skip_optional_setup_stage(self) -> None:
+        """Mark the active optional explicit setup stage as skipped."""
+
+        session = self._session()
+        skipped = _skip_first_optional_item(session.setup.items)
+        self._set_session(replace(session, setup=replace(session.setup, items=skipped)))
+
+    def validate_recipe_context(self) -> None:
+        """Validate recipe/process setup context and persist warnings."""
+
+        result = validate_process_context(self._session())
+        self._set_session(result.session)
+
     def _arm_box(self, stage: str) -> None:
         self.context = self._canvas_engine.arm_box_capture(self.context)
         self._arm_workflow(stage, CanvasObjectType.SITE_BOX)
@@ -91,3 +108,39 @@ class SetupGuideCommandService:
 
     def _set_session(self, session: SessionRecord) -> None:
         self._setup_guide.set_active_session(session)
+
+
+def register_setup_command_handlers(
+    command_registry: CommandRegistry,
+    setup_commands: SetupGuideCommandService,
+) -> None:
+    """Register modeless setup-guide command handlers."""
+
+    for command_id, handler in (
+        (CommandId.USE_GLOBAL_COORDINATES, setup_commands.use_global_coordinates),
+        (CommandId.USE_ORIGIN_COORDINATES, setup_commands.use_origin_coordinates),
+        (CommandId.START_ORIGIN_POINT_CAPTURE, setup_commands.start_origin_point_capture),
+        (CommandId.START_ORIGIN_REFERENCE_CAPTURE, setup_commands.start_origin_reference_capture),
+        (CommandId.START_ALIGNMENT_CAPTURE, setup_commands.start_alignment_capture),
+        (CommandId.START_SEM_ALIGNMENT_CAPTURE, setup_commands.start_sem_alignment_capture),
+        (CommandId.SKIP_OPTIONAL_SETUP_STAGE, setup_commands.skip_optional_setup_stage),
+        (CommandId.VALIDATE_RECIPE_CONTEXT, setup_commands.validate_recipe_context),
+        (CommandId.MARK_SETUP_COMPLETE, setup_commands.mark_setup_complete),
+    ):
+        command_registry.register(command_id, handler)
+
+
+def _skip_first_optional_item(items: tuple[SetupItemRecord, ...]) -> tuple[SetupItemRecord, ...]:
+    updated: list[SetupItemRecord] = []
+    skipped = False
+    for item in items:
+        if not skipped and not _is_required(item) and item.status != "complete":
+            updated.append(replace(item, status="skipped"))
+            skipped = True
+        else:
+            updated.append(item)
+    return tuple(updated)
+
+
+def _is_required(item: SetupItemRecord) -> bool:
+    return bool(dict(item.metadata or {}).get("required", True))

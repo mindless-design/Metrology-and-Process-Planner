@@ -12,7 +12,7 @@ Last updated: 2026-06-24
 - The session editor controller now rerenders the active shell window after selection and mutating action callbacks, so navigator selection, preview rows, inspector fields, actions, and status text stay synchronized with the rebuilt `SessionDocument`.
 - The session editor header/status presenter now surfaces session name, mode, output folder, setup state, capture state, selected item state, dirty state, warning count, and process-context state from the document/state-machine spine.
 - The session editor header now exposes primary command-shaped actions for save, resume pending capture, reopen setup, attach/validate process context, export CSV, build report, open output folder, and close through the same `EditorAction` callback path as inspector actions.
-- The modeless setup guide now attaches action callbacks to its shell window and routes setup-stage commands through the shared `CommandRouter`. Setup capture commands arm shared canvas primitives and durable workflow state, setup-state commands update canonical setup fields, implemented modeless actions such as close update the shared `WindowRegistry`, and still-deferred setup actions return structured unavailable results.
+- The modeless setup guide now attaches action callbacks to its shell window and routes setup-stage commands through the shared `CommandRouter`. Setup capture commands arm shared canvas primitives and durable workflow state, setup-state commands update canonical setup fields, optional explicit setup stages can be skipped without prompts, recipe-context validation persists structured warnings, implemented modeless actions such as close update the shared `WindowRegistry`, and still-deferred setup actions return structured unavailable results.
 - Rendering and annotation pipelines use editable scene specs, SVG as canonical output, optional rasterizer injection, drawing persistence, and editor/render bridge refresh hooks.
 - Drawing export now returns canonical `ArtifactRecord` sets directly; capture, measurement, and process-owned drawings update the central registry plus owner `artifact_refs` without mirrored image/drawing wrappers.
 - Canvas pending-crop artifacts are now created, promoted, or removed explicitly by workflow commands rather than synthesized during `SessionRecord` construction.
@@ -175,7 +175,8 @@ Last updated: 2026-06-24
 - Modeless setup-guide controller tests covering shared-window reuse, command-router action
   callbacks, structured unavailable setup actions, and close behavior through the window registry.
 - Setup guide command tests covering origin point arming, alignment box arming, capture-status
-  refresh, coordinate-mode updates, setup-ready updates, and workflow disarming.
+  refresh, coordinate-mode updates, optional explicit stage skip, recipe-context validation
+  warnings, setup-ready updates, and workflow disarming.
 - Measurement completion prompt tests covering save-result prompt choices, rearming the same
   parent capture for another measurement, returning to the parent capture, and completing on the
   saved measurement.

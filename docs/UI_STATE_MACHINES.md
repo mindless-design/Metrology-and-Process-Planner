@@ -30,7 +30,10 @@ The KLayout Tools menu uses only the primary `MENU_COMMANDS`; setup cards, recip
 Setup guide stage actions are emitted as command IDs by the pure presenter and routed by the
 `SetupGuideController` through the shared `CommandRouter`. Setup capture commands arm shared
 canvas primitives and update durable `WorkflowState`; setup configuration commands update
-canonical setup fields. Deferred setup commands should return structured unavailable results; they
+canonical setup fields. `SkipOptionalSetupStage` marks the first incomplete explicit optional setup
+item as skipped, and `ValidateRecipeContext` runs the process-context validation workflow so recipe
+warnings appear inline through session warnings instead of prompts. Deferred setup commands should
+return structured unavailable results; they
 should not become widget-local logic or blocking prompts.
 
 Disabled editor actions carry `disabled_reason` in the same view model as their command ID. UI

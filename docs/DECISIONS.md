@@ -87,6 +87,10 @@ Last updated: 2026-06-24
   saved recipe path, the process-context workflow updates `SessionRecord.process_context`, and the
   session editor is rebuilt from the updated canonical session. Widgets never mutate session JSON
   or process-context fields directly.
+- Setup-guide skip and validation actions are controller/service-owned commands. Skipping applies
+  only to explicit optional `SetupItemRecord` stages in canonical setup state, while recipe-context
+  validation delegates to the process-context workflow and stores warnings on the session for the
+  editor/setup guide to render modelessly.
 
 ## Child Measurement Slice
 
