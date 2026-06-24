@@ -2,24 +2,26 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from metrology_process_planner.app.diagnostics_state import workflow_state_rows
+from metrology_process_planner.app.diagnostics_summary import (
+    diagnostics_summary_rows,
+    missing_artifact_count,
+)
 from metrology_process_planner.app.diagnostics_windows import open_windows_summary
 from metrology_process_planner.app.window_registry import (
     WindowOpenStatus,
     WindowRegistry,
 )
 from metrology_process_planner.domains.session import (
-    ArtifactStatus,
     ModeRegistry,
     SessionRecord,
     built_in_mode_registry,
 )
 from metrology_process_planner.infrastructure.diagnostics import (
-    DiagnosticEvent,
     DiagnosticSink,
     DiagnosticsService,
 )
@@ -28,6 +30,7 @@ from metrology_process_planner.ui.diagnostics import (
     DiagnosticsShell,
     InMemoryDiagnosticsWidgetFactory,
 )
+from metrology_process_planner.workflows.editor.document import SessionDocument
 
 
 @dataclass(frozen=True)
@@ -53,6 +56,7 @@ class AdvancedDiagnosticsController:
         shell: DiagnosticsShell | None = None,
         mode_registry: ModeRegistry | None = None,
         window_registry: WindowRegistry[object] | None = None,
+        editor_document_provider: Callable[[], SessionDocument | None] | None = None,
     ) -> None:
         self._sink = sink
         self._service = service
@@ -65,6 +69,7 @@ class AdvancedDiagnosticsController:
         )
         self.active_session: Optional[SessionRecord] = None
         self.active_paths: Optional[SessionPaths] = None
+        self._editor_document_provider = editor_document_provider
 
     def set_active_session(
         self,
@@ -76,23 +81,32 @@ class AdvancedDiagnosticsController:
         self.active_session = session
         self.active_paths = paths
 
+    def set_editor_document_provider(
+        self,
+        provider: Callable[[], SessionDocument | None] | None,
+    ) -> None:
+        """Set the current editor document provider inspected by diagnostics."""
+
+        self._editor_document_provider = provider
+
     def open_current(self) -> DiagnosticsOpenResult:
         """Return the current diagnostics summary for an advanced UI shell."""
 
         if self.active_session is None:
             return DiagnosticsOpenResult("unavailable", "No active session is loaded.")
         recent_events = self._sink.recent(100)
-        summary_rows = _summary_rows(
+        summary_rows = diagnostics_summary_rows(
             self.active_session,
             recent_events,
             self._mode_registry,
             self._window_registry,
+            self._current_editor_document(),
         )
         result = DiagnosticsOpenResult(
             status="opened",
             message="Advanced diagnostics resolved.",
             warning_count=len(self.active_session.warnings),
-            missing_artifact_count=_missing_artifact_count(self.active_session),
+            missing_artifact_count=missing_artifact_count(self.active_session),
             recent_event_count=len(recent_events),
             summary_rows=summary_rows,
         )
@@ -132,71 +146,11 @@ class AdvancedDiagnosticsController:
             self.active_paths,
         )
 
+    def _current_editor_document(self) -> SessionDocument | None:
+        if self._editor_document_provider is None:
+            return None
+        return self._editor_document_provider()
 
-def _summary_rows(
-    session: SessionRecord,
-    recent_events: tuple[DiagnosticEvent, ...],
-    mode_registry: ModeRegistry,
-    window_registry: WindowRegistry[object] | None = None,
-) -> tuple[tuple[str, str], ...]:
-    return (
-        ("Status", "opened"),
-        ("Message", "Advanced diagnostics resolved."),
-        ("Session", f"{session.name} ({session.id})"),
-        ("Mode", session.mode.value),
-        *workflow_state_rows(session),
-        ("Loaded Modes", _loaded_modes(session, mode_registry)),
-        ("Artifacts", _artifact_summary(session)),
-        ("Warnings", str(len(session.warnings))),
-        ("Warning Codes", _warning_codes(session)),
-        ("Missing Artifacts", str(_missing_artifact_count(session))),
-        ("Recent Commands", _recent_commands(recent_events)),
-        ("Recent Events", _recent_event_names(recent_events)),
-        ("Recent Event Count", str(len(recent_events))),
-        ("Open Windows", open_windows_summary(window_registry)),
-    )
-
-
-def _loaded_modes(session: SessionRecord, mode_registry: ModeRegistry) -> str:
-    requested = dict(session.extensions or {}).get("mode_validation", {})
-    requested_mode = requested.get("requested_mode") if isinstance(requested, dict) else None
-    modes = list(mode_registry.mode_ids())
-    if requested_mode and requested_mode not in modes:
-        modes.append(str(requested_mode))
-    return ", ".join(modes)
-
-
-def _artifact_summary(session: SessionRecord) -> str:
-    artifacts = tuple((session.artifacts or {}).values())
-    if not artifacts:
-        return "0 total"
-    counts: dict[str, int] = {}
-    for artifact in artifacts:
-        counts[artifact.status.value] = counts.get(artifact.status.value, 0) + 1
-    status_text = "; ".join(f"{key}={counts[key]}" for key in sorted(counts))
-    return f"{len(artifacts)} total; {status_text}"
-
-
-def _missing_artifact_count(session: SessionRecord) -> int:
-    return sum(
-        1
-        for artifact in (session.artifacts or {}).values()
-        if artifact.status is ArtifactStatus.MISSING
-    )
-
-
-def _warning_codes(session: SessionRecord) -> str:
-    codes = sorted({warning.code for warning in session.warnings if warning.code})
-    return ", ".join(codes) if codes else "none"
-
-
-def _recent_commands(events: tuple[DiagnosticEvent, ...]) -> str:
-    commands = [event.operation for event in events if event.category == "command"]
-    return ", ".join(commands[-5:]) if commands else "none"
-
-
-def _recent_event_names(events: tuple[DiagnosticEvent, ...]) -> str:
-    return ", ".join(event.event_name for event in events[-5:]) if events else "none"
 
 def _diagnostics_window_key(session: SessionRecord) -> str:
     return f"advanced-diagnostics:{session.id}"

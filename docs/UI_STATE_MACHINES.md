@@ -60,8 +60,12 @@ Advanced Diagnostics surfaces durable state-machine outputs for:
 
 - workflow state
 - armed capture primitive
+- selected editor item
+- selected canvas object
 - recipe context
 - artifact repair
+- mode validation fallback state
+- recent failure events
 
 Ephemeral mouse position and window geometry are intentionally not persisted in session JSON and are not required for restore.
 

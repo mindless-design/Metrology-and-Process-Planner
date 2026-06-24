@@ -115,15 +115,18 @@ def _build_ui_controllers(
     diagnostics_service: DiagnosticsService,
 ) -> UiControllers:
     window_registry: WindowRegistry[object] = WindowRegistry(diagnostic_sink=diagnostics_sink)
+    session_editor = SessionEditorController(window_registry=window_registry)
+    diagnostics = AdvancedDiagnosticsController(
+        diagnostics_sink,
+        diagnostics_service,
+        window_registry=window_registry,
+        editor_document_provider=lambda: session_editor.current_document,
+    )
     return UiControllers(
-        diagnostics=AdvancedDiagnosticsController(
-            diagnostics_sink,
-            diagnostics_service,
-            window_registry=window_registry,
-        ),
+        diagnostics=diagnostics,
         setup_guide=SetupGuideController(window_registry=window_registry),
         recipe_editor=RecipeEditorController(window_registry=window_registry),
-        session_editor=SessionEditorController(window_registry=window_registry),
+        session_editor=session_editor,
         window_registry=window_registry,
     )
 

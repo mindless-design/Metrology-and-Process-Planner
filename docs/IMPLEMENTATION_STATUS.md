@@ -17,7 +17,7 @@ Last updated: 2026-06-24
 - Canvas pending-crop artifacts are now created, promoted, or removed explicitly by workflow commands rather than synthesized during `SessionRecord` construction.
 - Repeated measurement annotation refresh failures upsert one failed SVG artifact record with stable warning IDs and repair metadata, and preview options surface the `regenerate_artifact` repair action.
 - Diagnostics and traceability services expose command, workflow, seam, artifact, warning, and snapshot views through pure Python services.
-- Advanced Diagnostics now opens a fakeable shell summary with active session, loaded/built-in modes, durable workflow state, armed capture primitive, recipe-context state, artifact-repair state, artifact status counts, warning codes, missing artifact count, recent command names, and recent diagnostic events.
+- Advanced Diagnostics now opens a fakeable shell summary with active session, loaded/built-in modes, mode-validation fallback state, durable workflow state, armed capture primitive, selected editor item, selected canvas object, recipe-context state, artifact-repair state, artifact status counts, warning codes, missing artifact count, recent command names, recent failure summaries, and recent diagnostic events.
 - Explicit pure UI state-machine evaluators now summarize session UI, capture interaction, pending review, measurement workflow, recipe context, and artifact repair state for editor headers, diagnostics, and future Qt widgets.
 - Built-in workflow modes are represented by declarative `ModeDefinition` records in a pure `ModeRegistry`; definitions now use typed policy blocks for capabilities, setup, capture, metadata, measurements, artifacts, process, editor, and reporting. External JSON mode definition folders can be loaded as inert data, and diagnostics reads loaded modes from the registry.
 - Profilometry Planner and Ellipsometry Planner are now registered as declarative process-aware compound modes. Their built-in definitions live separately from the registry contract, and the shared workflow supports site-then-line and site-then-point pending composites.
@@ -70,7 +70,7 @@ Last updated: 2026-06-24
 - Editor actions now carry disabled reasons. Deferred report-building actions are rendered as
   disabled with clear reasons, and dispatching them returns structured unavailable results.
 - Mode definitions and validation exist in tests and UI shell contracts; unknown saved mode IDs now load through a safe fallback with warning/audit records and original mode preservation in extensions. External custom-mode JSON loading exists, while app/release configuration for discovering installed mode folders remains future work.
-- Diagnostics identify seams and warning states and expose the required alpha-spine summary rows, but they are not yet a polished end-user troubleshooting dashboard.
+- Diagnostics identify seams, warning states, selected editor/canvas state, mode fallback state, and recent failures, but they are not yet a polished end-user troubleshooting dashboard.
 - KLayout integration includes a pure capture gesture adapter that routes normalized Shift-drag line events and Shift-click ellipsometry point events into shared workflow services and restores marker overlays without importing `pya` or mutating source layout data; the live KLayout batch lane passes with `KLAYOUT_EXE=C:\Users\edmun\AppData\Roaming\KLayout\klayout_app.exe`.
 - Point capture is not implemented as a workflow yet, but it is now an explicit unavailable path: armed Shift-click returns a handled result with a message and does not mutate session or overlay state.
 - Ellipsometry point capture is wired for the process-aware site-then-point child step in pure tooling, KLayout-boundary tests, and the opt-in live KLayout batch probe; general point-capture workflows remain deferred.
@@ -115,7 +115,7 @@ Last updated: 2026-06-24
 - Legacy capture migration-boundary tests assert old field translation stays outside canonical v5 capture record loading.
 - Process-output regeneration tests covering solver-backed profilometry regeneration, editor dispatch, canonical output metadata, JSON artifact export, artifact status transitions, export failure warnings, and explicit solver-unavailable warnings.
 - Process-output editor item tests covering solver summary fields, process-output-only previews, and output-item regeneration routing.
-- Diagnostics summary tests covering active session, mode list, artifact status counts, warning codes, and recent command/event visibility.
+- Diagnostics summary tests covering active session, mode list, mode validation, editor/canvas selection, artifact status counts, warning codes, recent failures, and recent command/event visibility.
 - UI state-machine tests covering pending review, armed capture, live preview, child pending capture review, pending measurement review, recipe warnings, artifact repair tasks, and active workflow resume state.
 - Capture status presenter tests covering session-derived box/line/point guidance, setup-guide
   propagation, editor status-strip precedence, unknown primitive handling, and mode-specific
