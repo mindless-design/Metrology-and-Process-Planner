@@ -54,6 +54,30 @@ class RecipeEditorSaveTests(unittest.TestCase):
         self.assertEqual(CommandId.SAVE_RECIPE, result.command_id)
         self.assertTrue(result.recipe.metadata["dirty"])
 
+    def test_controller_save_as_sets_path_and_clears_dirty_state(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "saved-as.json"
+            controller = RecipeEditorController()
+            controller.set_recipe(_recipe(None, dirty=True))
+
+            result = controller.dispatch_action(f"SaveRecipeAs:{path}")
+
+            self.assertEqual("success", result.status)
+            self.assertEqual(CommandId.SAVE_RECIPE_AS, result.command_id)
+            self.assertEqual(str(path), controller.current_recipe.metadata["recipe_path"])
+            self.assertNotIn("dirty", controller.current_recipe.metadata)
+            self.assertTrue(path.exists())
+
+    def test_controller_save_as_without_path_returns_unavailable(self) -> None:
+        controller = RecipeEditorController()
+        controller.set_recipe(_recipe(None, dirty=True))
+
+        result = controller.dispatch_action("SaveRecipeAs")
+
+        self.assertEqual("unavailable", result.status)
+        self.assertEqual(CommandId.SAVE_RECIPE_AS, result.command_id)
+        self.assertTrue(result.recipe.metadata["dirty"])
+
     def test_controller_save_failure_preserves_dirty_recipe(self) -> None:
         controller = RecipeEditorController(recipe_store=_FailingRecipeStore())
         controller.set_recipe(_recipe(Path("blocked.json"), dirty=True))

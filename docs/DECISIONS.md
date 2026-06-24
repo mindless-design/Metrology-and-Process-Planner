@@ -68,8 +68,8 @@ Last updated: 2026-06-24
   result for `CloseRecipeEditor` and only closes dirty recipes through the explicit
   `CloseRecipeEditor:discard` confirmation path.
 - Recipe JSON persistence lives behind `ProcessRecipeJsonStore`. The recipe editor controller may
-  call it for `SaveRecipe` when a recipe path is known, but widgets and pure dispatchers do not
-  write recipe files directly.
+  call it for `SaveRecipe` when a recipe path is known, or `SaveRecipeAs:<path>` when a shell
+  supplies a new destination, but widgets and pure dispatchers do not write recipe files directly.
 
 ## Child Measurement Slice
 

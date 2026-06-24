@@ -89,6 +89,9 @@ Last updated: 2026-06-24
   `ProcessRecipeJsonStore`. Recipes with `metadata.recipe_path` are written as indented JSON with
   atomic temp/replace and backup behavior; save failures return structured error results while
   preserving dirty in-memory edits.
+- `SaveRecipeAs:<path>` uses the same modeless save service, writes the recipe to the supplied
+  path, records `metadata.recipe_path`, clears dirty state on success, and returns a structured
+  unavailable result when no path is supplied.
 - Recipe editor view models now include a selected-card detail panel for materials, steps, and
   layer references. Material details expose category/color/visibility/notes fields and material
   actions; step details expose operation/material/mask/thickness/notes fields and step actions.
@@ -172,7 +175,7 @@ Last updated: 2026-06-24
 
 - Broaden opt-in live KLayout smoke coverage beyond batch probes if a stable GUI automation lane becomes available.
 - App-level discovery/configuration tests for installed external JSON mode folders.
-- Recipe file open and Save As workflow tests once file-picking paths are wired behind commands.
+- Recipe file open workflow tests once file-picking paths are wired behind commands.
 
 ## Safe Reuse Points
 

@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
-from pathlib import Path
+from dataclasses import dataclass
 from typing import Any
 
 from metrology_process_planner.app.command_types import CommandId
+from metrology_process_planner.app.recipe_editor_saving import save_recipe
 from metrology_process_planner.app.window_registry import WindowOpenStatus, WindowRegistry
 from metrology_process_planner.domains.process import ProcessRecipe
 from metrology_process_planner.persistence.recipe_store import ProcessRecipeJsonStore
@@ -78,6 +78,8 @@ class RecipeEditorController:
             return self.close_current(force_discard=action_id.endswith(":discard"))
         if action_id == "SaveRecipe":
             return self.save_current()
+        if action_id.startswith("SaveRecipeAs"):
+            return self.save_current(_action_payload(action_id), CommandId.SAVE_RECIPE_AS)
         result = self._dispatcher.dispatch(self.current_recipe, action_id)
         self.last_action_result = result
         if result.recipe is not None:
@@ -109,52 +111,24 @@ class RecipeEditorController:
         self.last_action_result = result
         return result
 
-    def save_current(self) -> RecipeEditorActionResult:
-        """Save the current recipe when a recipe path is configured."""
+    def save_current(
+        self,
+        path_override: str = "",
+        command_id: CommandId = CommandId.SAVE_RECIPE,
+    ) -> RecipeEditorActionResult:
+        """Save the current recipe and refresh the modeless window on success."""
 
-        if self.current_recipe is None:
-            return self._remember(
-                RecipeEditorActionResult(
-                    "unavailable",
-                    CommandId.SAVE_RECIPE,
-                    "No recipe is loaded.",
-                    next_ui_hint="Open or create a recipe before saving.",
-                ),
-            )
-        recipe_path = _recipe_path(self.current_recipe)
-        if recipe_path is None:
-            return self._remember(
-                RecipeEditorActionResult(
-                    "unavailable",
-                    CommandId.SAVE_RECIPE,
-                    "Recipe has no save path.",
-                    self.current_recipe,
-                    next_ui_hint="Use Save As before saving this recipe.",
-                ),
-            )
-        try:
-            saved_path = self._recipe_store.save(self.current_recipe, recipe_path)
-        except OSError as exc:
-            return self._remember(
-                RecipeEditorActionResult(
-                    "error",
-                    CommandId.SAVE_RECIPE,
-                    f"Recipe save failed: {exc}",
-                    self.current_recipe,
-                    next_ui_hint="Fix the recipe path or permissions and retry Save.",
-                ),
-            )
-        self.current_recipe = _mark_saved(self.current_recipe, saved_path)
-        self.open_current()
-        return self._remember(
-            RecipeEditorActionResult(
-                "success",
-                CommandId.SAVE_RECIPE,
-                f"Recipe saved: {saved_path}",
-                self.current_recipe,
-                next_ui_hint="Continue editing or return to the session editor.",
-            ),
+        outcome = save_recipe(
+            self.current_recipe,
+            self._recipe_store,
+            command_id,
+            path_override,
         )
+        if outcome.recipe is not None:
+            self.current_recipe = outcome.recipe
+        if outcome.result.status == "success":
+            self.open_current()
+        return self._remember(outcome.result)
 
     def _attach_action_callback(self, window: Any) -> None:
         if isinstance(window, dict):
@@ -178,20 +152,6 @@ def _is_dirty(recipe: ProcessRecipe | None) -> bool:
     return bool(recipe is not None and dict(recipe.metadata or {}).get("dirty", False))
 
 
-def _recipe_path(recipe: ProcessRecipe) -> Path | None:
-    value = dict(recipe.metadata or {}).get("recipe_path", "")
-    if not value:
-        return None
-    return Path(str(value))
-
-
-def _mark_saved(recipe: ProcessRecipe, saved_path: Path) -> ProcessRecipe:
-    metadata = dict(recipe.metadata or {})
-    metadata.pop("dirty", None)
-    metadata["recipe_path"] = str(saved_path)
-    return replace(recipe, metadata=metadata)
-
-
 def _close_message(force_discard: bool) -> str:
     if force_discard:
         return "Recipe editor closed and unsaved edits were discarded."
@@ -202,3 +162,9 @@ def _status(status: WindowOpenStatus, recipe: ProcessRecipe | None) -> str:
     if status is WindowOpenStatus.RAISED:
         return "raised"
     return "opened" if recipe is not None else "unavailable"
+
+
+def _action_payload(action_id: str) -> str:
+    if ":" not in action_id:
+        return ""
+    return action_id.split(":", 1)[1]

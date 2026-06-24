@@ -53,6 +53,10 @@ recipe with `metadata.recipe_path` is written through `ProcessRecipeJsonStore`; 
 clear dirty metadata, while save failures return structured `error` results and keep edits in
 memory.
 
+`SaveRecipeAs:<path>` follows the same modeless service path and updates `metadata.recipe_path`
+after a successful save. The eventual file-picker UI should dispatch the path-bearing command
+instead of writing files itself.
+
 Recipe editor selection should render through `selected_detail` on `RecipeEditorViewModel`.
 Material, process-step, and layer cards expose their own field/action models there, keeping card
 selection and detail editing on the same modeless view-model spine.
