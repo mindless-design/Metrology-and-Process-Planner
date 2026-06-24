@@ -1,0 +1,2 @@
+session_id,session_name,session_mode,capture_id,label,type,created_at,geometry_kind,left,bottom,right,top,measurement_count,image_paths,notes
+session-001,Demo Session,simple_capture,cap-001,Site 1,layout_region,2026-06-23T20:00:00Z,box,0.0,0.0,5.0,5.0,1,images/cap-001.png,Initial capture

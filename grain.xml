@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<salt-grain>
+  <name>metrology_process_planner</name>
+  <version>0.1.0</version>
+  <api-version>0.28</api-version>
+  <title>Metrology and Process Planner</title>
+  <doc>
+    KLayout plugin for repeatable layout capture, metrology planning, process-stack
+    visualization, and restartable reporting.
+  </doc>
+  <doc-url>README.md</doc-url>
+  <author>Metrology and Process Planner contributors</author>
+  <license>MIT</license>
+</salt-grain>
+

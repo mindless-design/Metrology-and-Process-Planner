@@ -1,0 +1,31 @@
+{
+  "id": "demo",
+  "materials": [
+    {
+      "color": "#99ccee",
+      "id": "oxide",
+      "name": "Oxide",
+      "visible": true
+    }
+  ],
+  "metadata": {},
+  "name": "Demo",
+  "process_windows": [],
+  "steps": [
+    {
+      "id": "deposit-oxide",
+      "kind": "blanket_deposition",
+      "layer": null,
+      "mask_polarity": "direct",
+      "material_id": "oxide",
+      "notes": "",
+      "target_material_ids": [],
+      "thickness": {
+        "lower": 0.45,
+        "target": 0.5,
+        "unit": "um",
+        "upper": 0.55
+      }
+    }
+  ]
+}

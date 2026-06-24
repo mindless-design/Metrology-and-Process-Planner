@@ -1,0 +1,72 @@
+{
+  "captures": [
+    {
+      "capture_type": "layout_region",
+      "created_at": "2026-06-23T20:00:00Z",
+      "geometry": {
+        "bounds": {
+          "bottom": 0.0,
+          "left": 0.0,
+          "right": 5.0,
+          "top": 5.0
+        },
+        "end": null,
+        "kind": "box",
+        "point": null,
+        "start": null
+      },
+      "id": "cap-001",
+      "images": [
+        {
+          "height_px": 600,
+          "path": "images/cap-001.png",
+          "role": "crop",
+          "sha256": null,
+          "width_px": 800
+        }
+      ],
+      "label": "Site 1",
+      "measurements": [
+        {
+          "annotation_color": "#ffcc00",
+          "derived_image_names": [],
+          "edge_detection_convention": "",
+          "end": {
+            "x": 3.0,
+            "y": 1.0
+          },
+          "id": "meas-001",
+          "label": "Gate CD",
+          "line_weight": 2.0,
+          "lower_spec_limit": 1.8,
+          "measured_length": 2.0,
+          "notes": "",
+          "start": {
+            "x": 1.0,
+            "y": 1.0
+          },
+          "target": 2.0,
+          "upper_spec_limit": 2.2
+        }
+      ],
+      "metadata": {},
+      "notes": "Initial capture"
+    }
+  ],
+  "created_at": "2026-06-23T20:00:00Z",
+  "exports": [],
+  "grid_datasets": [],
+  "id": "session-001",
+  "metadata": {},
+  "mode": "simple_capture",
+  "name": "Demo Session",
+  "schema_version": 1,
+  "setup": {
+    "alignments": [],
+    "coordinate_mode": "global",
+    "is_capture_ready": false,
+    "origin": null
+  },
+  "updated_at": "2026-06-23T20:00:00Z",
+  "warnings": []
+}

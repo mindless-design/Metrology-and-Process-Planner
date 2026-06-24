@@ -1,0 +1,107 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "metrology-process-planner"
+version = "0.1.0"
+description = "Python-first KLayout plugin for metrology and process planning workflows."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "Metrology and Process Planner contributors" }]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "import-linter>=2.0",
+    "interrogate>=1.7",
+    "mypy>=1.8,<2",
+    "pytest>=7.4",
+    "radon>=6.0",
+    "ruff>=0.5",
+    "vulture>=2.11",
+    "xenon>=0.9",
+]
+
+[tool.setuptools.packages.find]
+where = ["python"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["python"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+src = ["python", "tests", "tools"]
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["B", "C4", "E", "F", "I", "N", "SIM", "UP"]
+ignore = ["UP045"]
+
+[tool.ruff.lint.per-file-ignores]
+"pymacros/*.py" = ["E402"]
+"vulture_whitelist.py" = ["B018"]
+
+[tool.interrogate]
+ignore-init-method = true
+ignore-init-module = true
+ignore-magic = true
+ignore-module = false
+ignore-private = true
+ignore-nested-functions = true
+fail-under = 85
+verbose = 1
+exclude = ["build", "dist", ".venv", "pymacros"]
+
+[tool.vulture]
+min_confidence = 80
+paths = ["python", "tools", "vulture_whitelist.py"]
+sort_by_size = true
+
+[tool.mypy]
+python_version = "3.9"
+mypy_path = "python"
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+
+[[tool.mypy.overrides]]
+module = [
+    "metrology_process_planner.infrastructure.klayout.*",
+    "metrology_process_planner.ui.*",
+]
+disallow_any_expr = false
+disallow_any_decorated = false
+warn_return_any = false
+
+[tool.importlinter]
+root_package = "metrology_process_planner"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Domain layer stays pure."
+type = "forbidden"
+source_modules = [
+    "metrology_process_planner.domains",
+    "metrology_process_planner.workflows",
+    "metrology_process_planner.persistence",
+    "metrology_process_planner.rendering",
+]
+forbidden_modules = [
+    "metrology_process_planner.app",
+    "metrology_process_planner.ui",
+    "metrology_process_planner.infrastructure.klayout",
+    "pya",
+]
+
+[[tool.importlinter.contracts]]
+name = "Application and UI do not leak into domains."
+type = "forbidden"
+source_modules = ["metrology_process_planner.domains"]
+forbidden_modules = [
+    "metrology_process_planner.app",
+    "metrology_process_planner.ui",
+    "metrology_process_planner.infrastructure",
+]
