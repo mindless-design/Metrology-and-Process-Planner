@@ -59,6 +59,20 @@ class ModelessSurfaceRegistryTests(unittest.TestCase):
         self.assertIn("Recipe Editor - No recipe loaded", summary["Open Windows"])
         self.assertIn("Advanced Diagnostics", summary["Open Windows"])
 
+    def test_setup_guide_actions_route_through_command_router(self) -> None:
+        services = build_app_services()
+        services.setup_guide_controller.set_active_session(session())
+        opened = services.setup_guide_controller.open_current()
+
+        unavailable = opened.window["on_action"]("StartOriginPointCapture")
+        closed = opened.window["on_action"]("CloseSetupGuide")
+
+        self.assertEqual("unavailable", unavailable.status)
+        self.assertIn("not wired", unavailable.next_ui_hint)
+        self.assertEqual("success", closed.status)
+        self.assertFalse(services.window_registry.is_open("setup-guide:session-001"))
+        self.assertEqual(closed, services.setup_guide_controller.last_action_result)
+
 
 if __name__ == "__main__":
     unittest.main()

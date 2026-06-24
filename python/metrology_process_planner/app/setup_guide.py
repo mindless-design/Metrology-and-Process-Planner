@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from metrology_process_planner.app.commands import command_id_from_view_action
 from metrology_process_planner.app.window_registry import WindowOpenStatus, WindowRegistry
 from metrology_process_planner.domains.session import SessionRecord
 from metrology_process_planner.ui.modeless import (
@@ -12,7 +13,11 @@ from metrology_process_planner.ui.modeless import (
     ModelessSurfaceShell,
 )
 from metrology_process_planner.ui.setup_guide import SetupGuidePresenter
-from metrology_process_planner.ui.shell import SetupGuideViewModel
+from metrology_process_planner.ui.shell import (
+    CommandRouter,
+    CommandRouteResult,
+    SetupGuideViewModel,
+)
 
 
 @dataclass(frozen=True)
@@ -33,16 +38,24 @@ class SetupGuideController:
         presenter: SetupGuidePresenter | None = None,
         shell: ModelessSurfaceShell | None = None,
         window_registry: WindowRegistry[Any] | None = None,
+        command_router: CommandRouter | None = None,
     ) -> None:
         self._presenter = presenter if presenter is not None else SetupGuidePresenter()
         self._shell = shell or ModelessSurfaceShell(InMemoryModelessSurfaceFactory())
         self._window_registry = window_registry if window_registry is not None else WindowRegistry()
+        self._command_router = command_router
         self.active_session: SessionRecord | None = None
+        self.last_action_result: CommandRouteResult | None = None
 
     def set_active_session(self, session: SessionRecord | None) -> None:
         """Set the session inspected by the guide."""
 
         self.active_session = session
+
+    def set_command_router(self, command_router: CommandRouter | None) -> None:
+        """Set the command router used by modeless setup actions."""
+
+        self._command_router = command_router
 
     def open_current(self) -> SetupGuideOpenResult:
         """Return a modeless setup-guide view model for the active session."""
@@ -56,8 +69,34 @@ class SetupGuideController:
         )
         if registry_result.status is WindowOpenStatus.FAILED:
             return SetupGuideOpenResult("failed", view_model, registry_result.message)
+        if registry_result.window is not None:
+            self._attach_action_callback(registry_result.window)
         status = _status(registry_result.status, self.active_session)
         return SetupGuideOpenResult(status, view_model, window=registry_result.window)
+
+    def close_current(self) -> None:
+        """Close the modeless setup guide for the active session."""
+
+        self._window_registry.close(_window_key(self.active_session))
+
+    def _attach_action_callback(self, window: Any) -> None:
+        if isinstance(window, dict):
+            window["on_action"] = self.route_action
+
+    def route_action(self, action_id: str) -> CommandRouteResult:
+        """Route one setup guide action through the app command router."""
+
+        command_id = command_id_from_view_action(action_id)
+        if self._command_router is None:
+            result = CommandRouteResult(
+                command_id,
+                "unavailable",
+                "Setup guide command routing is not configured.",
+            )
+        else:
+            result = self._command_router.route(command_id)
+        self.last_action_result = result
+        return result
 
 
 def _window_key(session: SessionRecord | None) -> str:

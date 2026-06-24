@@ -86,7 +86,9 @@ def build_app_services() -> AppServices:
         CommandId.OPEN_DIAGNOSTICS,
         lambda: _open_diagnostics(ui.diagnostics),
     )
+    _register_modeless_command_handlers(command_registry, ui)
     command_router = CommandRouter(command_registry, diagnostics_sink)
+    ui.setup_guide.set_command_router(command_router)
     return AppServices(
         commands=command_registry,
         command_router=command_router,
@@ -107,6 +109,20 @@ def build_app_services() -> AppServices:
         diagnostics_service=diagnostics_service,
         diagnostics_controller=ui.diagnostics,
         window_registry=ui.window_registry,
+    )
+
+
+def _register_modeless_command_handlers(
+    command_registry: CommandRegistry,
+    ui: UiControllers,
+) -> None:
+    command_registry.register(
+        CommandId.RETURN_TO_EDITOR,
+        lambda: _open_session_editor(ui.session_editor),
+    )
+    command_registry.register(
+        CommandId.CLOSE_SETUP_GUIDE,
+        lambda: ui.setup_guide.close_current(),
     )
 
 

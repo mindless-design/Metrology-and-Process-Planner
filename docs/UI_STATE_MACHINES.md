@@ -27,6 +27,11 @@ State-machine snapshots expose command-shaped action IDs. UI shells should route
 
 The KLayout Tools menu uses only the primary `MENU_COMMANDS`; setup cards, recipe cards, editor buttons, and review actions use the broader typed command catalog.
 
+Setup guide stage actions are emitted as command IDs by the pure presenter and routed by the
+`SetupGuideController` through the shared `CommandRouter`. Deferred setup capture/configuration
+commands should return structured unavailable results; they should not become widget-local logic or
+blocking prompts.
+
 Disabled editor actions carry `disabled_reason` in the same view model as their command ID. UI
 shells should render disabled actions with that reason, and dispatch should return the same reason
 as a structured `unavailable` result rather than silently doing nothing.
