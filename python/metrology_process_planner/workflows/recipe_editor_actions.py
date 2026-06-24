@@ -11,6 +11,7 @@ from metrology_process_planner.domains.process import (
     ProcessStep,
     ProcessStepKind,
 )
+from metrology_process_planner.workflows.recipe_editor_material_edits import edit_material
 from metrology_process_planner.workflows.recipe_editor_materials import (
     add_material,
     delete_material,
@@ -91,6 +92,8 @@ def _dispatch_material_action(
         return toggle_material_visibility(recipe, action_id, command_id)
     if command_id is CommandId.FIND_MATERIAL_USAGE:
         return find_material_usage(recipe, action_id, command_id)
+    if command_id is CommandId.EDIT_MATERIAL:
+        return edit_material(recipe, action_id, command_id)
     return None
 
 

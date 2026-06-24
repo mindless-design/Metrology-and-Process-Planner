@@ -55,6 +55,47 @@ class RecipeEditorMaterialActionTests(unittest.TestCase):
         self.assertIn("oxide-deposit", result.message)
         self.assertNotIn("dirty", result.recipe.metadata)
 
+    def test_edit_material_updates_domain_fields_and_marks_dirty(self) -> None:
+        result = RecipeEditorActionDispatcher().dispatch(
+            _recipe(),
+            "EditMaterial:oxide:name:Field Oxide",
+        )
+
+        self.assertEqual("success", result.status)
+        self.assertEqual(CommandId.EDIT_MATERIAL, result.command_id)
+        self.assertEqual("Field Oxide", result.recipe.materials[1].name)
+        self.assertEqual("material:oxide", result.selected_card_id)
+        self.assertTrue(result.recipe.metadata["dirty"])
+
+    def test_edit_material_updates_metadata_backed_detail_fields(self) -> None:
+        result = RecipeEditorActionDispatcher().dispatch(
+            _recipe(),
+            "EditMaterial:oxide:category:dielectric",
+        )
+
+        self.assertEqual("success", result.status)
+        self.assertEqual(
+            "dielectric",
+            result.recipe.metadata["material_categories"]["oxide"],
+        )
+
+        notes = RecipeEditorActionDispatcher().dispatch(
+            result.recipe,
+            "EditMaterial:oxide:notes:Used for STI and gate dielectric",
+        )
+
+        self.assertEqual(
+            "Used for STI and gate dielectric",
+            notes.recipe.metadata["material_notes"]["oxide"],
+        )
+
+    def test_edit_material_rejects_bad_payload_modelessly(self) -> None:
+        result = RecipeEditorActionDispatcher().dispatch(_recipe(), "EditMaterial:oxide")
+
+        self.assertEqual("error", result.status)
+        self.assertEqual(CommandId.EDIT_MATERIAL, result.command_id)
+        self.assertIn("payload", result.message)
+
 
 def _material_ids(recipe: ProcessRecipe) -> tuple[str, ...]:
     return tuple(material.id for material in recipe.materials)

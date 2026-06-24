@@ -73,6 +73,10 @@ Recipe material add, duplicate, visibility toggle, and usage lookup use command-
 Mutating material actions mark the recipe dirty and keep the material card selected. Usage lookup
 returns a modeless result message and should not dirty the recipe.
 
+Recipe material detail edits use `EditMaterial:<material_id>:<field>:<value>` action IDs. Domain
+fields update the selected `Material`; category and notes update the recipe metadata extension
+blocks. The workflow marks the recipe dirty and returns inline errors for malformed payloads.
+
 Recipe process-step actions also stay inline: duplicate, delete, move up/down, enable, and disable
 mutate the in-memory recipe, mark it dirty, and keep the affected step selected. Boundary moves
 return structured `blocked` results.

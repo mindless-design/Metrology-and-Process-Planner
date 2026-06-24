@@ -164,6 +164,8 @@ Last updated: 2026-06-24
 - Recipe editor action tests covering blocked deletion of used materials and safe in-memory deletion
   of unused materials.
 - Recipe editor material-action tests covering add, duplicate, visibility toggle, and usage lookup.
+- Recipe editor material-edit tests covering command-routed edits for material name, category,
+  notes, selected-card preservation, dirty state, and malformed payload errors.
 - Recipe editor step-action tests covering duplicate, move, disable, and blocked boundary moves.
 - Modeless setup-guide controller tests covering shared-window reuse, command-router action
   callbacks, structured unavailable setup actions, and close behavior through the window registry.
