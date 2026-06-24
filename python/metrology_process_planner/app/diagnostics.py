@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+from metrology_process_planner.app.diagnostics_state import workflow_state_rows
 from metrology_process_planner.app.diagnostics_windows import open_windows_summary
 from metrology_process_planner.app.window_registry import (
     WindowOpenStatus,
@@ -143,6 +144,7 @@ def _summary_rows(
         ("Message", "Advanced diagnostics resolved."),
         ("Session", f"{session.name} ({session.id})"),
         ("Mode", session.mode.value),
+        *workflow_state_rows(session),
         ("Loaded Modes", _loaded_modes(session, mode_registry)),
         ("Artifacts", _artifact_summary(session)),
         ("Warnings", str(len(session.warnings))),
@@ -196,10 +198,8 @@ def _recent_commands(events: tuple[DiagnosticEvent, ...]) -> str:
 def _recent_event_names(events: tuple[DiagnosticEvent, ...]) -> str:
     return ", ".join(event.event_name for event in events[-5:]) if events else "none"
 
-
 def _diagnostics_window_key(session: SessionRecord) -> str:
     return f"advanced-diagnostics:{session.id}"
-
 
 def _with_open_window_rows(
     result: DiagnosticsOpenResult,
