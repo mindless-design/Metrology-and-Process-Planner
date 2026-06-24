@@ -6,7 +6,11 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Protocol
 
-from metrology_process_planner.ui.session_editor.header import header_entries, status_text
+from metrology_process_planner.ui.session_editor.header import (
+    header_entries,
+    primary_actions,
+    status_text,
+)
 from metrology_process_planner.workflows.editor.adapters import SessionModeAdapter
 from metrology_process_planner.workflows.editor.document import SessionDocument
 from metrology_process_planner.workflows.editor.view_models import EditorAction
@@ -33,6 +37,14 @@ class SessionEditorWidgetFactory(Protocol):
 
     def set_header(self, window: Any, entries: tuple[tuple[str, str], ...]) -> None:
         """Render the compact header/session bar."""
+
+    def set_primary_actions(
+        self,
+        window: Any,
+        actions: tuple[EditorAction, ...],
+        on_action: ActionCallback,
+    ) -> None:
+        """Render the header primary action bar."""
 
     def set_navigator(
         self,
@@ -92,6 +104,7 @@ class SessionEditorShell:
 
         selected = document.items_by_id[document.selection.selected_item_id]
         self._factory.set_header(window, header_entries(document))
+        self._factory.set_primary_actions(window, primary_actions(document), callbacks.on_action)
         self._factory.set_navigator(
             window,
             _navigator_groups(document),
@@ -120,6 +133,17 @@ class InMemorySessionEditorWidgetFactory:
         """Store rendered header entries."""
 
         window["header"] = entries
+
+    def set_primary_actions(
+        self,
+        window: dict[str, Any],
+        actions: tuple[EditorAction, ...],
+        on_action: ActionCallback,
+    ) -> None:
+        """Store rendered primary header actions and callback."""
+
+        window["primary_actions"] = actions
+        window["on_primary_action"] = on_action
 
     def set_navigator(
         self,

@@ -15,6 +15,7 @@ from metrology_process_planner.workflows.editor import (
     EditorActionType,
     SessionDocumentBuilder,
 )
+from tests.editor_render_fixtures import empty_session
 from tests.editor_render_fixtures import session as rich_session
 
 
@@ -41,6 +42,17 @@ class SessionEditorShellControllerTests(unittest.TestCase):
         self.assertIn(("Selected", "Demo (ready)"), window["header"])
         self.assertIn(("Process Context", "none"), window["header"])
         self.assertEqual("Ready; selected Demo", window["status"])
+        self.assertEqual(
+            [
+                "Save Edits",
+                "Reopen Setup",
+                "Export CSV",
+                "Build Report",
+                "Open Output Folder",
+                "Close",
+            ],
+            [action.label for action in window["primary_actions"]],
+        )
         self.assertTrue(window["navigator"])
         self.assertTrue(window["preview"])
         self.assertTrue(window["fields"])
@@ -55,6 +67,9 @@ class SessionEditorShellControllerTests(unittest.TestCase):
 
         result = controller.open_document(document)
         result.window["on_action"](EditorAction(EditorActionType.BUILD_POWERPOINT, "Build"))
+        result.window["on_primary_action"](
+            EditorAction(EditorActionType.OPEN_OUTPUT_FOLDER, "Open")
+        )
 
         self.assertEqual("opened", result.status)
         self.assertEqual("unavailable", controller.last_action_result.status)
@@ -74,6 +89,10 @@ class SessionEditorShellControllerTests(unittest.TestCase):
         self.assertEqual(
             "Pending capture review is waiting in the editor.",
             result.window["status"],
+        )
+        self.assertIn(
+            "Resume Capture",
+            [action.label for action in result.window["primary_actions"]],
         )
         self.assertIn(("label", "Label", "Site 1"), result.window["fields"])
         self.assertTrue(
@@ -119,6 +138,18 @@ class SessionEditorShellControllerTests(unittest.TestCase):
         services.commands.dispatch(CommandId.OPEN_SESSION_EDITOR)
 
         self.assertIsNone(services.session_editor_controller.current_document)
+
+    def test_process_aware_document_surfaces_attach_recipe_primary_action(self) -> None:
+        document = SessionDocumentBuilder().build(empty_session())
+        factory = InMemorySessionEditorWidgetFactory()
+
+        window = SessionEditorShell(factory).open(
+            document,
+            DefaultSessionModeAdapter(),
+            SessionEditorCallbacks(lambda _item_id: None, lambda _action: None),
+        )
+
+        self.assertIn("Attach Recipe", [action.label for action in window["primary_actions"]])
 
 
 def _document():

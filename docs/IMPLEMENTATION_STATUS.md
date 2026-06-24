@@ -11,6 +11,7 @@ Last updated: 2026-06-24
 - Editor action dispatch routes save, CSV export, pending save/retake/discard, selection, canvas selection, and artifact regeneration through workflow services.
 - The session editor controller now rerenders the active shell window after selection and mutating action callbacks, so navigator selection, preview rows, inspector fields, actions, and status text stay synchronized with the rebuilt `SessionDocument`.
 - The session editor header/status presenter now surfaces session name, mode, output folder, setup state, capture state, selected item state, dirty state, warning count, and process-context state from the document/state-machine spine.
+- The session editor header now exposes primary command-shaped actions for save, resume pending capture, reopen setup, attach/validate process context, export CSV, build report, open output folder, and close through the same `EditorAction` callback path as inspector actions.
 - Rendering and annotation pipelines use editable scene specs, SVG as canonical output, optional rasterizer injection, drawing persistence, and editor/render bridge refresh hooks.
 - Drawing export now returns canonical `ArtifactRecord` sets directly; capture, measurement, and process-owned drawings update the central registry plus owner `artifact_refs` without mirrored image/drawing wrappers.
 - Canvas pending-crop artifacts are now created, promoted, or removed explicitly by workflow commands rather than synthesized during `SessionRecord` construction.
