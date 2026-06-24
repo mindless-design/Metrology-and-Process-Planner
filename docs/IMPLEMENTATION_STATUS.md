@@ -69,6 +69,9 @@ Last updated: 2026-06-24
 - Point capture is not implemented as a workflow yet, but it is now an explicit unavailable path: armed Shift-click returns a handled result with a message and does not mutate session or overlay state.
 - Ellipsometry point capture is wired for the process-aware site-then-point child step in pure tooling, KLayout-boundary tests, and the opt-in live KLayout batch probe; general point-capture workflows remain deferred.
 - Process output regeneration is solver-backed for attached recipes, exporter-backed for JSON summary artifacts when paths are configured, and warning-only for missing recipe, unavailable solver, parse failure, solver failure, or artifact export failure paths.
+- Recipe editor card/header actions now route through a pure dispatcher. It supports safe
+  in-memory card selection, validation, and add-step templates, while save/open/attach remain
+  structured unavailable command results until real recipe persistence workflows are wired.
 
 ## Tests In Place
 
@@ -107,6 +110,9 @@ Last updated: 2026-06-24
 - Capture status presenter tests covering session-derived box/line/point guidance, setup-guide
   propagation, editor status-strip precedence, unknown primitive handling, and mode-specific
   point/line gesture hints.
+- Recipe editor action tests covering command normalization, in-memory card selection, add-step
+  template dirty state, modeless controller refresh, validation warning IDs, and deferred save
+  actions returning structured unavailable results.
 - Measurement annotation repair tests covering repeated export failures, failed artifact status, repair metadata, stable warning IDs, and preview repair actions.
 - Opt-in KLayout batch smoke coverage for `KLayoutCaptureGestureAdapter` inside a real `pya` runtime, including saved measurement line, profilometry compound child-line capture, and ellipsometry compound child-point capture, gated by `MPP_RUN_KLAYOUT_TESTS=1`; current evidence is 8 passing live KLayout integration tests.
 - Opt-in KLayout GUI automation covers real menu registration and main-window snapshot probes through `MPP_RUN_KLAYOUT_UI_TESTS=1`, `klayout_app.exe`, and GUI `-e -rm` execution; current evidence is 2 passing live KLayout UI automation tests.
@@ -115,6 +121,7 @@ Last updated: 2026-06-24
 
 - Broaden opt-in live KLayout smoke coverage beyond batch probes if a stable GUI automation lane becomes available.
 - App-level discovery/configuration tests for installed external JSON mode folders.
+- Recipe file open/save workflow tests once recipe persistence is wired behind commands.
 
 ## Safe Reuse Points
 

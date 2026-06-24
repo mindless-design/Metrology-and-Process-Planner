@@ -1,0 +1,166 @@
+"""Command-shaped recipe editor action dispatch."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, replace
+
+from metrology_process_planner.app.command_types import CommandId
+from metrology_process_planner.app.commands import command_id_from_view_action
+from metrology_process_planner.domains.process import (
+    ProcessRecipe,
+    ProcessStep,
+    ProcessStepKind,
+)
+
+
+@dataclass(frozen=True)
+class RecipeEditorActionResult:
+    """Result from one recipe editor action intent."""
+
+    status: str
+    command_id: CommandId | None = None
+    message: str = ""
+    recipe: ProcessRecipe | None = None
+    selected_card_id: str = ""
+    warning_ids: tuple[str, ...] = ()
+    next_ui_hint: str = ""
+
+
+class RecipeEditorActionDispatcher:
+    """Apply safe recipe editor actions without direct file persistence."""
+
+    def dispatch(
+        self,
+        recipe: ProcessRecipe | None,
+        action_id: str,
+    ) -> RecipeEditorActionResult:
+        """Dispatch one recipe editor action ID."""
+
+        if action_id.startswith("SelectRecipeCard:"):
+            return _select_card(recipe, action_id.split(":", 1)[1])
+        try:
+            command_id = command_id_from_view_action(action_id)
+        except ValueError:
+            return RecipeEditorActionResult(
+                "error",
+                message=f"Unknown recipe editor action: {action_id}",
+                recipe=recipe,
+                next_ui_hint="Open diagnostics and review the recipe editor action.",
+            )
+        if command_id is CommandId.ADD_PROCESS_STEP:
+            return _add_step_template(recipe, action_id, command_id)
+        if command_id is CommandId.VALIDATE_RECIPE:
+            return _validate(recipe, command_id)
+        return RecipeEditorActionResult(
+            "unavailable",
+            command_id,
+            f"{command_id.value} is not wired to a recipe workflow yet.",
+            recipe,
+            next_ui_hint="The action is known and should stay modeless until wired.",
+        )
+
+
+def _select_card(
+    recipe: ProcessRecipe | None,
+    card_id: str,
+) -> RecipeEditorActionResult:
+    if recipe is None:
+        return RecipeEditorActionResult(
+            "unavailable",
+            message="Load or create a recipe before selecting cards.",
+            next_ui_hint="Open or create a recipe first.",
+        )
+    updated = _with_metadata(recipe, selected_card_id=card_id)
+    return RecipeEditorActionResult(
+        "success",
+        message=f"Selected {card_id}.",
+        recipe=updated,
+        selected_card_id=card_id,
+        next_ui_hint="Recipe details are ready for inline editing.",
+    )
+
+
+def _add_step_template(
+    recipe: ProcessRecipe | None,
+    action_id: str,
+    command_id: CommandId,
+) -> RecipeEditorActionResult:
+    if recipe is None:
+        return RecipeEditorActionResult(
+            "unavailable",
+            command_id,
+            "Create or open a recipe before adding process steps.",
+            next_ui_hint="Use New Recipe or Open Recipe first.",
+        )
+    kind = _step_kind_from_action(action_id)
+    if kind is None:
+        return RecipeEditorActionResult(
+            "error",
+            command_id,
+            f"Recipe step template is missing or invalid: {action_id}",
+            recipe,
+            next_ui_hint="Choose a supported process step template.",
+        )
+    step_id = _next_step_id(recipe, kind)
+    step = ProcessStep(
+        step_id,
+        kind,
+        parameters={"enabled": True, "template": True},
+        notes=f"New {kind.value.replace('_', ' ')} step.",
+    )
+    updated = _with_metadata(
+        replace(recipe, steps=(*recipe.steps, step)),
+        dirty=True,
+        selected_card_id=f"step:{step_id}",
+    )
+    return RecipeEditorActionResult(
+        "success",
+        command_id,
+        f"Added {kind.value.replace('_', ' ')} step template.",
+        updated,
+        f"step:{step_id}",
+        next_ui_hint="Fill required fields in the process step details panel.",
+    )
+
+
+def _validate(
+    recipe: ProcessRecipe | None,
+    command_id: CommandId,
+) -> RecipeEditorActionResult:
+    if recipe is None:
+        return RecipeEditorActionResult(
+            "unavailable",
+            command_id,
+            "No recipe is loaded for validation.",
+            next_ui_hint="Open or create a recipe first.",
+        )
+    warnings = tuple(f"recipe-warning-{index}" for index, _ in enumerate(recipe.validate(), 1))
+    status = "warning" if warnings else "success"
+    message = f"Recipe validation found {len(warnings)} warning(s)."
+    return RecipeEditorActionResult(status, command_id, message, recipe, warning_ids=warnings)
+
+
+def _step_kind_from_action(action_id: str) -> ProcessStepKind | None:
+    if ":" not in action_id:
+        return None
+    try:
+        return ProcessStepKind(action_id.split(":", 1)[1])
+    except ValueError:
+        return None
+
+
+def _next_step_id(recipe: ProcessRecipe, kind: ProcessStepKind) -> str:
+    existing = {step.id for step in recipe.steps}
+    base = kind.value.replace("_", "-")
+    index = len(recipe.steps) + 1
+    step_id = f"step-{index:03d}-{base}"
+    while step_id in existing:
+        index += 1
+        step_id = f"step-{index:03d}-{base}"
+    return step_id
+
+
+def _with_metadata(recipe: ProcessRecipe, **updates: object) -> ProcessRecipe:
+    metadata = dict(recipe.metadata or {})
+    metadata.update(updates)
+    return replace(recipe, metadata=metadata)

@@ -53,6 +53,10 @@ Last updated: 2026-06-24
 - Built-in process-aware modes declare the full placeholder artifact role set, including `full_stack_compressed_image` for profilometry and `film_thickness_summary` for ellipsometry. Compound capture save creates central registry records for those placeholders.
 - Process-output regeneration may call `HybridCrossSectionSolver` from workflow code when a recipe is attached. The workflow stores a compact solver summary in `ProcessOutputRecord`; configured app/editor services use `ProcessOutputStore` to write concrete JSON artifacts and mark process-output artifact records `present`.
 - Process-output editor items read preview artifacts from `ProcessOutputRecord.artifact_refs`, filtered to registry artifacts of type `process_output`, and route regeneration through the output's canonical `metadata.capture_id`.
+- Recipe editor card/header actions route through `RecipeEditorActionDispatcher`. The dispatcher
+  normalizes view-model action IDs to typed `CommandId` values, applies only safe in-memory edits
+  such as card selection or adding partial step templates, and leaves file save/open operations
+  explicitly unavailable until a real workflow handler is wired.
 
 ## Child Measurement Slice
 

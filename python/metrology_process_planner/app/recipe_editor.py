@@ -13,6 +13,10 @@ from metrology_process_planner.ui.modeless import (
 )
 from metrology_process_planner.ui.recipe_editor import RecipeEditorPresenter
 from metrology_process_planner.ui.recipe_editor.view_models import RecipeEditorViewModel
+from metrology_process_planner.workflows.recipe_editor_actions import (
+    RecipeEditorActionDispatcher,
+    RecipeEditorActionResult,
+)
 
 
 @dataclass(frozen=True)
@@ -31,13 +35,16 @@ class RecipeEditorController:
     def __init__(
         self,
         presenter: RecipeEditorPresenter | None = None,
+        dispatcher: RecipeEditorActionDispatcher | None = None,
         shell: ModelessSurfaceShell | None = None,
         window_registry: WindowRegistry[Any] | None = None,
     ) -> None:
         self._presenter = presenter if presenter is not None else RecipeEditorPresenter()
+        self._dispatcher = dispatcher if dispatcher is not None else RecipeEditorActionDispatcher()
         self._shell = shell or ModelessSurfaceShell(InMemoryModelessSurfaceFactory())
         self._window_registry = window_registry if window_registry is not None else WindowRegistry()
         self.current_recipe: ProcessRecipe | None = None
+        self.last_action_result: RecipeEditorActionResult | None = None
 
     def set_recipe(self, recipe: ProcessRecipe | None) -> None:
         """Set the recipe currently shown by the editor."""
@@ -58,6 +65,16 @@ class RecipeEditorController:
             return RecipeEditorOpenResult("failed", view_model, registry_result.message)
         status = _status(registry_result.status, self.current_recipe)
         return RecipeEditorOpenResult(status, view_model, window=registry_result.window)
+
+    def dispatch_action(self, action_id: str) -> RecipeEditorActionResult:
+        """Dispatch a recipe editor action and refresh the modeless window."""
+
+        result = self._dispatcher.dispatch(self.current_recipe, action_id)
+        self.last_action_result = result
+        if result.recipe is not None:
+            self.current_recipe = result.recipe
+        self.open_current()
+        return result
 
 
 def _window_key(recipe: ProcessRecipe | None) -> str:

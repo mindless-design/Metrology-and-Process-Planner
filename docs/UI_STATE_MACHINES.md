@@ -27,6 +27,11 @@ State-machine snapshots expose command-shaped action IDs. UI shells should route
 
 The KLayout Tools menu uses only the primary `MENU_COMMANDS`; setup cards, recipe cards, editor buttons, and review actions use the broader typed command catalog.
 
+Recipe editor card/header actions use `RecipeEditorActionDispatcher` before any widget-specific
+behavior. The dispatcher converts action IDs such as `AddProcessStep:directional_etch` to typed
+commands, applies safe in-memory recipe edits, and returns structured unavailable results for
+deferred save/open/attach workflows.
+
 ## Blocking Dialog Policy
 
 Normal setup, capture review, recipe validation, missing artifact handling, and process-context warnings stay modeless. The only normal workflow prompt still allowed is the post-measurement completion choice:
