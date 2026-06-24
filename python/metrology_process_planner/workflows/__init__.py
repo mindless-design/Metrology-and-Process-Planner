@@ -64,8 +64,8 @@ from metrology_process_planner.workflows.process_context_models import (
 )
 from metrology_process_planner.workflows.recipe_editor_actions import (
     RecipeEditorActionDispatcher,
-    RecipeEditorActionResult,
 )
+from metrology_process_planner.workflows.recipe_editor_results import RecipeEditorActionResult
 from metrology_process_planner.workflows.selection import (
     EditorSelectionSink,
     SelectionCoordinator,

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import replace
 
 from metrology_process_planner.app.command_types import CommandId
 from metrology_process_planner.app.commands import command_id_from_view_action
@@ -11,19 +11,8 @@ from metrology_process_planner.domains.process import (
     ProcessStep,
     ProcessStepKind,
 )
-
-
-@dataclass(frozen=True)
-class RecipeEditorActionResult:
-    """Result from one recipe editor action intent."""
-
-    status: str
-    command_id: CommandId | None = None
-    message: str = ""
-    recipe: ProcessRecipe | None = None
-    selected_card_id: str = ""
-    warning_ids: tuple[str, ...] = ()
-    next_ui_hint: str = ""
+from metrology_process_planner.workflows.recipe_editor_materials import delete_material
+from metrology_process_planner.workflows.recipe_editor_results import RecipeEditorActionResult
 
 
 class RecipeEditorActionDispatcher:
@@ -49,6 +38,8 @@ class RecipeEditorActionDispatcher:
             )
         if command_id is CommandId.ADD_PROCESS_STEP:
             return _add_step_template(recipe, action_id, command_id)
+        if command_id is CommandId.DELETE_MATERIAL:
+            return delete_material(recipe, action_id, command_id)
         if command_id is CommandId.VALIDATE_RECIPE:
             return _validate(recipe, command_id)
         return RecipeEditorActionResult(

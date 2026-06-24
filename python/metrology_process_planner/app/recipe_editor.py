@@ -14,10 +14,8 @@ from metrology_process_planner.ui.modeless import (
 )
 from metrology_process_planner.ui.recipe_editor import RecipeEditorPresenter
 from metrology_process_planner.ui.recipe_editor.view_models import RecipeEditorViewModel
-from metrology_process_planner.workflows.recipe_editor_actions import (
-    RecipeEditorActionDispatcher,
-    RecipeEditorActionResult,
-)
+from metrology_process_planner.workflows.recipe_editor_actions import RecipeEditorActionDispatcher
+from metrology_process_planner.workflows.recipe_editor_results import RecipeEditorActionResult
 
 
 @dataclass(frozen=True)

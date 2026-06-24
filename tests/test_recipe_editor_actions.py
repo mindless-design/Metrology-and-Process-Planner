@@ -38,6 +38,33 @@ class RecipeEditorActionTests(unittest.TestCase):
         self.assertTrue(result.recipe.metadata["dirty"])
         self.assertEqual(result.selected_card_id, result.recipe.metadata["selected_card_id"])
 
+    def test_delete_used_material_returns_inline_blocked_result(self) -> None:
+        recipe = _recipe()
+
+        result = RecipeEditorActionDispatcher().dispatch(recipe, "DeleteMaterial:si")
+
+        self.assertEqual("blocked", result.status)
+        self.assertEqual(CommandId.DELETE_MATERIAL, result.command_id)
+        self.assertIn("substrate", result.message)
+        self.assertEqual(("recipe-material-in-use-si",), result.warning_ids)
+        self.assertEqual(recipe, result.recipe)
+
+    def test_delete_unused_material_marks_recipe_dirty(self) -> None:
+        recipe = ProcessRecipe(
+            "recipe-002",
+            "Unused",
+            (Material("si", "Silicon", "#aaa"), Material("oxide", "Oxide", "#88ccff")),
+            (ProcessStep("substrate", ProcessStepKind.SUBSTRATE, "si"),),
+            metadata={"selected_card_id": "material:oxide"},
+        )
+
+        result = RecipeEditorActionDispatcher().dispatch(recipe, "DeleteMaterial")
+
+        self.assertEqual("success", result.status)
+        self.assertEqual(("si",), tuple(material.id for material in result.recipe.materials))
+        self.assertTrue(result.recipe.metadata["dirty"])
+        self.assertEqual("", result.recipe.metadata["selected_card_id"])
+
     def test_deferred_file_actions_return_structured_unavailable_result(self) -> None:
         result = RecipeEditorActionDispatcher().dispatch(_recipe(), "SaveRecipe")
 

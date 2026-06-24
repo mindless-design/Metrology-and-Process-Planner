@@ -48,6 +48,10 @@ Recipe editor selection should render through `selected_detail` on `RecipeEditor
 Material, process-step, and layer cards expose their own field/action models there, keeping card
 selection and detail editing on the same modeless view-model spine.
 
+Recipe material deletion is handled as an inline action result: unused materials may be removed
+from the in-memory recipe and mark it dirty, while materials referenced by process steps return a
+structured `blocked` result with warning IDs and repair guidance.
+
 ## Blocking Dialog Policy
 
 Normal setup, capture review, recipe validation, missing artifact handling, and process-context warnings stay modeless. The only normal workflow prompt still allowed is the post-measurement completion choice:

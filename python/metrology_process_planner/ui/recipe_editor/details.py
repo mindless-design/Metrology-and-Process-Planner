@@ -132,8 +132,16 @@ def _step_fields(
 
 def _material_actions(material_id: str) -> tuple[EditorActionViewModel, ...]:
     return (
-        EditorActionViewModel("DuplicateMaterial", "Duplicate Material", f"material:{material_id}"),
-        EditorActionViewModel("DeleteMaterial", "Delete Material", f"material:{material_id}"),
+        EditorActionViewModel(
+            f"DuplicateMaterial:{material_id}",
+            "Duplicate Material",
+            f"material:{material_id}",
+        ),
+        EditorActionViewModel(
+            f"DeleteMaterial:{material_id}",
+            "Delete Material",
+            f"material:{material_id}",
+        ),
         EditorActionViewModel("ToggleVisibility", "Toggle Visibility", f"material:{material_id}"),
         EditorActionViewModel("FindUsage", "Find Usage", f"material:{material_id}"),
     )

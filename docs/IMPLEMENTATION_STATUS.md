@@ -85,6 +85,9 @@ Last updated: 2026-06-24
 - Recipe editor view models now include a selected-card detail panel for materials, steps, and
   layer references. Material details expose category/color/visibility/notes fields and material
   actions; step details expose operation/material/mask/thickness/notes fields and step actions.
+- Recipe material deletion is now an inline, modeless action. Unused materials are removed from
+  the in-memory recipe and mark it dirty; materials referenced by process steps return a structured
+  blocked result with warning IDs and repair guidance instead of prompting or silently deleting.
 - Post-measurement completion is represented as an explicit prompt result and pure workflow
   choice handler; final Qt prompt rendering remains deferred.
 
@@ -134,6 +137,8 @@ Last updated: 2026-06-24
   the window registry.
 - Recipe editor card tests covering selected material and process-step detail-panel fields and
   actions.
+- Recipe editor action tests covering blocked deletion of used materials and safe in-memory deletion
+  of unused materials.
 - Modeless setup-guide controller tests covering shared-window reuse, command-router action
   callbacks, structured unavailable setup actions, and close behavior through the window registry.
 - Setup guide command tests covering origin point arming, alignment box arming, capture-status
