@@ -41,6 +41,11 @@ def process_step_card_actions(
         _action(f"MoveProcessStepUp:{step_id}", "Move Up", f"step:{step_id}"),
         _action(f"MoveProcessStepDown:{step_id}", "Move Down", f"step:{step_id}"),
         toggle,
+        _action(
+            f"PreviewRecipeThroughStep:{step_id}",
+            "Preview Through This Step",
+            f"step:{step_id}",
+        ),
     )
 
 

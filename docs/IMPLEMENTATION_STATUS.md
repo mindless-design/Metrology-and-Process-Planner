@@ -72,8 +72,9 @@ Last updated: 2026-06-24
 - Saved profilometry and ellipsometry composites now have document-store reload coverage for parent/child canvas indexes, feature item indexes, artifact refs, warning refs, and `process_context.active` extension refs.
 - Recipe/process context commands now attach, detach, validate, refresh fingerprints, and expose regeneration hooks through editor actions. Canonical JSON writes the process context as `process_context.active`, while flat process-context payloads are migration-only. Missing recipe/solver states become structured warnings instead of capture-save failures.
 - Recipe editor process-step cards now expose explicit enabled/disabled status labels and
-  command-shaped card actions for duplicate, delete, move, enable, and disable. The selected step
-  detail panel uses the same shared action policy, so card and detail widgets do not drift.
+  command-shaped card actions for duplicate, delete, move, enable/disable, and preview-through-step.
+  The selected step detail panel uses the same shared action policy, so card and detail widgets do
+  not drift.
 - Process-context validation now checks missing recipes, missing recipe files, missing solver backends, missing render profiles, stale process-output records/artifacts, and process-aware captures missing the `process_context.active` reference.
 - The dashboard now exposes session-level `Regenerate Process Outputs`, routing through the all-process-aware-captures regeneration path.
 - Process-aware capture inspector metadata now includes recipe, solver operation, process window, per-capture process-output status counts, and warning count from canonical session records.

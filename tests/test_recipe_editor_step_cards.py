@@ -7,6 +7,7 @@ from metrology_process_planner.domains.process import (
     ProcessStepKind,
 )
 from metrology_process_planner.ui.recipe_editor import RecipeEditorPresenter
+from metrology_process_planner.workflows import RecipeEditorActionDispatcher
 
 
 class RecipeEditorStepCardTests(unittest.TestCase):
@@ -21,6 +22,7 @@ class RecipeEditorStepCardTests(unittest.TestCase):
                 "MoveProcessStepUp:deposit",
                 "MoveProcessStepDown:deposit",
                 "DisableProcessStep:deposit",
+                "PreviewRecipeThroughStep:deposit",
             ),
             tuple(action.action_id for action in card.actions),
         )
@@ -36,6 +38,15 @@ class RecipeEditorStepCardTests(unittest.TestCase):
         assert detail is not None
         self.assertIn("Enable Step", [action.label for action in detail.actions])
         self.assertNotIn("Disable Step", [action.label for action in detail.actions])
+
+    def test_step_card_preview_action_updates_modeless_preview_state(self) -> None:
+        action_id = RecipeEditorPresenter().build(_recipe(enabled=True)).step_cards[0].actions[-1]
+
+        result = RecipeEditorActionDispatcher().dispatch(_recipe(enabled=True), action_id.action_id)
+
+        self.assertEqual("warning", result.status)
+        self.assertEqual("through_step", result.recipe.metadata["preview_scope"])
+        self.assertEqual("step:deposit", result.recipe.metadata["selected_card_id"])
 
 
 def _recipe(enabled: bool) -> ProcessRecipe:
