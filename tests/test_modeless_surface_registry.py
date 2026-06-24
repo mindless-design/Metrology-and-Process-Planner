@@ -64,7 +64,7 @@ class ModelessSurfaceRegistryTests(unittest.TestCase):
         services.setup_guide_controller.set_active_session(session())
         opened = services.setup_guide_controller.open_current()
 
-        unavailable = opened.window["on_action"]("StartOriginPointCapture")
+        unavailable = opened.window["on_action"]("ValidateRecipeContext")
         closed = opened.window["on_action"]("CloseSetupGuide")
 
         self.assertEqual("unavailable", unavailable.status)

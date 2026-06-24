@@ -14,6 +14,7 @@ from metrology_process_planner.app.commands import (
 from metrology_process_planner.app.diagnostics import AdvancedDiagnosticsController
 from metrology_process_planner.app.recipe_editor import RecipeEditorController
 from metrology_process_planner.app.session_editor import SessionEditorController
+from metrology_process_planner.app.setup_commands import SetupGuideCommandService
 from metrology_process_planner.app.setup_guide import SetupGuideController
 from metrology_process_planner.app.window_registry import WindowRegistry
 from metrology_process_planner.infrastructure.diagnostics import (
@@ -69,6 +70,40 @@ def build_app_services() -> AppServices:
     diagnostics_sink = InMemoryDiagnosticSink()
     diagnostics_service = DiagnosticsService(diagnostics_sink)
     ui = _build_ui_controllers(diagnostics_sink, diagnostics_service)
+    canvas_interaction = CanvasInteractionEngine(diagnostics_sink)
+    setup_commands = SetupGuideCommandService(ui.setup_guide, canvas_interaction)
+    _register_primary_command_handlers(command_registry, ui)
+    _register_modeless_command_handlers(command_registry, ui)
+    _register_setup_command_handlers(command_registry, setup_commands)
+    command_router = CommandRouter(command_registry, diagnostics_sink)
+    ui.setup_guide.set_command_router(command_router)
+    return AppServices(
+        commands=command_registry,
+        command_router=command_router,
+        session_store=SessionJsonStore(diagnostics_sink),
+        capture_csv_exporter=CaptureCsvExporter(diagnostics_sink),
+        drawing_store=SessionDrawingStore(),
+        canvas_interaction=canvas_interaction,
+        pending_capture_review=PendingCaptureReviewService(diagnostics_sink),
+        overlay_manager_factory=CanvasOverlayManager,
+        selection_coordinator_factory=lambda manager: SelectionCoordinator(
+            manager,
+            diagnostic_sink=diagnostics_sink,
+        ),
+        session_editor_controller=ui.session_editor,
+        setup_guide_controller=ui.setup_guide,
+        recipe_editor_controller=ui.recipe_editor,
+        diagnostics_sink=diagnostics_sink,
+        diagnostics_service=diagnostics_service,
+        diagnostics_controller=ui.diagnostics,
+        window_registry=ui.window_registry,
+    )
+
+
+def _register_primary_command_handlers(
+    command_registry: CommandRegistry,
+    ui: UiControllers,
+) -> None:
     command_registry.register(
         CommandId.OPEN_SETUP_GUIDE,
         lambda: _open_setup_guide(ui.setup_guide),
@@ -86,30 +121,37 @@ def build_app_services() -> AppServices:
         CommandId.OPEN_DIAGNOSTICS,
         lambda: _open_diagnostics(ui.diagnostics),
     )
-    _register_modeless_command_handlers(command_registry, ui)
-    command_router = CommandRouter(command_registry, diagnostics_sink)
-    ui.setup_guide.set_command_router(command_router)
-    return AppServices(
-        commands=command_registry,
-        command_router=command_router,
-        session_store=SessionJsonStore(diagnostics_sink),
-        capture_csv_exporter=CaptureCsvExporter(diagnostics_sink),
-        drawing_store=SessionDrawingStore(),
-        canvas_interaction=CanvasInteractionEngine(diagnostics_sink),
-        pending_capture_review=PendingCaptureReviewService(diagnostics_sink),
-        overlay_manager_factory=CanvasOverlayManager,
-        selection_coordinator_factory=lambda manager: SelectionCoordinator(
-            manager,
-            diagnostic_sink=diagnostics_sink,
-        ),
-        session_editor_controller=ui.session_editor,
-        setup_guide_controller=ui.setup_guide,
-        recipe_editor_controller=ui.recipe_editor,
-        diagnostics_sink=diagnostics_sink,
-        diagnostics_service=diagnostics_service,
-        diagnostics_controller=ui.diagnostics,
-        window_registry=ui.window_registry,
+
+
+def _register_setup_command_handlers(
+    command_registry: CommandRegistry,
+    setup_commands: SetupGuideCommandService,
+) -> None:
+    command_registry.register(
+        CommandId.USE_GLOBAL_COORDINATES,
+        setup_commands.use_global_coordinates,
     )
+    command_registry.register(
+        CommandId.USE_ORIGIN_COORDINATES,
+        setup_commands.use_origin_coordinates,
+    )
+    command_registry.register(
+        CommandId.START_ORIGIN_POINT_CAPTURE,
+        setup_commands.start_origin_point_capture,
+    )
+    command_registry.register(
+        CommandId.START_ORIGIN_REFERENCE_CAPTURE,
+        setup_commands.start_origin_reference_capture,
+    )
+    command_registry.register(
+        CommandId.START_ALIGNMENT_CAPTURE,
+        setup_commands.start_alignment_capture,
+    )
+    command_registry.register(
+        CommandId.START_SEM_ALIGNMENT_CAPTURE,
+        setup_commands.start_sem_alignment_capture,
+    )
+    command_registry.register(CommandId.MARK_SETUP_COMPLETE, setup_commands.mark_setup_complete)
 
 
 def _register_modeless_command_handlers(

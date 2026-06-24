@@ -45,13 +45,7 @@ class CanvasInteractionEngine:
     ) -> InteractionContext:
         """Return context armed for a Shift-drag site box capture."""
         _emit(self._diagnostics, trace_context, "BoxCaptureArmed", "Box capture armed.")
-        return replace(
-            context,
-            armed_object_type=CanvasObjectType.SITE_BOX,
-            active_parent_id=parent_id,
-            live_preview_id=None,
-            drag_start=None,
-        )
+        return _armed_context(context, CanvasObjectType.SITE_BOX, parent_id)
 
     def arm_line_capture(
         self,
@@ -61,13 +55,17 @@ class CanvasInteractionEngine:
     ) -> InteractionContext:
         """Return context armed for a Shift-drag child measurement line."""
         _emit(self._diagnostics, trace_context, "LineCaptureArmed", "Line capture armed.")
-        return replace(
-            context,
-            armed_object_type=CanvasObjectType.MEASUREMENT,
-            active_parent_id=parent_id,
-            live_preview_id=None,
-            drag_start=None,
-        )
+        return _armed_context(context, CanvasObjectType.MEASUREMENT, parent_id)
+
+    def arm_point_capture(
+        self,
+        context: InteractionContext,
+        parent_id: Optional[str] = None,
+        trace_context: Optional[TraceContext] = None,
+    ) -> InteractionContext:
+        """Return context armed for a Shift-click point capture."""
+        _emit(self._diagnostics, trace_context, "PointCaptureArmed", "Point capture armed.")
+        return _armed_context(context, CanvasObjectType.POINT, parent_id)
 
     def disarm_capture(self, context: InteractionContext) -> InteractionContext:
         """Return context with no armed capture primitive."""
@@ -182,4 +180,18 @@ def _emit(
         severity,
         related_record_ids,
         related_artifact_paths,
+    )
+
+
+def _armed_context(
+    context: InteractionContext,
+    object_type: CanvasObjectType,
+    parent_id: Optional[str],
+) -> InteractionContext:
+    return replace(
+        context,
+        armed_object_type=object_type,
+        active_parent_id=parent_id,
+        live_preview_id=None,
+        drag_start=None,
     )
