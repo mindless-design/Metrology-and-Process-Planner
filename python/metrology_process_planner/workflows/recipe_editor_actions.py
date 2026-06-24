@@ -12,6 +12,7 @@ from metrology_process_planner.domains.process import (
     ProcessStepKind,
 )
 from metrology_process_planner.workflows.recipe_editor_materials import (
+    add_material,
     delete_material,
     duplicate_material,
     find_material_usage,
@@ -49,14 +50,9 @@ class RecipeEditorActionDispatcher:
             )
         if command_id is CommandId.ADD_PROCESS_STEP:
             return _add_step_template(recipe, action_id, command_id)
-        if command_id is CommandId.DELETE_MATERIAL:
-            return delete_material(recipe, action_id, command_id)
-        if command_id is CommandId.DUPLICATE_MATERIAL:
-            return duplicate_material(recipe, action_id, command_id)
-        if command_id is CommandId.TOGGLE_MATERIAL_VISIBILITY:
-            return toggle_material_visibility(recipe, action_id, command_id)
-        if command_id is CommandId.FIND_MATERIAL_USAGE:
-            return find_material_usage(recipe, action_id, command_id)
+        material_result = _dispatch_material_action(recipe, action_id, command_id)
+        if material_result is not None:
+            return material_result
         if command_id is CommandId.DUPLICATE_PROCESS_STEP:
             return duplicate_step(recipe, action_id, command_id)
         if command_id is CommandId.DELETE_PROCESS_STEP:
@@ -78,6 +74,24 @@ class RecipeEditorActionDispatcher:
             recipe,
             next_ui_hint="The action is known and should stay modeless until wired.",
         )
+
+
+def _dispatch_material_action(
+    recipe: ProcessRecipe | None,
+    action_id: str,
+    command_id: CommandId,
+) -> RecipeEditorActionResult | None:
+    if command_id is CommandId.ADD_MATERIAL:
+        return add_material(recipe, command_id)
+    if command_id is CommandId.DELETE_MATERIAL:
+        return delete_material(recipe, action_id, command_id)
+    if command_id is CommandId.DUPLICATE_MATERIAL:
+        return duplicate_material(recipe, action_id, command_id)
+    if command_id is CommandId.TOGGLE_MATERIAL_VISIBILITY:
+        return toggle_material_visibility(recipe, action_id, command_id)
+    if command_id is CommandId.FIND_MATERIAL_USAGE:
+        return find_material_usage(recipe, action_id, command_id)
+    return None
 
 
 def _select_card(

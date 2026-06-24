@@ -24,6 +24,7 @@ class RecipeEditorViewModel:
     dirty: bool = False
     tabs: tuple[str, ...] = ()
     header_actions: tuple[EditorActionViewModel, ...] = ()
+    material_actions: tuple[EditorActionViewModel, ...] = ()
     material_cards: tuple[RecipeMaterialCardViewModel, ...] = ()
     step_cards: tuple[RecipeStepCardViewModel, ...] = ()
     layer_cards: tuple[RecipeLayerCardViewModel, ...] = ()

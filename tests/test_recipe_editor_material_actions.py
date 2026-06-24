@@ -11,6 +11,15 @@ from metrology_process_planner.workflows import RecipeEditorActionDispatcher
 
 
 class RecipeEditorMaterialActionTests(unittest.TestCase):
+    def test_add_material_marks_dirty_and_selects_new_card(self) -> None:
+        result = RecipeEditorActionDispatcher().dispatch(_recipe(), "AddMaterial")
+
+        self.assertEqual("success", result.status)
+        self.assertEqual(CommandId.ADD_MATERIAL, result.command_id)
+        self.assertEqual(("si", "oxide", "material"), _material_ids(result.recipe))
+        self.assertEqual("material:material", result.selected_card_id)
+        self.assertTrue(result.recipe.metadata["dirty"])
+
     def test_duplicate_material_marks_dirty_and_selects_copy(self) -> None:
         result = RecipeEditorActionDispatcher().dispatch(
             _recipe(),

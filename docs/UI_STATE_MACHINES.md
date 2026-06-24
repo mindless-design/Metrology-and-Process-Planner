@@ -52,7 +52,7 @@ Recipe material deletion is handled as an inline action result: unused materials
 from the in-memory recipe and mark it dirty, while materials referenced by process steps return a
 structured `blocked` result with warning IDs and repair guidance.
 
-Recipe material duplicate, visibility toggle, and usage lookup use target-bearing command IDs.
+Recipe material add, duplicate, visibility toggle, and usage lookup use command-shaped action IDs.
 Mutating material actions mark the recipe dirty and keep the material card selected. Usage lookup
 returns a modeless result message and should not dirty the recipe.
 

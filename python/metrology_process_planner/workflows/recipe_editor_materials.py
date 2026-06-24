@@ -16,6 +16,37 @@ from metrology_process_planner.workflows.recipe_editor_material_helpers import (
 from metrology_process_planner.workflows.recipe_editor_results import RecipeEditorActionResult
 
 
+def add_material(
+    recipe: ProcessRecipe | None,
+    command_id: CommandId,
+) -> RecipeEditorActionResult:
+    """Add a new material card without saving the recipe file."""
+
+    if recipe is None:
+        return RecipeEditorActionResult(
+            "unavailable",
+            command_id,
+            "Open or create a recipe before adding materials.",
+            next_ui_hint="Use Open Recipe or New Recipe first.",
+        )
+    material_id = unique_material_id(recipe, "material")
+    material = Material(material_id, "New Material", "#888888")
+    selected = f"material:{material_id}"
+    updated = _with_metadata(
+        replace(recipe, materials=(*recipe.materials, material)),
+        dirty=True,
+        selected_card_id=selected,
+    )
+    return RecipeEditorActionResult(
+        "success",
+        command_id,
+        f"Added material '{material_id}'.",
+        updated,
+        selected,
+        next_ui_hint="Fill in the material name, category, and display color.",
+    )
+
+
 def delete_material(
     recipe: ProcessRecipe | None,
     action_id: str,

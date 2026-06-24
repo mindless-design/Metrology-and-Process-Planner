@@ -6,6 +6,7 @@ from metrology_process_planner.domains.process import ProcessRecipe
 from metrology_process_planner.ui.recipe_editor.cards import (
     header_actions,
     layer_cards,
+    material_actions,
     material_cards,
     preview_model,
     step_cards,
@@ -37,6 +38,7 @@ class RecipeEditorPresenter:
                 (WarningViewModel("recipe-unloaded", "info", "No recipe is loaded."),),
                 tabs=_tabs(),
                 header_actions=header_actions(),
+                material_actions=material_actions(),
                 preview=None,
             )
         metadata = dict(recipe.metadata or {})
@@ -53,6 +55,7 @@ class RecipeEditorPresenter:
             dirty=bool(metadata.get("dirty", False)),
             tabs=_tabs(),
             header_actions=header_actions(),
+            material_actions=material_actions(),
             material_cards=material_cards(recipe),
             step_cards=step_cards(recipe),
             layer_cards=layer_cards(recipe),

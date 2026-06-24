@@ -149,6 +149,12 @@ def header_actions() -> tuple[EditorActionViewModel, ...]:
     )
 
 
+def material_actions() -> tuple[EditorActionViewModel, ...]:
+    """Return command-shaped material tab actions."""
+
+    return (EditorActionViewModel("AddMaterial", "Add Material"),)
+
+
 def step_templates() -> tuple[EditorActionViewModel, ...]:
     """Return add-step template commands for supported process operations."""
 
