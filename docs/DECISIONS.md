@@ -73,6 +73,10 @@ Last updated: 2026-06-24
 - Recipe switching is also controller-owned. `NewRecipe` and `OpenRecipe:<path>` block when the
   current recipe is dirty, and only `NewRecipe:discard` / `OpenRecipe:discard:<path>` replace the
   active recipe after an explicit confirmation.
+- Attaching a recipe to the active session is a typed app-level bridge. The recipe editor supplies a
+  saved recipe path, the process-context workflow updates `SessionRecord.process_context`, and the
+  session editor is rebuilt from the updated canonical session. Widgets never mutate session JSON
+  or process-context fields directly.
 
 ## Child Measurement Slice
 

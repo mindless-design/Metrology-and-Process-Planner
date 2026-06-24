@@ -13,6 +13,7 @@ from metrology_process_planner.domains.process import (
     ProcessStepKind,
 )
 from metrology_process_planner.persistence.recipe_store import JsonPath, ProcessRecipeJsonStore
+from tests.process_context_fixtures import session
 
 
 class RecipeEditorSaveTests(unittest.TestCase):
@@ -87,6 +88,44 @@ class RecipeEditorSaveTests(unittest.TestCase):
         self.assertEqual("error", result.status)
         self.assertEqual(CommandId.SAVE_RECIPE, result.command_id)
         self.assertTrue(controller.current_recipe.metadata["dirty"])
+
+    def test_attach_recipe_to_active_session_updates_process_context(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "recipe.json"
+            ProcessRecipeJsonStore().save(_recipe(path), path)
+            active = {"session": session()}
+            controller = RecipeEditorController(
+                active_session_provider=lambda: active["session"],
+                active_session_updater=lambda updated: active.update(session=updated),
+            )
+            controller.set_recipe(_recipe(path))
+
+            result = controller.dispatch_action("AttachRecipeToActiveSession")
+
+            self.assertEqual("success", result.status)
+            self.assertEqual(CommandId.ATTACH_RECIPE_TO_ACTIVE_SESSION, result.command_id)
+            self.assertEqual("recipe-001", active["session"].process_context.recipe_id)
+            self.assertEqual(str(path), active["session"].process_context.recipe_path)
+
+    def test_attach_recipe_blocks_dirty_or_missing_session_modelessly(self) -> None:
+        controller = RecipeEditorController()
+        controller.set_recipe(_recipe(Path("recipe.json"), dirty=True))
+
+        dirty = controller.dispatch_action("AttachRecipeToActiveSession")
+
+        self.assertEqual("blocked", dirty.status)
+        self.assertEqual(CommandId.ATTACH_RECIPE_TO_ACTIVE_SESSION, dirty.command_id)
+
+        clean = RecipeEditorController(
+            active_session_provider=lambda: None,
+            active_session_updater=lambda updated: None,
+        )
+        clean.set_recipe(_recipe(Path("recipe.json")))
+
+        missing = clean.dispatch_action("AttachRecipeToActiveSession")
+
+        self.assertEqual("unavailable", missing.status)
+        self.assertEqual("No active session is loaded.", missing.message)
 
 
 class _FailingRecipeStore(ProcessRecipeJsonStore):

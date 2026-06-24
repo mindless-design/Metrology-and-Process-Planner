@@ -157,6 +157,8 @@ Last updated: 2026-06-24
 - Recipe editor dirty-close tests covering blocked close and confirmed discard close behavior.
 - Recipe editor opening tests covering new recipe, path-backed open, dirty-switch blocking,
   discard-confirmed switching, missing paths, and bad files.
+- Recipe editor session-attachment tests covering saved-recipe attachment into the active
+  session process context, dirty-recipe blocking, and no-active-session unavailable results.
 - Recipe editor card tests covering selected material and process-step detail-panel fields and
   actions.
 - Recipe editor action tests covering blocked deletion of used materials and safe in-memory deletion

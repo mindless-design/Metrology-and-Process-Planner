@@ -13,6 +13,10 @@ from metrology_process_planner.app.commands import (
 )
 from metrology_process_planner.app.diagnostics import AdvancedDiagnosticsController
 from metrology_process_planner.app.recipe_editor import RecipeEditorController
+from metrology_process_planner.app.recipe_session_attachment import (
+    active_session_from_editor,
+    refresh_editor_session,
+)
 from metrology_process_planner.app.session_editor import SessionEditorController
 from metrology_process_planner.app.setup_commands import SetupGuideCommandService
 from metrology_process_planner.app.setup_guide import SetupGuideController
@@ -183,7 +187,11 @@ def _build_ui_controllers(
     return UiControllers(
         diagnostics=diagnostics,
         setup_guide=SetupGuideController(window_registry=window_registry),
-        recipe_editor=RecipeEditorController(window_registry=window_registry),
+        recipe_editor=RecipeEditorController(
+            window_registry=window_registry,
+            active_session_provider=lambda: active_session_from_editor(session_editor),
+            active_session_updater=lambda session: refresh_editor_session(session_editor, session),
+        ),
         session_editor=session_editor,
         window_registry=window_registry,
     )

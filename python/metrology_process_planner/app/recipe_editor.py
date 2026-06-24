@@ -6,6 +6,11 @@ from dataclasses import dataclass
 from typing import Any
 
 from metrology_process_planner.app.command_types import CommandId
+from metrology_process_planner.app.recipe_editor_attachment import (
+    SessionProvider,
+    SessionUpdater,
+    attach_recipe_to_session,
+)
 from metrology_process_planner.app.recipe_editor_opening import (
     dirty_switch_block,
     new_recipe,
@@ -45,23 +50,25 @@ class RecipeEditorController:
         recipe_store: ProcessRecipeJsonStore | None = None,
         shell: ModelessSurfaceShell | None = None,
         window_registry: WindowRegistry[Any] | None = None,
+        active_session_provider: SessionProvider | None = None,
+        active_session_updater: SessionUpdater | None = None,
     ) -> None:
         self._presenter = presenter if presenter is not None else RecipeEditorPresenter()
         self._dispatcher = dispatcher if dispatcher is not None else RecipeEditorActionDispatcher()
         self._recipe_store = recipe_store if recipe_store is not None else ProcessRecipeJsonStore()
         self._shell = shell or ModelessSurfaceShell(InMemoryModelessSurfaceFactory())
         self._window_registry = window_registry if window_registry is not None else WindowRegistry()
+        self._active_session_provider = active_session_provider
+        self._active_session_updater = active_session_updater
         self.current_recipe: ProcessRecipe | None = None
         self.last_action_result: RecipeEditorActionResult | None = None
 
     def set_recipe(self, recipe: ProcessRecipe | None) -> None:
         """Set the recipe currently shown by the editor."""
-
         self.current_recipe = recipe
 
     def open_current(self) -> RecipeEditorOpenResult:
         """Return a recipe editor view model for the current recipe."""
-
         view_model = self._presenter.build(self.current_recipe)
         registry_result = self._window_registry.open_or_raise(
             _window_key(self.current_recipe),
@@ -71,14 +78,13 @@ class RecipeEditorController:
         )
         if registry_result.status is WindowOpenStatus.FAILED:
             return RecipeEditorOpenResult("failed", view_model, registry_result.message)
-        if registry_result.window is not None:
-            self._attach_action_callback(registry_result.window)
+        if isinstance(registry_result.window, dict):
+            registry_result.window["on_action"] = self.dispatch_action
         status = _status(registry_result.status, self.current_recipe)
         return RecipeEditorOpenResult(status, view_model, window=registry_result.window)
 
     def dispatch_action(self, action_id: str) -> RecipeEditorActionResult:
         """Dispatch a recipe editor action and refresh the modeless window."""
-
         if action_id.startswith("CloseRecipeEditor"):
             return self.close_current(force_discard=action_id.endswith(":discard"))
         if action_id.startswith("NewRecipe"):
@@ -90,6 +96,14 @@ class RecipeEditorController:
             return self.save_current()
         if action_id.startswith("SaveRecipeAs"):
             return self.save_current(_action_payload(action_id), CommandId.SAVE_RECIPE_AS)
+        if action_id == "AttachRecipeToActiveSession":
+            return self._remember(
+                attach_recipe_to_session(
+                    self.current_recipe,
+                    self._active_session_provider,
+                    self._active_session_updater,
+                )
+            )
         result = self._dispatcher.dispatch(self.current_recipe, action_id)
         self.last_action_result = result
         if result.recipe is not None:
@@ -99,7 +113,6 @@ class RecipeEditorController:
 
     def close_current(self, force_discard: bool = False) -> RecipeEditorActionResult:
         """Close the modeless recipe editor or block on unsaved edits."""
-
         if _is_dirty(self.current_recipe) and not force_discard:
             result = RecipeEditorActionResult(
                 "blocked",
@@ -123,7 +136,6 @@ class RecipeEditorController:
 
     def new_current(self, force_discard: bool = False) -> RecipeEditorActionResult:
         """Create a new in-memory recipe or block on unsaved edits."""
-
         recipe = self.current_recipe
         if _is_dirty(recipe) and not force_discard and recipe is not None:
             return self._remember(dirty_switch_block(CommandId.NEW_RECIPE, recipe))
@@ -135,7 +147,6 @@ class RecipeEditorController:
         force_discard: bool = False,
     ) -> RecipeEditorActionResult:
         """Open a recipe path or block on unsaved edits."""
-
         recipe = self.current_recipe
         if _is_dirty(recipe) and not force_discard and recipe is not None:
             return self._remember(dirty_switch_block(CommandId.OPEN_RECIPE, recipe))
@@ -147,7 +158,6 @@ class RecipeEditorController:
         command_id: CommandId = CommandId.SAVE_RECIPE,
     ) -> RecipeEditorActionResult:
         """Save the current recipe and refresh the modeless window on success."""
-
         outcome = save_recipe(
             self.current_recipe,
             self._recipe_store,
@@ -159,10 +169,6 @@ class RecipeEditorController:
         if outcome.result.status == "success":
             self.open_current()
         return self._remember(outcome.result)
-
-    def _attach_action_callback(self, window: Any) -> None:
-        if isinstance(window, dict):
-            window["on_action"] = self.dispatch_action
 
     def _remember(self, result: RecipeEditorActionResult) -> RecipeEditorActionResult:
         self.last_action_result = result
