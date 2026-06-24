@@ -147,15 +147,6 @@ class SessionEditorCommandService:
             EditorActionType.REGENERATE_ARTIFACT,
         )
 
-    def regenerate_process_output(self) -> CommandRouteResult:
-        """Regenerate process outputs for the selected item or dashboard."""
-
-        return _dispatch_selected(
-            self._controller,
-            CommandId.REGENERATE_PROCESS_OUTPUT,
-            EditorActionType.REGENERATE_PROCESS_OUTPUT,
-        )
-
 
 def _dispatch_selected(
     controller: SessionEditorController,
@@ -165,6 +156,9 @@ def _dispatch_selected(
     document = controller.current_document
     if document is None:
         return no_document(command_id, action_label(action_type))
+    routed = controller.routed_action
+    if routed is not None and routed.action_type is action_type:
+        return _dispatch_action(controller, command_id, routed)
     return _dispatch(controller, command_id, action_type, document.selection.selected_item_id)
 
 
@@ -175,9 +169,17 @@ def _dispatch(
     item_id: str = "",
 ) -> CommandRouteResult:
     action = EditorAction(action_type, action_label(action_type), item_id)
+    return _dispatch_action(controller, command_id, action)
+
+
+def _dispatch_action(
+    controller: SessionEditorController,
+    command_id: CommandId,
+    action: EditorAction,
+) -> CommandRouteResult:
     result = controller.dispatch_current_action(action, allow_app_route=False)
     if result is None:
-        return no_document(command_id, action_label(action_type))
+        return no_document(command_id, action.label)
     return command_result(command_id, result)
 
 
@@ -186,6 +188,10 @@ def register_session_editor_command_handlers(
     controller: SessionEditorController,
 ) -> None:
     """Register command handlers owned by the unified session editor."""
+
+    from metrology_process_planner.app.session_editor_process_commands import (
+        register_process_editor_command_handlers,
+    )
 
     service = SessionEditorCommandService(controller)
     registry.register(CommandId.SAVE_SESSION_EDITS, service.save_session_edits)
@@ -201,4 +207,4 @@ def register_session_editor_command_handlers(
     registry.register(CommandId.RETAKE_MEASUREMENT_LINE, service.retake_measurement_line)
     registry.register(CommandId.DISCARD_MEASUREMENT, service.discard_measurement)
     registry.register(CommandId.REGENERATE_ARTIFACT, service.regenerate_artifact)
-    registry.register(CommandId.REGENERATE_PROCESS_OUTPUT, service.regenerate_process_output)
+    register_process_editor_command_handlers(registry, controller)

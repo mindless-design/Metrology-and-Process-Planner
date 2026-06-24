@@ -61,6 +61,7 @@ class SessionEditorController:
         self._callbacks: Optional[SessionEditorCallbacks] = None
         self._command_router: Optional[CommandRouter] = None
         self._dispatcher: Optional[EditorActionDispatcher] = None
+        self._routed_action: Optional[EditorAction] = None
 
     def set_command_router(self, command_router: Optional[CommandRouter]) -> None:
         """Set the app command router used for editor window/lifecycle intents."""
@@ -143,11 +144,21 @@ class SessionEditorController:
         self.current_document = document
         self._render_current()
 
+    @property
+    def routed_action(self) -> Optional[EditorAction]:
+        """Return the editor action currently being routed through app commands."""
+
+        return self._routed_action
+
     def _route_app_command(self, action: EditorAction) -> bool:
         command_id = _command_for_action(action)
         if command_id is None or self._command_router is None:
             return False
-        self.last_command_result = self._command_router.route(command_id)
+        self._routed_action = action
+        try:
+            self.last_command_result = self._command_router.route(command_id)
+        finally:
+            self._routed_action = None
         if self.current_document is None:
             return True
         self._render_current()
@@ -181,9 +192,12 @@ def _command_for_action(action: EditorAction) -> Optional[CommandId]:
 
 _EDITOR_COMMANDS: dict[EditorActionType, CommandId] = {
     EditorActionType.ADD_MEASUREMENT: CommandId.ADD_MEASUREMENT,
+    EditorActionType.ATTACH_RECIPE: CommandId.ATTACH_RECIPE,
+    EditorActionType.COMPOSITE_DISCARD: CommandId.DISCARD_PENDING_CAPTURE,
     EditorActionType.COMPOSITE_RETAKE_INNER: CommandId.RETAKE_INNER_FEATURE,
     EditorActionType.COMPOSITE_RETAKE_PARENT: CommandId.RETAKE_PARENT_CAPTURE,
     EditorActionType.COMPOSITE_SAVE: CommandId.SAVE_COMPOSITE_CAPTURE,
+    EditorActionType.DETACH_RECIPE: CommandId.DETACH_RECIPE,
     EditorActionType.DISCARD_MEASUREMENT: CommandId.DISCARD_MEASUREMENT,
     EditorActionType.EXIT_SESSION: CommandId.END_ACTIVE_SESSION,
     EditorActionType.PENDING_DISCARD: CommandId.DISCARD_PENDING_CAPTURE,
@@ -195,6 +209,7 @@ _EDITOR_COMMANDS: dict[EditorActionType, CommandId] = {
     EditorActionType.RETAKE_MEASUREMENT_LINE: CommandId.RETAKE_MEASUREMENT_LINE,
     EditorActionType.SAVE_EDITS: CommandId.SAVE_SESSION_EDITS,
     EditorActionType.SAVE_MEASUREMENT: CommandId.SAVE_MEASUREMENT,
+    EditorActionType.VALIDATE_PROCESS_CONTEXT: CommandId.VALIDATE_PROCESS_CONTEXT,
 }
 
 

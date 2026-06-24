@@ -41,6 +41,12 @@ Selected-item editor commands use the same bridge. Commands such as `SavePending
 editor action, then return command metadata for the refreshed document and selected item. This
 keeps future menus, shortcut handlers, and widget buttons on one modeless command path.
 
+Process-context editor commands follow that route too. When a widget emits a payload-bearing action
+such as `AttachRecipe` with a recipe path, the controller preserves that action while
+`CommandRouter` runs, so the command service can delegate the same payload to
+`EditorActionDispatcher`. Direct command invocations without required payloads return structured
+unavailable results rather than opening modal file prompts.
+
 `Open Output Folder` is a modeless shell handoff. The dispatcher resolves the configured session
 folder into `EditorActionResult.output_path`; UI adapters may reveal that path, but workflow code
 does not launch external applications or block on missing folders.
