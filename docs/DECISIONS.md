@@ -54,6 +54,9 @@ Last updated: 2026-06-24
 - Point capture remains a deferred workflow, but armed Shift-click is an explicit handled-unavailable result so host navigation and future mode contracts are predictable.
 - Unknown saved session modes load through the built-in `simple_capture` fallback, with the requested mode preserved under `extensions.mode_validation` and surfaced as a warning/audit event.
 - UI command routing emits lightweight `CommandRouted` diagnostic events so Advanced Diagnostics can show recent command activity without coupling to concrete widgets.
+- Advanced Diagnostics shell actions are controller-provided view models. The shell renders
+  `EditorActionViewModel` rows for diagnostics/export/validation handoffs and does not invent
+  action labels or availability rules locally.
 - Modeless UI state is summarized by pure state-machine evaluators before widgets render. Diagnostics, editor headers, and setup/recipe shells should consume state snapshots instead of re-inferring state from widget flags.
 - Setup guide cards must render from action view models, not command-name guesses. Primary,
   secondary, and footer actions carry labels and disabled reasons from the setup state/policy

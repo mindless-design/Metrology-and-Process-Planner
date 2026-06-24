@@ -48,6 +48,10 @@ Last updated: 2026-06-24
 - Repeated measurement annotation refresh failures upsert one failed SVG artifact record with stable warning IDs and repair metadata, and preview options surface the `regenerate_artifact` repair action.
 - Diagnostics and traceability services expose command, workflow, seam, artifact, warning, and snapshot views through pure Python services.
 - Advanced Diagnostics now opens a fakeable shell summary with active session, loaded/built-in modes, mode-validation fallback state, durable workflow state, armed capture primitive, selected editor item, selected canvas object, recipe-context state, artifact-repair state, artifact status counts, warning codes, missing artifact count, recent command names, recent failure summaries, and recent diagnostic events.
+- Advanced Diagnostics actions now render as typed `EditorActionViewModel` rows for exporting a
+  diagnostics bundle, copying command trace, opening the session folder, scanning artifacts,
+  validating the session, and validating modes. Actions carry disabled reasons when no trace or
+  session folder is available.
 - Explicit pure UI state-machine evaluators now summarize session UI, capture interaction, pending review, measurement workflow, recipe context, and artifact repair state for editor headers, diagnostics, and future Qt widgets.
 - Built-in workflow modes are represented by declarative `ModeDefinition` records in a pure `ModeRegistry`; definitions now use typed policy blocks for capabilities, setup, capture, metadata, measurements, artifacts, process, editor, and reporting. External JSON mode definition folders can be loaded as inert data, and diagnostics reads loaded modes from the registry.
 - Profilometry Planner and Ellipsometry Planner are now registered as declarative process-aware compound modes. Their built-in definitions live separately from the registry contract, and the shared workflow supports site-then-line and site-then-point pending composites.

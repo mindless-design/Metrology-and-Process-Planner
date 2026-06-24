@@ -192,6 +192,11 @@ Advanced Diagnostics surfaces durable state-machine outputs for:
 - mode validation fallback state
 - recent failure events
 
+Diagnostics action buttons are rendered from `EditorActionViewModel` rows supplied by the
+controller, not hard-coded by the shell. The current action set is Export Diagnostics Bundle,
+Copy Command Trace, Open Session Folder, Scan Artifacts, Validate Session, and Validate Modes;
+unavailable actions carry disabled reasons when trace events or session paths are missing.
+
 Ephemeral mouse position and window geometry are intentionally not persisted in session JSON and are not required for restore.
 
 ## Capture Status Visibility

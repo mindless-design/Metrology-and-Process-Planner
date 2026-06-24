@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+from metrology_process_planner.app.diagnostics_actions import diagnostics_actions
 from metrology_process_planner.app.diagnostics_summary import (
     diagnostics_summary_rows,
     missing_artifact_count,
@@ -30,6 +31,7 @@ from metrology_process_planner.ui.diagnostics import (
     DiagnosticsShell,
     InMemoryDiagnosticsWidgetFactory,
 )
+from metrology_process_planner.ui.shell.view_models import EditorActionViewModel
 from metrology_process_planner.workflows.editor.document import SessionDocument
 
 
@@ -44,6 +46,7 @@ class DiagnosticsOpenResult:
     recent_event_count: int = 0
     window: object | None = None
     summary_rows: tuple[tuple[str, str], ...] = ()
+    actions: tuple[EditorActionViewModel, ...] = ()
 
 
 class AdvancedDiagnosticsController:
@@ -109,6 +112,7 @@ class AdvancedDiagnosticsController:
             missing_artifact_count=missing_artifact_count(self.active_session),
             recent_event_count=len(recent_events),
             summary_rows=summary_rows,
+            actions=diagnostics_actions(self.active_paths, recent_events),
         )
         registry_result = self._window_registry.get_or_create_diagnostics_panel(
             self.active_session.id,
@@ -133,6 +137,7 @@ class AdvancedDiagnosticsController:
             result.recent_event_count,
             registry_result.window,
             result.summary_rows,
+            result.actions,
         )
 
     def export_debug_bundle(self, output_path: Path) -> Path:
@@ -163,8 +168,9 @@ def _with_open_window_rows(
         result.status,
         result.message,
         result.warning_count,
-        result.missing_artifact_count,
-        result.recent_event_count,
-        result.window,
-        rows,
-    )
+            result.missing_artifact_count,
+            result.recent_event_count,
+            result.window,
+            rows,
+            result.actions,
+        )

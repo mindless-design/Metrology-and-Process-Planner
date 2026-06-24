@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Protocol
 
 from metrology_process_planner.infrastructure.diagnostics import DiagnosticEvent
+from metrology_process_planner.ui.shell.view_models import EditorActionViewModel
 
 
 class DiagnosticsWidgetFactory(Protocol):
@@ -19,7 +20,7 @@ class DiagnosticsWidgetFactory(Protocol):
     def set_events(self, window: Any, events: tuple[DiagnosticEvent, ...]) -> None:
         """Render recent diagnostic events."""
 
-    def set_actions(self, window: Any, actions: tuple[str, ...]) -> None:
+    def set_actions(self, window: Any, actions: tuple[EditorActionViewModel, ...]) -> None:
         """Render advanced diagnostics action labels."""
 
     def show(self, window: Any) -> None:
@@ -54,16 +55,7 @@ class DiagnosticsShell:
 
         self._factory.set_summary(window, _summary_rows(result))
         self._factory.set_events(window, recent_events)
-        self._factory.set_actions(
-            window,
-            (
-                "Run Seam Checks",
-                "Export Debug Bundle",
-                "Copy Selected Trace",
-                "Open Diagnostics Folder",
-                "Clear Runtime Events",
-            ),
-        )
+        self._factory.set_actions(window, getattr(result, "actions", ()))
 
 
 class InMemoryDiagnosticsWidgetFactory:
@@ -84,8 +76,12 @@ class InMemoryDiagnosticsWidgetFactory:
 
         window["events"] = events
 
-    def set_actions(self, window: dict[str, Any], actions: tuple[str, ...]) -> None:
-        """Store action labels."""
+    def set_actions(
+        self,
+        window: dict[str, Any],
+        actions: tuple[EditorActionViewModel, ...],
+    ) -> None:
+        """Store action view models."""
 
         window["actions"] = actions
 
