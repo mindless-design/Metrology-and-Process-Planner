@@ -37,6 +37,10 @@ from metrology_process_planner.workflows.measurement_completion import (
     apply_measurement_completion_choice,
     measurement_completion_prompt,
 )
+from metrology_process_planner.workflows.measurement_review import (
+    discard_pending_measurement,
+    retake_pending_measurement_line,
+)
 from metrology_process_planner.workflows.overlays import (
     CanvasOverlayBackend,
     CanvasOverlayManager,
@@ -121,6 +125,7 @@ __all__ = [
     "attach_recipe",
     "begin_compound_capture",
     "discard_composite_capture",
+    "discard_pending_measurement",
     "detach_recipe",
     "ellipsometry_request",
     "exit_composite_capture",
@@ -129,6 +134,7 @@ __all__ = [
     "refresh_recipe_fingerprint",
     "regenerate_process_outputs",
     "retake_inner_feature",
+    "retake_pending_measurement_line",
     "retake_parent_capture",
     "save_composite_capture",
     "validate_process_context",

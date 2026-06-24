@@ -51,6 +51,8 @@ Last updated: 2026-06-24
   - `ADD_MEASUREMENT` marks the selected capture's canvas object as active parent.
   - Shift-drag line capture creates a pending nested `MeasurementRecord`.
   - The line canvas object persists under the parent canvas object.
+  - Pending measurement items expose Save Measurement, Retake Measurement Line, Discard
+    Measurement, and Return to Parent Capture through the generic editor adapter.
   - `SAVE_EDITS` applies measurement metadata, promotes pending measurements to saved, and refreshes measurement-owned annotation drawing artifacts through the existing render bridge.
   - Reload through `SessionDocumentStore` restores the parent capture item, child measurement item, and both canvas objects.
   - `REGENERATE_ARTIFACT` can refresh a selected measurement's annotation artifact after the initial save.
@@ -86,7 +88,9 @@ Last updated: 2026-06-24
 - Rendering pipelines, drawing persistence, SVG output, and fake rasterizer export paths.
 - UI command routing and KLayout boundary/import isolation.
 - Hybrid process solver pure fixtures, although solver integration is not the current alpha priority.
-- New child-measurement workflow tests covering active-parent line capture, full measurement metadata edits, annotation artifact generation/regeneration, save/reload restoration, and render failure paths.
+- New child-measurement workflow tests covering active-parent line capture, pending measurement
+  review actions, retake/discard transitions, full measurement metadata edits, annotation artifact
+  generation/regeneration, save/reload restoration, and render failure paths.
 - Point capture tests covering normal-navigation preservation and explicit unavailable results through the direct tool and KLayout gesture adapter.
 - Mode validation tests covering unknown v5 and legacy mode IDs loading through graceful fallback instead of crashing.
 - Mode registry tests covering built-in registration, capability definitions, duplicate detection, and invalid custom definitions as warnings.

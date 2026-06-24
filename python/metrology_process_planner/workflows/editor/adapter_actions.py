@@ -84,6 +84,34 @@ def _record_drawing_actions(
     return _drawing_actions(item)
 
 
+def _measurement_actions(
+    _session: SessionRecord,
+    item: SessionItem,
+) -> tuple[EditorAction, ...]:
+    if item.status == "pending":
+        return (
+            EditorAction(EditorActionType.SAVE_MEASUREMENT, "Save Measurement", item.item_id),
+            EditorAction(
+                EditorActionType.RETAKE_MEASUREMENT_LINE,
+                "Retake Measurement Line",
+                item.item_id,
+            ),
+            EditorAction(EditorActionType.DISCARD_MEASUREMENT, "Discard Measurement", item.item_id),
+            EditorAction(
+                EditorActionType.SELECT_ITEM,
+                "Return to Parent Capture",
+                item.parent_id or "",
+            ),
+        )
+    return (
+        EditorAction(
+            EditorActionType.REGENERATE_ARTIFACT,
+            "Regenerate Measurement Annotation",
+            item.item_id,
+        ),
+    )
+
+
 def _export_actions(item: SessionItem) -> tuple[EditorAction, ...]:
     return (
         EditorAction(EditorActionType.EXPORT_CSV, "Export CSV", item.item_id),
@@ -110,6 +138,7 @@ def _pending_by_id(session: SessionRecord, pending_id: str) -> PendingCapture | 
 _RECORD_ACTIONS = {
     "pending_capture": _record_pending_actions,
     "capture": saved_capture_actions,
+    "measurement": _measurement_actions,
     "session_drawing": _record_drawing_actions,
     "process_output": process_output_actions,
 }

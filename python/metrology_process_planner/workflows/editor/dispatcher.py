@@ -35,6 +35,10 @@ from metrology_process_planner.workflows.editor.render_bridge import SessionRend
 from metrology_process_planner.workflows.editor.render_bridge_models import CrossSectionRenderInput
 from metrology_process_planner.workflows.editor.store import SessionDocumentStore
 from metrology_process_planner.workflows.editor.view_models import EditorAction, EditorActionType
+from metrology_process_planner.workflows.measurement_review import (
+    discard_pending_measurement,
+    retake_pending_measurement_line,
+)
 from metrology_process_planner.workflows.measurement_workflow import begin_measurement_line
 from metrology_process_planner.workflows.pending_capture_review import PendingCaptureReviewService
 from metrology_process_planner.workflows.selection import SelectionCoordinator
@@ -138,3 +142,28 @@ class EditorActionDispatcher:
             "Armed measurement line capture.",
         )
 
+    def _retake_measurement(
+        self,
+        document: SessionDocument,
+        action: EditorAction,
+    ) -> EditorActionResult:
+        measurement_id = _record_id(document, action.item_id)
+        session = retake_pending_measurement_line(document.session, measurement_id)
+        return EditorActionResult(
+            "success",
+            self._rebuild(session, document),
+            "Retaking measurement line.",
+        )
+
+    def _discard_measurement(
+        self,
+        document: SessionDocument,
+        action: EditorAction,
+    ) -> EditorActionResult:
+        measurement_id = _record_id(document, action.item_id)
+        session = discard_pending_measurement(document.session, measurement_id)
+        return EditorActionResult(
+            "success",
+            self._rebuild(session, document),
+            "Discarded pending measurement.",
+        )

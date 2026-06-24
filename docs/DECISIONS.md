@@ -67,6 +67,9 @@ Last updated: 2026-06-24
 - Saved measurements refresh measurement-owned `measurement_annotation` drawing artifacts through the existing render bridge and drawing store.
 - If annotation generation cannot run, saved measurements may still carry a pending artifact/warning repair task instead of blocking canonical session save.
 - Measurement annotation regeneration uses the generic `REGENERATE_ARTIFACT` editor action for measurement items rather than adding a mode-specific command.
+- Pending measurements expose `SAVE_MEASUREMENT`, `RETAKE_MEASUREMENT_LINE`,
+  `DISCARD_MEASUREMENT`, and parent-return actions through the generic editor adapter. Retake and
+  discard are pure workflow transitions and do not require a separate measurement review dialog.
 - The allowed post-measurement prompt is carried as `EditorActionResult.post_action_prompt`
   after `SAVE_EDITS` promotes a pending measurement. Prompt choices are applied through
   `MeasurementCompletionChoice`; Qt should render those choices rather than inventing dialog logic.

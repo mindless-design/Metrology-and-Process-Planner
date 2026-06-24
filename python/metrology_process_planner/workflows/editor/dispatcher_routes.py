@@ -105,6 +105,30 @@ def _add_measurement_action(
     return dispatcher._add_measurement(document, action)
 
 
+def _save_measurement_action(
+    dispatcher: EditorActionDispatcher,
+    document: SessionDocument,
+    _action: EditorAction,
+) -> EditorActionResult:
+    return dispatcher._save(document)
+
+
+def _retake_measurement_action(
+    dispatcher: EditorActionDispatcher,
+    document: SessionDocument,
+    action: EditorAction,
+) -> EditorActionResult:
+    return dispatcher._retake_measurement(document, action)
+
+
+def _discard_measurement_action(
+    dispatcher: EditorActionDispatcher,
+    document: SessionDocument,
+    action: EditorAction,
+) -> EditorActionResult:
+    return dispatcher._discard_measurement(document, action)
+
+
 def _detach_recipe_action(
     dispatcher: EditorActionDispatcher,
     document: SessionDocument,
@@ -144,6 +168,9 @@ _ACTION_HANDLERS: dict[EditorActionType, ActionHandler] = {
     EditorActionType.COMPOSITE_EXIT: composite_exit_action,
     EditorActionType.REGENERATE_ARTIFACT: _regenerate_artifact_action,
     EditorActionType.ADD_MEASUREMENT: _add_measurement_action,
+    EditorActionType.SAVE_MEASUREMENT: _save_measurement_action,
+    EditorActionType.RETAKE_MEASUREMENT_LINE: _retake_measurement_action,
+    EditorActionType.DISCARD_MEASUREMENT: _discard_measurement_action,
     EditorActionType.ATTACH_RECIPE: attach_recipe_action,
     EditorActionType.DETACH_RECIPE: _detach_recipe_action,
     EditorActionType.VALIDATE_PROCESS_CONTEXT: _validate_process_context_action,

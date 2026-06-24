@@ -45,6 +45,9 @@ contains this exact choice set. The resulting choice is applied through
 `MeasurementCompletionChoice`, which either rearms the same parent capture, returns to the parent
 capture in the editor, or finishes on the saved measurement.
 
+Pending measurement editor items expose the same modeless review actions as the
+`MeasurementWorkflowStateMachine`: save, retake line, discard, and return to the parent capture.
+
 Destructive confirmation, unrecoverable write failure, external overwrite, and catastrophic runtime failures may still use blocking acknowledgement.
 
 ## Diagnostics
