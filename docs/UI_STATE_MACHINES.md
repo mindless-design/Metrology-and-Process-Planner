@@ -27,6 +27,14 @@ State-machine snapshots expose command-shaped action IDs. UI shells should route
 
 The KLayout Tools menu uses only the primary `MENU_COMMANDS`; setup cards, recipe cards, editor buttons, and review actions use the broader typed command catalog.
 
+## Window Ownership
+
+`WindowRegistry` is the modeless surface owner for the primary product windows. Controllers open or
+refresh surfaces through `get_or_create_session_editor`, `get_or_create_setup_guide`,
+`get_or_create_recipe_editor`, and `get_or_create_diagnostics_panel`; the generic lifecycle backend
+still owns toolkit-specific alive/raise behavior. This keeps duplicate-window prevention,
+bring-to-front behavior, diagnostics keys, and shell refresh callbacks in one place.
+
 The session editor keeps document mutation in `EditorActionDispatcher`, but app-owned header
 intents are bridged into the app command router. `Save Edits` maps to `SaveSessionEdits`, whose
 handler delegates back to the active editor dispatcher and returns a structured command result with

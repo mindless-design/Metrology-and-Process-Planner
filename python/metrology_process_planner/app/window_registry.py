@@ -9,6 +9,10 @@ from metrology_process_planner.app.window_registry_support import (
     emit_window_event,
     refresh_and_raise,
 )
+from metrology_process_planner.app.window_registry_surfaces import (
+    WindowSurfaceMixin,
+    surface_key,
+)
 from metrology_process_planner.app.window_registry_types import (
     WindowLifecycleBackend,
     WindowOpenResult,
@@ -36,7 +40,7 @@ class DefaultWindowLifecycleBackend:
             window["raised"] = int(window.get("raised", 0)) + 1
 
 
-class WindowRegistry(Generic[WindowT]):
+class WindowRegistry(WindowSurfaceMixin[WindowT], Generic[WindowT]):
     """Own modeless windows by logical key and prevent duplicate surfaces."""
 
     def __init__(
@@ -158,6 +162,7 @@ class WindowRegistry(Generic[WindowT]):
 
 __all__ = [
     "DefaultWindowLifecycleBackend",
+    "surface_key",
     "WindowLifecycleBackend",
     "WindowOpenResult",
     "WindowOpenStatus",

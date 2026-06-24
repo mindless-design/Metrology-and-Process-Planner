@@ -17,7 +17,10 @@ from metrology_process_planner.app.recipe_editor_opening import (
     open_recipe,
 )
 from metrology_process_planner.app.recipe_editor_saving import save_recipe
-from metrology_process_planner.app.window_registry import WindowOpenStatus, WindowRegistry
+from metrology_process_planner.app.window_registry import (
+    WindowOpenStatus,
+    WindowRegistry,
+)
 from metrology_process_planner.domains.process import ProcessRecipe
 from metrology_process_planner.persistence.recipe_store import ProcessRecipeJsonStore
 from metrology_process_planner.ui.modeless import (
@@ -70,8 +73,8 @@ class RecipeEditorController:
     def open_current(self) -> RecipeEditorOpenResult:
         """Return a recipe editor view model for the current recipe."""
         view_model = self._presenter.build(self.current_recipe)
-        registry_result = self._window_registry.open_or_raise(
-            _window_key(self.current_recipe),
+        registry_result = self._window_registry.get_or_create_recipe_editor(
+            _recipe_id(self.current_recipe),
             _window_title(view_model),
             lambda: self._shell.open(_window_title(view_model), view_model),
             refresh_existing=lambda window: self._shell.render(window, view_model),
@@ -80,7 +83,9 @@ class RecipeEditorController:
             return RecipeEditorOpenResult("failed", view_model, registry_result.message)
         if isinstance(registry_result.window, dict):
             registry_result.window["on_action"] = self.dispatch_action
-        status = _status(registry_result.status, self.current_recipe)
+        status = "opened" if self.current_recipe is not None else "unavailable"
+        if registry_result.status is WindowOpenStatus.RAISED:
+            status = "raised"
         return RecipeEditorOpenResult(status, view_model, window=registry_result.window)
 
     def dispatch_action(self, action_id: str) -> RecipeEditorActionResult:
@@ -123,11 +128,14 @@ class RecipeEditorController:
             )
             self.last_action_result = result
             return result
-        self._window_registry.close(_window_key(self.current_recipe))
+        self._window_registry.close(f"recipe-editor:{_recipe_id(self.current_recipe)}")
+        message = "Recipe editor closed."
+        if force_discard:
+            message = "Recipe editor closed and unsaved edits were discarded."
         result = RecipeEditorActionResult(
             "success",
             CommandId.CLOSE_RECIPE_EDITOR,
-            _close_message(force_discard),
+            message,
             self.current_recipe,
             next_ui_hint="Return to the session editor when ready.",
         )
@@ -139,7 +147,7 @@ class RecipeEditorController:
         recipe = self.current_recipe
         if _is_dirty(recipe) and not force_discard and recipe is not None:
             return self._remember(dirty_switch_block(CommandId.NEW_RECIPE, recipe))
-        return self._replace_current(new_recipe())
+        return _replace_current(self, new_recipe())
 
     def open_recipe_path(
         self,
@@ -150,7 +158,7 @@ class RecipeEditorController:
         recipe = self.current_recipe
         if _is_dirty(recipe) and not force_discard and recipe is not None:
             return self._remember(dirty_switch_block(CommandId.OPEN_RECIPE, recipe))
-        return self._replace_current(open_recipe(path_text, self._recipe_store))
+        return _replace_current(self, open_recipe(path_text, self._recipe_store))
 
     def save_current(
         self,
@@ -174,17 +182,20 @@ class RecipeEditorController:
         self.last_action_result = result
         return result
 
-    def _replace_current(self, result: RecipeEditorActionResult) -> RecipeEditorActionResult:
-        if result.recipe is not None:
-            self._window_registry.close(_window_key(self.current_recipe))
-            self.current_recipe = result.recipe
-            self.open_current()
-        return self._remember(result)
+
+def _replace_current(
+    controller: RecipeEditorController,
+    result: RecipeEditorActionResult,
+) -> RecipeEditorActionResult:
+    if result.recipe is not None:
+        controller._window_registry.close(f"recipe-editor:{_recipe_id(controller.current_recipe)}")
+        controller.current_recipe = result.recipe
+        controller.open_current()
+    return controller._remember(result)
 
 
-def _window_key(recipe: ProcessRecipe | None) -> str:
-    recipe_id = recipe.id if recipe is not None else "no-recipe"
-    return f"recipe-editor:{recipe_id}"
+def _recipe_id(recipe: ProcessRecipe | None) -> str:
+    return recipe.id if recipe is not None else "no-recipe"
 
 
 def _window_title(view_model: RecipeEditorViewModel) -> str:
@@ -193,18 +204,6 @@ def _window_title(view_model: RecipeEditorViewModel) -> str:
 
 def _is_dirty(recipe: ProcessRecipe | None) -> bool:
     return bool(recipe is not None and dict(recipe.metadata or {}).get("dirty", False))
-
-
-def _close_message(force_discard: bool) -> str:
-    if force_discard:
-        return "Recipe editor closed and unsaved edits were discarded."
-    return "Recipe editor closed."
-
-
-def _status(status: WindowOpenStatus, recipe: ProcessRecipe | None) -> str:
-    if status is WindowOpenStatus.RAISED:
-        return "raised"
-    return "opened" if recipe is not None else "unavailable"
 
 
 def _action_payload(action_id: str) -> str:

@@ -110,8 +110,8 @@ class AdvancedDiagnosticsController:
             recent_event_count=len(recent_events),
             summary_rows=summary_rows,
         )
-        registry_result = self._window_registry.open_or_raise(
-            _diagnostics_window_key(self.active_session),
+        registry_result = self._window_registry.get_or_create_diagnostics_panel(
+            self.active_session.id,
             "Advanced Diagnostics",
             lambda: self._shell.open(result, recent_events),
             refresh_existing=lambda window: self._shell.render(
@@ -150,10 +150,6 @@ class AdvancedDiagnosticsController:
         if self._editor_document_provider is None:
             return None
         return self._editor_document_provider()
-
-
-def _diagnostics_window_key(session: SessionRecord) -> str:
-    return f"advanced-diagnostics:{session.id}"
 
 def _with_open_window_rows(
     result: DiagnosticsOpenResult,

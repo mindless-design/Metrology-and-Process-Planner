@@ -6,7 +6,11 @@ from dataclasses import dataclass
 from typing import Any
 
 from metrology_process_planner.app.commands import command_id_from_view_action
-from metrology_process_planner.app.window_registry import WindowOpenStatus, WindowRegistry
+from metrology_process_planner.app.window_registry import (
+    WindowOpenStatus,
+    WindowRegistry,
+    surface_key,
+)
 from metrology_process_planner.domains.session import SessionRecord
 from metrology_process_planner.ui.modeless import (
     InMemoryModelessSurfaceFactory,
@@ -61,8 +65,8 @@ class SetupGuideController:
         """Return a modeless setup-guide view model for the active session."""
 
         view_model = self._presenter.build(self.active_session)
-        registry_result = self._window_registry.open_or_raise(
-            _window_key(self.active_session),
+        registry_result = self._window_registry.get_or_create_setup_guide(
+            _session_id(self.active_session),
             _window_title(view_model),
             lambda: self._shell.open(_window_title(view_model), view_model),
             refresh_existing=lambda window: self._shell.render(window, view_model),
@@ -100,8 +104,11 @@ class SetupGuideController:
 
 
 def _window_key(session: SessionRecord | None) -> str:
-    session_id = session.id if session is not None else "no-session"
-    return f"setup-guide:{session_id}"
+    return surface_key("setup-guide", _session_id(session))
+
+
+def _session_id(session: SessionRecord | None) -> str:
+    return session.id if session is not None else "no-session"
 
 
 def _window_title(view_model: SetupGuideViewModel) -> str:

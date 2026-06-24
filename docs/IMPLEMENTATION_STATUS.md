@@ -16,6 +16,10 @@ Last updated: 2026-06-24
   `Save Edits` routes through `SaveSessionEdits` before delegating to the editor dispatcher,
   `Reopen Setup` opens the setup guide for the active editor session, and `Close` routes through
   `EndActiveSession` so pending/dirty blockers surface inline and diagnostics record the command.
+- `WindowRegistry` now exposes named modeless product-surface methods for the session editor,
+  setup guide, recipe editor, and diagnostics panel. Controllers use those methods instead of
+  hand-owning duplicate window keys, while the registry still delegates lifecycle work to a
+  fakeable toolkit backend.
 - Active editor commands now also cover selected-item workflows through the same bridge:
   pending save/retake/discard, composite save/retake, add/save/retake/discard measurement,
   regenerate artifact, regenerate process output, and discard unsaved edits all route through

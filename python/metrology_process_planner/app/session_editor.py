@@ -94,8 +94,8 @@ class SessionEditorController:
 
         callbacks = SessionEditorCallbacks(on_select_item=on_select, on_action=on_action)
         self._callbacks = callbacks
-        registry_result = self._window_registry.open_or_raise(
-            _window_key(document),
+        registry_result = self._window_registry.get_or_create_session_editor(
+            document.session.id,
             f"Session Editor - {document.session.name}",
             lambda: self._shell.open(document, self._adapter, callbacks),
             refresh_existing=lambda window: self._shell.render(
@@ -180,10 +180,6 @@ class SessionEditorController:
 
 def _default_shell() -> SessionEditorShell:
     return SessionEditorShell(InMemorySessionEditorWidgetFactory())
-
-
-def _window_key(document: SessionDocument) -> str:
-    return f"session-editor:{document.session.id}"
 
 
 def _command_for_action(action: EditorAction) -> Optional[CommandId]:

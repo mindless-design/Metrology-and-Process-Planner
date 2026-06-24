@@ -13,6 +13,11 @@ Last updated: 2026-06-24
 
 ## Editor And Canvas
 
+- Modeless windows are owned by `WindowRegistry` through named product-surface methods:
+  `get_or_create_session_editor`, `get_or_create_setup_guide`,
+  `get_or_create_recipe_editor`, and `get_or_create_diagnostics_panel`. Controllers pass
+  view-model render callbacks into that registry boundary instead of hand-owning duplicate
+  top-level windows.
 - The unified editor uses `SessionDocument` and dispatches explicit `EditorAction` values.
 - UI shells should not directly mutate session JSON, run solvers, generate reports, or write files.
 - Deferred or unavailable actions should set `EditorAction.enabled = False` with a
