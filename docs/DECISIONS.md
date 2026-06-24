@@ -71,6 +71,9 @@ Last updated: 2026-06-24
 - Setup guide cards must also render requirement and artifact badges from presenter view models.
   Widgets should not inspect `SetupItemRecord.artifact_refs` or artifact registry state directly;
   the presenter supplies a compact artifact availability badge from canonical session data.
+- Recipe editor cards own their displayed status/action view models. Process-step card widgets
+  should render the supplied status label and `EditorActionViewModel` rows instead of rebuilding
+  duplicate/move/enable/disable rules locally.
 - Render refresh failures upsert failed owner/role SVG artifacts with repair metadata, so retries update one canonical repair target instead of piling up warnings or hidden error state.
 - Live KLayout line-capture coverage is an opt-in batch probe that drives `KLayoutCaptureGestureAdapter` inside `pya` against a real layout and asserts source shapes are unchanged.
 - Profilometry child-line capture reuses the same KLayout line gesture adapter and `LineCaptureTool`; durable workflow state decides whether line release creates a measurement child or a profilometry compound feature.

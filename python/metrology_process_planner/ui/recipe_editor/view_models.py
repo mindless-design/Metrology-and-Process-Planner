@@ -78,10 +78,12 @@ class RecipeStepCardViewModel:
     material_label: str = ""
     layer_label: str = ""
     thickness_summary: str = ""
+    status_label: str = "Enabled"
     plain_language_summary: str = ""
     warning_count: int = 0
     selected: bool = False
     dirty: bool = False
+    actions: tuple[EditorActionViewModel, ...] = ()
 
 
 @dataclass(frozen=True)

@@ -7,6 +7,10 @@ from metrology_process_planner.domains.process import (
     ProcessRecipe,
     ProcessStep,
 )
+from metrology_process_planner.ui.recipe_editor.card_actions import (
+    material_card_actions,
+    process_step_card_actions,
+)
 from metrology_process_planner.ui.recipe_editor.summaries import (
     layer_label,
     material_label,
@@ -57,7 +61,7 @@ def _material_detail(
             MetadataFieldViewModel("visible", "Visible", _bool_text(material.visible)),
             MetadataFieldViewModel("notes", "Notes", _material_notes(recipe, material.id)),
         ),
-        _material_actions(material.id),
+        material_card_actions(material.id),
         summary=f"{material.name} is a {category} material.",
     )
 
@@ -72,7 +76,7 @@ def _step_detail(recipe: ProcessRecipe, step_id: str) -> RecipeDetailPanelViewMo
         "step",
         step_name(step),
         _step_fields(step, labels),
-        _step_actions(step.id),
+        process_step_card_actions(step.id, step_enabled(step)),
         summary=step_summary(step, labels),
     )
 
@@ -127,66 +131,6 @@ def _step_fields(
         MetadataFieldViewModel("mask_polarity", "Mask Polarity", step.mask_polarity.value),
         MetadataFieldViewModel("thickness", "Thickness / Depth / Plane", thickness_summary(step)),
         MetadataFieldViewModel("notes", "Notes", step.notes),
-    )
-
-
-def _material_actions(material_id: str) -> tuple[EditorActionViewModel, ...]:
-    return (
-        EditorActionViewModel(
-            f"DuplicateMaterial:{material_id}",
-            "Duplicate Material",
-            f"material:{material_id}",
-        ),
-        EditorActionViewModel(
-            f"DeleteMaterial:{material_id}",
-            "Delete Material",
-            f"material:{material_id}",
-        ),
-        EditorActionViewModel(
-            f"ToggleMaterialVisibility:{material_id}",
-            "Toggle Visibility",
-            f"material:{material_id}",
-        ),
-        EditorActionViewModel(
-            f"FindMaterialUsage:{material_id}",
-            "Find Usage",
-            f"material:{material_id}",
-        ),
-    )
-
-
-def _step_actions(step_id: str) -> tuple[EditorActionViewModel, ...]:
-    return (
-        EditorActionViewModel(
-            f"DuplicateProcessStep:{step_id}",
-            "Duplicate Step",
-            f"step:{step_id}",
-        ),
-        EditorActionViewModel(
-            f"DeleteProcessStep:{step_id}",
-            "Delete Step",
-            f"step:{step_id}",
-        ),
-        EditorActionViewModel(
-            f"MoveProcessStepUp:{step_id}",
-            "Move Up",
-            f"step:{step_id}",
-        ),
-        EditorActionViewModel(
-            f"MoveProcessStepDown:{step_id}",
-            "Move Down",
-            f"step:{step_id}",
-        ),
-        EditorActionViewModel(
-            f"DisableProcessStep:{step_id}",
-            "Disable Step",
-            f"step:{step_id}",
-        ),
-        EditorActionViewModel(
-            f"EnableProcessStep:{step_id}",
-            "Enable Step",
-            f"step:{step_id}",
-        ),
     )
 
 

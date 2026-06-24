@@ -11,6 +11,7 @@ from metrology_process_planner.domains.process import (
     ProcessStepKind,
 )
 from metrology_process_planner.domains.process.validation import validate_step
+from metrology_process_planner.ui.recipe_editor.card_actions import process_step_card_actions
 from metrology_process_planner.ui.recipe_editor.summaries import (
     layer_label,
     material_label,
@@ -70,10 +71,12 @@ def step_cards(recipe: ProcessRecipe) -> tuple[RecipeStepCardViewModel, ...]:
             material_label(step, labels),
             layer_label(step),
             thickness_summary(step),
+            _status_label(step),
             step_summary(step, labels),
             len(validate_step(step, material_ids)),
             selected == f"step:{step.id}",
             bool(metadata.get("dirty", False)),
+            process_step_card_actions(step.id, step_enabled(step)),
         )
         for index, step in enumerate(recipe.steps, start=1)
     )
@@ -169,3 +172,7 @@ def _material_category(recipe: ProcessRecipe, material: Material) -> str:
 def _material_warning_count(material: Material, usage_count: int) -> int:
     checks = (not material.name, not material.color, usage_count == 0)
     return sum(1 for failed in checks if failed)
+
+
+def _status_label(step: ProcessStep) -> str:
+    return "Enabled" if step_enabled(step) else "Disabled"

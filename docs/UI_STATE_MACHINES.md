@@ -115,6 +115,10 @@ deferred save/open/attach workflows. The modeless recipe editor shell exposes a 
 callback; widgets should call that callback rather than mutating recipe state directly. Closing the
 recipe editor is a controller/window-registry action, not a recipe mutation.
 
+Process-step cards expose their own status label and card actions. The selected-card detail panel
+uses the same shared action policy, so enable/disable visibility and movement actions stay
+consistent between the card list and detail panel.
+
 Dirty recipe close is a modeless blocked state: `CloseRecipeEditor` returns a structured result
 when unsaved edits exist and leaves the window open. A future destructive-confirmation widget may
 dispatch `CloseRecipeEditor:discard` to close after the user confirms data loss.
