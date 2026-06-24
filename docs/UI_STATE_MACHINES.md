@@ -44,6 +44,10 @@ deferred save/open/attach workflows. The modeless recipe editor shell exposes a 
 callback; widgets should call that callback rather than mutating recipe state directly. Closing the
 recipe editor is a controller/window-registry action, not a recipe mutation.
 
+Recipe editor selection should render through `selected_detail` on `RecipeEditorViewModel`.
+Material, process-step, and layer cards expose their own field/action models there, keeping card
+selection and detail editing on the same modeless view-model spine.
+
 ## Blocking Dialog Policy
 
 Normal setup, capture review, recipe validation, missing artifact handling, and process-context warnings stay modeless. The only normal workflow prompt still allowed is the post-measurement completion choice:

@@ -12,6 +12,7 @@ from metrology_process_planner.ui.recipe_editor.cards import (
     step_templates,
     summary_model,
 )
+from metrology_process_planner.ui.recipe_editor.details import selected_detail
 from metrology_process_planner.ui.recipe_editor.validation_view import validation_messages
 from metrology_process_planner.ui.recipe_editor.view_models import RecipeEditorViewModel
 from metrology_process_planner.ui.shell import (
@@ -60,6 +61,7 @@ class RecipeEditorPresenter:
             preview=preview_model(recipe),
             step_templates=step_templates(),
             selected_card_id=str(metadata.get("selected_card_id", "")),
+            selected_detail=selected_detail(recipe),
         )
 
 

@@ -82,6 +82,9 @@ Last updated: 2026-06-24
 - The modeless recipe editor window now exposes an action callback for header/card actions. Recipe
   edits dispatch through `RecipeEditorActionDispatcher` and refresh the existing window; Close is a
   modeless controller action that updates the shared `WindowRegistry`.
+- Recipe editor view models now include a selected-card detail panel for materials, steps, and
+  layer references. Material details expose category/color/visibility/notes fields and material
+  actions; step details expose operation/material/mask/thickness/notes fields and step actions.
 - Post-measurement completion is represented as an explicit prompt result and pure workflow
   choice handler; final Qt prompt rendering remains deferred.
 
@@ -129,6 +132,8 @@ Last updated: 2026-06-24
   actions returning structured unavailable results.
 - Recipe editor callback tests covering modeless window action dispatch and close behavior through
   the window registry.
+- Recipe editor card tests covering selected material and process-step detail-panel fields and
+  actions.
 - Modeless setup-guide controller tests covering shared-window reuse, command-router action
   callbacks, structured unavailable setup actions, and close behavior through the window registry.
 - Setup guide command tests covering origin point arming, alignment box arming, capture-status

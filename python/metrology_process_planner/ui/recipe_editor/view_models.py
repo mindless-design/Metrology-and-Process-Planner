@@ -32,6 +32,7 @@ class RecipeEditorViewModel:
     preview: RecipePreviewViewModel | None = None
     step_templates: tuple[EditorActionViewModel, ...] = ()
     selected_card_id: str = ""
+    selected_detail: RecipeDetailPanelViewModel | None = None
 
 
 @dataclass(frozen=True)
@@ -110,3 +111,16 @@ class RecipePreviewViewModel:
     status: str
     placeholder: str = ""
     selected_step_id: str = ""
+
+
+@dataclass(frozen=True)
+class RecipeDetailPanelViewModel:
+    """Editable details for the selected material, step, or layer card."""
+
+    card_id: str
+    card_type: str
+    title: str
+    fields: tuple[MetadataFieldViewModel, ...]
+    actions: tuple[EditorActionViewModel, ...] = ()
+    warning_ids: tuple[str, ...] = ()
+    summary: str = ""

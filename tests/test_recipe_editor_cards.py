@@ -43,6 +43,17 @@ class RecipeEditorCardsTests(unittest.TestCase):
         self.assertTrue(cards["oxide"].selected)
         self.assertEqual(1, cards["metal"].warning_count)
 
+    def test_selected_material_detail_shows_editable_material_fields(self) -> None:
+        view_model = RecipeEditorPresenter().build(_recipe())
+        detail = view_model.selected_detail
+
+        self.assertIsNotNone(detail)
+        self.assertEqual("material:oxide", detail.card_id)
+        self.assertEqual("material", detail.card_type)
+        self.assertIn(("category", "Category", "dielectric"), _field_rows(detail))
+        self.assertIn(("visible", "Visible", "yes"), _field_rows(detail))
+        self.assertIn("Find Usage", [action.label for action in detail.actions])
+
     def test_step_cards_show_plain_language_summary_and_layer(self) -> None:
         view_model = RecipeEditorPresenter().build(_recipe())
         step = view_model.step_cards[1]
@@ -52,6 +63,36 @@ class RecipeEditorCardsTests(unittest.TestCase):
         self.assertEqual("Gate", step.layer_label)
         self.assertEqual("80 nm target", step.thickness_summary)
         self.assertIn("where Gate is active", step.plain_language_summary)
+
+    def test_selected_step_detail_shows_operation_specific_fields(self) -> None:
+        recipe = ProcessRecipe(
+            "recipe-003",
+            "Selected Step",
+            (Material("oxide", "Oxide", "#88ccff"),),
+            (
+                ProcessStep(
+                    "step-pattern",
+                    ProcessStepKind.PATTERNED_DEPOSITION,
+                    "oxide",
+                    ThicknessSpec(80, unit="nm"),
+                    LayerReference("layout", 10, 0, "Gate"),
+                    notes="Use gate mask.",
+                ),
+            ),
+            metadata={"selected_card_id": "step:step-pattern"},
+        )
+
+        detail = RecipeEditorPresenter().build(recipe).selected_detail
+
+        self.assertIsNotNone(detail)
+        self.assertEqual("step:step-pattern", detail.card_id)
+        self.assertIn(("kind", "Operation Type", "Patterned deposition"), _field_rows(detail))
+        self.assertIn(("layer", "Layer / Mask", "Gate"), _field_rows(detail))
+        self.assertIn(
+            ("thickness", "Thickness / Depth / Plane", "80 nm target"),
+            _field_rows(detail),
+        )
+        self.assertIn("Duplicate Step", [action.label for action in detail.actions])
 
     def test_layers_and_inline_validation_are_clickable_view_models(self) -> None:
         view_model = RecipeEditorPresenter().build(_recipe())
@@ -118,6 +159,10 @@ def _recipe() -> ProcessRecipe:
             "material_categories": {"oxide": "dielectric", "metal": "metal"},
         },
     )
+
+
+def _field_rows(detail):
+    return tuple((field.key, field.label, field.value) for field in detail.fields)
 
 
 if __name__ == "__main__":
