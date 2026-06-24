@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Optional
 
 from metrology_process_planner.workflows.editor.document import SessionDocument
+from metrology_process_planner.workflows.measurement_completion import PostActionPrompt
 
 
 @dataclass(frozen=True)
@@ -17,3 +18,4 @@ class EditorActionResult:
     document: SessionDocument
     message: str = ""
     output_path: Optional[Path] = None
+    post_action_prompt: PostActionPrompt | None = None

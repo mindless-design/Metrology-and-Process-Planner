@@ -28,6 +28,10 @@ from metrology_process_planner.workflows.editor.render_bridge_models import (
 )
 from metrology_process_planner.workflows.editor.store import SessionDocumentStore
 from metrology_process_planner.workflows.editor.view_models import EditorAction
+from metrology_process_planner.workflows.measurement_completion import (
+    measurement_completion_prompt,
+    pending_measurement_count,
+)
 from metrology_process_planner.workflows.measurement_workflow import save_pending_measurements
 from metrology_process_planner.workflows.pending_capture_review import PendingCaptureReviewService
 
@@ -53,6 +57,7 @@ def _save_document(
     if dispatcher._paths is None:
         return EditorActionResult("unavailable", document, "No session folder is configured.")
     original = document
+    pending_measurements_before_save = pending_measurement_count(document.session)
     document = apply_metadata_edits(document)
     document = _with_session(dispatcher, document, save_pending_measurements(document.session))
     render_result = _refresh_on_save(dispatcher, document.session)
@@ -66,7 +71,10 @@ def _save_document(
     message = "Saved session edits."
     if render_result.message:
         message = f"{message} {render_result.message}"
-    return EditorActionResult(status, saved, message, dispatcher._paths.session_json)
+    prompt = None
+    if pending_measurements_before_save and pending_measurement_count(saved.session) == 0:
+        prompt = measurement_completion_prompt(saved.session)
+    return EditorActionResult(status, saved, message, dispatcher._paths.session_json, prompt)
 
 
 def _pending_save(

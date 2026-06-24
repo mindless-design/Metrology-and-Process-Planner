@@ -54,6 +54,8 @@ Last updated: 2026-06-24
   - `SAVE_EDITS` applies measurement metadata, promotes pending measurements to saved, and refreshes measurement-owned annotation drawing artifacts through the existing render bridge.
   - Reload through `SessionDocumentStore` restores the parent capture item, child measurement item, and both canvas objects.
   - `REGENERATE_ARTIFACT` can refresh a selected measurement's annotation artifact after the initial save.
+  - The save result now carries the one allowed post-measurement prompt with `Take Another
+    Measurement`, `Return to Editor`, and `Done` choices; a pure workflow applies those choices.
 
 ## Partially Implemented
 
@@ -72,6 +74,8 @@ Last updated: 2026-06-24
 - Recipe editor card/header actions now route through a pure dispatcher. It supports safe
   in-memory card selection, validation, and add-step templates, while save/open/attach remain
   structured unavailable command results until real recipe persistence workflows are wired.
+- Post-measurement completion is represented as an explicit prompt result and pure workflow
+  choice handler; final Qt prompt rendering remains deferred.
 
 ## Tests In Place
 
@@ -113,6 +117,9 @@ Last updated: 2026-06-24
 - Recipe editor action tests covering command normalization, in-memory card selection, add-step
   template dirty state, modeless controller refresh, validation warning IDs, and deferred save
   actions returning structured unavailable results.
+- Measurement completion prompt tests covering save-result prompt choices, rearming the same
+  parent capture for another measurement, returning to the parent capture, and completing on the
+  saved measurement.
 - Measurement annotation repair tests covering repeated export failures, failed artifact status, repair metadata, stable warning IDs, and preview repair actions.
 - Opt-in KLayout batch smoke coverage for `KLayoutCaptureGestureAdapter` inside a real `pya` runtime, including saved measurement line, profilometry compound child-line capture, and ellipsometry compound child-point capture, gated by `MPP_RUN_KLAYOUT_TESTS=1`; current evidence is 8 passing live KLayout integration tests.
 - Opt-in KLayout GUI automation covers real menu registration and main-window snapshot probes through `MPP_RUN_KLAYOUT_UI_TESTS=1`, `klayout_app.exe`, and GUI `-e -rm` execution; current evidence is 2 passing live KLayout UI automation tests.

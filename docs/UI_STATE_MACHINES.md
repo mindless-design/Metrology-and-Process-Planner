@@ -40,6 +40,11 @@ Normal setup, capture review, recipe validation, missing artifact handling, and 
 - `Return to Editor`
 - `Done`
 
+After `SAVE_EDITS` promotes a pending measurement, `EditorActionResult.post_action_prompt`
+contains this exact choice set. The resulting choice is applied through
+`MeasurementCompletionChoice`, which either rearms the same parent capture, returns to the parent
+capture in the editor, or finishes on the saved measurement.
+
 Destructive confirmation, unrecoverable write failure, external overwrite, and catastrophic runtime failures may still use blocking acknowledgement.
 
 ## Diagnostics
@@ -64,4 +69,5 @@ a modeless navigation-active warning message rather than an exception.
 
 - The Qt shell remains minimal and does not yet render polished cards for every state snapshot.
 - General point capture remains explicit-unavailable outside the ellipsometry compound child path.
-- The post-measurement blocking prompt policy is represented in command/state contracts, but the final Qt prompt shell is still a deferred polish item.
+- The post-measurement prompt policy is represented in command/state contracts, but the final Qt
+  prompt shell is still a deferred polish item.
