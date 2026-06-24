@@ -19,6 +19,10 @@ Last updated: 2026-06-24
   `disabled_reason`; UI shells render the reason and dispatch returns it as a structured
   unavailable result if the action is routed anyway.
 - Session editor callbacks must rerender through the shell contract after dispatch, using the rebuilt `SessionDocument`; model updates without visible shell refresh are considered stale UI bugs.
+- Session editor header actions split by responsibility: document mutations remain in
+  `EditorActionDispatcher`, while window/lifecycle intents such as reopen setup and close route
+  through the app `CommandRouter` so menus and editor buttons share diagnostics and blocked-result
+  behavior.
 - Canvas visuals are durable `CanvasObject` records and overlay commands; KLayout source layouts remain read-only.
 - Selection sync flows through `SelectionCoordinator` and document canvas-object indexes.
 - KLayout capture gestures are normalized at the infrastructure boundary and routed through the shared capture tools; overlay restoration goes through `CanvasOverlayManager`, never source-layout shape insertion.

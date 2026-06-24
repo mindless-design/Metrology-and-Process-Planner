@@ -102,6 +102,7 @@ def build_app_services() -> AppServices:
     register_setup_command_handlers(command_registry, setup_commands)
     command_router = CommandRouter(command_registry, diagnostics_sink)
     ui.setup_guide.set_command_router(command_router)
+    ui.session_editor.set_command_router(command_router)
     return AppServices(
         commands=command_registry,
         command_router=command_router,
@@ -134,7 +135,7 @@ def _register_primary_command_handlers(
 ) -> None:
     command_registry.register(
         CommandId.OPEN_SETUP_GUIDE,
-        lambda: _open_setup_guide(ui.setup_guide),
+        lambda: _open_setup_guide(ui),
     )
     command_registry.register(
         CommandId.OPEN_SESSION_EDITOR,
@@ -142,7 +143,7 @@ def _register_primary_command_handlers(
     )
     command_registry.register(
         CommandId.OPEN_RECIPE_EDITOR,
-        lambda: _open_recipe_editor(ui.recipe_editor),
+        lambda: ui.recipe_editor.open_current(),
     )
     command_registry.register(CommandId.END_ACTIVE_SESSION, session_lifecycle.end_active_session)
     command_registry.register(
@@ -205,14 +206,13 @@ def _build_ui_controllers(
     )
 
 
-def _open_setup_guide(controller: SetupGuideController) -> None:
-    controller.open_current()
+def _open_setup_guide(ui: UiControllers) -> None:
+    session = active_session_from_editor(ui.session_editor)
+    if session is not None:
+        ui.setup_guide.set_active_session(session)
+    ui.setup_guide.open_current()
 
 
 def _open_session_editor(controller: SessionEditorController) -> None:
     controller.open_current_session()
-
-
-def _open_recipe_editor(controller: RecipeEditorController) -> None:
-    controller.open_current()
 

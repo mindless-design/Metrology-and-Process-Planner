@@ -27,6 +27,12 @@ State-machine snapshots expose command-shaped action IDs. UI shells should route
 
 The KLayout Tools menu uses only the primary `MENU_COMMANDS`; setup cards, recipe cards, editor buttons, and review actions use the broader typed command catalog.
 
+The session editor still dispatches document-mutating actions through `EditorActionDispatcher`, but
+window/lifecycle intents are bridged into the app command router. `Reopen Setup` maps to
+`OpenSetupGuide` after handing the active editor session to the setup guide, and editor `Close`
+maps to `EndActiveSession` so the same blocked/diagnostic behavior is used from menus and editor
+buttons.
+
 Generic capture commands use the same modeless command route as setup actions. `StartCapture`
 aliases box capture; explicit box, line, and point commands arm `CanvasInteractionEngine`, write
 durable `WorkflowState` on the active session, and refresh any open editor/setup surfaces for that

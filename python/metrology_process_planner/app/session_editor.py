@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional, Union
 
+from metrology_process_planner.app.commands import CommandId
 from metrology_process_planner.app.window_registry import (
     WindowOpenStatus,
     WindowRegistry,
@@ -16,6 +17,7 @@ from metrology_process_planner.ui.session_editor import (
     SessionEditorCallbacks,
     SessionEditorShell,
 )
+from metrology_process_planner.ui.shell import CommandRouter, CommandRouteResult
 from metrology_process_planner.workflows.editor.adapters import DefaultSessionModeAdapter
 from metrology_process_planner.workflows.editor.dispatcher import EditorActionDispatcher
 from metrology_process_planner.workflows.editor.dispatcher_results import EditorActionResult
@@ -54,8 +56,15 @@ class SessionEditorController:
         )
         self.current_document: Optional[SessionDocument] = None
         self.last_action_result: Optional[EditorActionResult] = None
+        self.last_command_result: Optional[CommandRouteResult] = None
         self.current_window: Optional[Any] = None
         self._callbacks: Optional[SessionEditorCallbacks] = None
+        self._command_router: Optional[CommandRouter] = None
+
+    def set_command_router(self, command_router: Optional[CommandRouter]) -> None:
+        """Set the app command router used for editor window/lifecycle intents."""
+
+        self._command_router = command_router
 
     def open_session_path(self, path_or_folder: PathInput) -> SessionEditorOpenResult:
         """Open a session JSON file or folder in the unified editor shell."""
@@ -110,6 +119,8 @@ class SessionEditorController:
     def _dispatch(self, dispatcher: EditorActionDispatcher, action: EditorAction) -> None:
         if self.current_document is None:
             return
+        if self._route_app_command(action):
+            return
         result = dispatcher.dispatch(self.current_document, action)
         self.current_document = result.document
         self.last_action_result = result
@@ -121,6 +132,22 @@ class SessionEditorController:
                 self._callbacks,
             )
 
+    def _route_app_command(self, action: EditorAction) -> bool:
+        command_id = _command_for_action(action)
+        if command_id is None or self._command_router is None:
+            return False
+        self.last_command_result = self._command_router.route(command_id)
+        if self.current_document is None:
+            return True
+        if self.current_window is not None and self._callbacks is not None:
+            self._shell.render(
+                self.current_window,
+                self.current_document,
+                self._adapter,
+                self._callbacks,
+            )
+        return True
+
 
 def _default_shell() -> SessionEditorShell:
     return SessionEditorShell(InMemorySessionEditorWidgetFactory())
@@ -128,6 +155,14 @@ def _default_shell() -> SessionEditorShell:
 
 def _window_key(document: SessionDocument) -> str:
     return f"session-editor:{document.session.id}"
+
+
+def _command_for_action(action: EditorAction) -> Optional[CommandId]:
+    if action.action_type is EditorActionType.REOPEN_SETUP:
+        return CommandId.OPEN_SETUP_GUIDE
+    if action.action_type is EditorActionType.EXIT_SESSION:
+        return CommandId.END_ACTIVE_SESSION
+    return None
 
 
 def _paths_for(path_or_folder: PathInput) -> SessionPaths:
