@@ -67,6 +67,9 @@ Last updated: 2026-06-24
 - Closing a dirty recipe editor is not a silent close. The controller returns a structured blocked
   result for `CloseRecipeEditor` and only closes dirty recipes through the explicit
   `CloseRecipeEditor:discard` confirmation path.
+- Recipe JSON persistence lives behind `ProcessRecipeJsonStore`. The recipe editor controller may
+  call it for `SaveRecipe` when a recipe path is known, but widgets and pure dispatchers do not
+  write recipe files directly.
 
 ## Child Measurement Slice
 

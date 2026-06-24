@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from pathlib import Path
 from typing import Any
 
 from metrology_process_planner.app.command_types import CommandId
 from metrology_process_planner.app.window_registry import WindowOpenStatus, WindowRegistry
 from metrology_process_planner.domains.process import ProcessRecipe
+from metrology_process_planner.persistence.recipe_store import ProcessRecipeJsonStore
 from metrology_process_planner.ui.modeless import (
     InMemoryModelessSurfaceFactory,
     ModelessSurfaceShell,
@@ -35,11 +37,13 @@ class RecipeEditorController:
         self,
         presenter: RecipeEditorPresenter | None = None,
         dispatcher: RecipeEditorActionDispatcher | None = None,
+        recipe_store: ProcessRecipeJsonStore | None = None,
         shell: ModelessSurfaceShell | None = None,
         window_registry: WindowRegistry[Any] | None = None,
     ) -> None:
         self._presenter = presenter if presenter is not None else RecipeEditorPresenter()
         self._dispatcher = dispatcher if dispatcher is not None else RecipeEditorActionDispatcher()
+        self._recipe_store = recipe_store if recipe_store is not None else ProcessRecipeJsonStore()
         self._shell = shell or ModelessSurfaceShell(InMemoryModelessSurfaceFactory())
         self._window_registry = window_registry if window_registry is not None else WindowRegistry()
         self.current_recipe: ProcessRecipe | None = None
@@ -72,6 +76,8 @@ class RecipeEditorController:
 
         if action_id.startswith("CloseRecipeEditor"):
             return self.close_current(force_discard=action_id.endswith(":discard"))
+        if action_id == "SaveRecipe":
+            return self.save_current()
         result = self._dispatcher.dispatch(self.current_recipe, action_id)
         self.last_action_result = result
         if result.recipe is not None:
@@ -103,9 +109,60 @@ class RecipeEditorController:
         self.last_action_result = result
         return result
 
+    def save_current(self) -> RecipeEditorActionResult:
+        """Save the current recipe when a recipe path is configured."""
+
+        if self.current_recipe is None:
+            return self._remember(
+                RecipeEditorActionResult(
+                    "unavailable",
+                    CommandId.SAVE_RECIPE,
+                    "No recipe is loaded.",
+                    next_ui_hint="Open or create a recipe before saving.",
+                ),
+            )
+        recipe_path = _recipe_path(self.current_recipe)
+        if recipe_path is None:
+            return self._remember(
+                RecipeEditorActionResult(
+                    "unavailable",
+                    CommandId.SAVE_RECIPE,
+                    "Recipe has no save path.",
+                    self.current_recipe,
+                    next_ui_hint="Use Save As before saving this recipe.",
+                ),
+            )
+        try:
+            saved_path = self._recipe_store.save(self.current_recipe, recipe_path)
+        except OSError as exc:
+            return self._remember(
+                RecipeEditorActionResult(
+                    "error",
+                    CommandId.SAVE_RECIPE,
+                    f"Recipe save failed: {exc}",
+                    self.current_recipe,
+                    next_ui_hint="Fix the recipe path or permissions and retry Save.",
+                ),
+            )
+        self.current_recipe = _mark_saved(self.current_recipe, saved_path)
+        self.open_current()
+        return self._remember(
+            RecipeEditorActionResult(
+                "success",
+                CommandId.SAVE_RECIPE,
+                f"Recipe saved: {saved_path}",
+                self.current_recipe,
+                next_ui_hint="Continue editing or return to the session editor.",
+            ),
+        )
+
     def _attach_action_callback(self, window: Any) -> None:
         if isinstance(window, dict):
             window["on_action"] = self.dispatch_action
+
+    def _remember(self, result: RecipeEditorActionResult) -> RecipeEditorActionResult:
+        self.last_action_result = result
+        return result
 
 
 def _window_key(recipe: ProcessRecipe | None) -> str:
@@ -119,6 +176,20 @@ def _window_title(view_model: RecipeEditorViewModel) -> str:
 
 def _is_dirty(recipe: ProcessRecipe | None) -> bool:
     return bool(recipe is not None and dict(recipe.metadata or {}).get("dirty", False))
+
+
+def _recipe_path(recipe: ProcessRecipe) -> Path | None:
+    value = dict(recipe.metadata or {}).get("recipe_path", "")
+    if not value:
+        return None
+    return Path(str(value))
+
+
+def _mark_saved(recipe: ProcessRecipe, saved_path: Path) -> ProcessRecipe:
+    metadata = dict(recipe.metadata or {})
+    metadata.pop("dirty", None)
+    metadata["recipe_path"] = str(saved_path)
+    return replace(recipe, metadata=metadata)
 
 
 def _close_message(force_discard: bool) -> str:

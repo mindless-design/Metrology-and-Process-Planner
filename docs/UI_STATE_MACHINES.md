@@ -48,6 +48,11 @@ Dirty recipe close is a modeless blocked state: `CloseRecipeEditor` returns a st
 when unsaved edits exist and leaves the window open. A future destructive-confirmation widget may
 dispatch `CloseRecipeEditor:discard` to close after the user confirms data loss.
 
+`SaveRecipe` is handled at the recipe editor controller/service boundary, not inside widgets. A
+recipe with `metadata.recipe_path` is written through `ProcessRecipeJsonStore`; successful saves
+clear dirty metadata, while save failures return structured `error` results and keep edits in
+memory.
+
 Recipe editor selection should render through `selected_detail` on `RecipeEditorViewModel`.
 Material, process-step, and layer cards expose their own field/action models there, keeping card
 selection and detail editing on the same modeless view-model spine.
