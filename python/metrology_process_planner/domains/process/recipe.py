@@ -9,7 +9,8 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 from metrology_process_planner.domains.process.materials import Material
-from metrology_process_planner.domains.process.steps import ProcessStep, ProcessWindow
+from metrology_process_planner.domains.process.step_specs import ProcessWindow
+from metrology_process_planner.domains.process.steps import ProcessStep
 from metrology_process_planner.domains.process.validation import validate_recipe
 from metrology_process_planner.domains.process.validation_messages import RecipeValidationMessage
 from metrology_process_planner.domains.process.validation_service import RecipeValidationService

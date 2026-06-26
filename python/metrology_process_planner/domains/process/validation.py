@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from metrology_process_planner.domains.process.materials import Material
+from metrology_process_planner.domains.process.step_specs import ProcessWindow
 from metrology_process_planner.domains.process.steps import (
     ProcessStep,
     ProcessStepKind,
-    ProcessWindow,
 )
 from metrology_process_planner.domains.process.validation_messages import (
     RecipeValidationMessage as RecipeValidationMessage,

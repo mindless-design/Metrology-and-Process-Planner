@@ -77,6 +77,7 @@ class RenderProfile:
     label_policy: LabelPolicy = LabelPolicy()
     color_policy: str = "material_colors"
     axis_policy: str = "physical_ticks"
+    display_unit_preference: str = "auto"
     legend_policy: str = "visible_materials"
     theme_id: str = "engineering_dark"
     output_size: tuple[int, int] = (1200, 720)
@@ -98,6 +99,7 @@ class RenderIntent:
     exaggeration_policy: ThinLayerPolicy = ThinLayerPolicy()
     labeling_policy: LabelPolicy = LabelPolicy()
     axis_policy: str = "physical_ticks"
+    display_unit_preference: str = "auto"
     legend_policy: str = "visible_materials"
     highlight_policy: str = ""
     output_context: str = "preview"
@@ -115,6 +117,7 @@ class RenderIntent:
             exaggeration_policy=profile.thin_layer_policy,
             labeling_policy=profile.label_policy,
             axis_policy=profile.axis_policy,
+            display_unit_preference=profile.display_unit_preference,
             legend_policy=profile.legend_policy,
         )
         return base if not overrides else _with_overrides(base, overrides)

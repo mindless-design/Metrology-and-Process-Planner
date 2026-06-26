@@ -9,15 +9,20 @@ from __future__ import annotations
 from importlib import import_module
 from typing import Any
 
-from metrology_process_planner.domains.process.materials import LayerReference, Material
+from metrology_process_planner.domains.process.materials import (
+    LayerReference,
+    Material,
+    material_catalog,
+    material_style,
+    resolve_material,
+)
 from metrology_process_planner.domains.process.recipe import ProcessRecipe
+from metrology_process_planner.domains.process.step_specs import ProcessWindow, ThicknessSpec
 from metrology_process_planner.domains.process.steps import (
     MaskPolarity,
     ProcessStep,
     ProcessStepKind,
-    ProcessWindow,
     RenderProfileRef,
-    ThicknessSpec,
 )
 from metrology_process_planner.domains.process.validation_messages import RecipeValidationMessage
 from metrology_process_planner.domains.process.validation_service import RecipeValidationService
@@ -76,6 +81,8 @@ __all__ = [
     "MaskInterval",
     "MaskPolarity",
     "Material",
+    "material_catalog",
+    "material_style",
     "MaterialInterval",
     "MaterialRegion",
     "PlanarizationProfile",
@@ -87,6 +94,7 @@ __all__ = [
     "RecipeValidationMessage",
     "RecipeValidationService",
     "RenderProfileRef",
+    "resolve_material",
     "ProcessStep",
     "ProcessStepKind",
     "ProcessWindow",

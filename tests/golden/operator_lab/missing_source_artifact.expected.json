@@ -1,0 +1,29 @@
+{
+  "artifact_registry": [
+    {"generator": "ProcessOutputStore", "id": "capture-cap-point-001-point_stack_table", "repair_action": "regenerate_process_output", "role": "point_stack_table", "status": "present", "type": "process_output", "warning_count": 0},
+    {"generator": "ProcessOutputStore", "id": "capture-cap-point-001-process_output_manifest", "repair_action": "regenerate_process_output", "role": "process_output_manifest", "status": "present", "type": "process_output", "warning_count": 0},
+    {"generator": "CrossSectionRenderingPipeline/1", "id": "capture-cap-point-001-stack_image", "repair_action": "regenerate_process_output", "role": "stack_image", "status": "present", "type": "stack_image", "warning_count": 0},
+    {"generator": "CrossSectionRenderingPipeline/1", "id": "capture-cap-profile-001-cross_section_image", "repair_action": "regenerate_process_output", "role": "cross_section_image", "status": "present", "type": "cross_section_image", "warning_count": 0},
+    {"generator": "ProcessOutputStore", "id": "capture-cap-profile-001-process_output_manifest", "repair_action": "regenerate_process_output", "role": "process_output_manifest", "status": "present", "type": "process_output", "warning_count": 0},
+    {"generator": "CrossSectionRenderingPipeline/1", "id": "capture-cap-profile-001-profile_image", "repair_action": "regenerate_process_output", "role": "profile_image", "status": "present", "type": "profile_image", "warning_count": 0},
+    {"generator": "", "id": "source-site-image", "repair_action": "regenerate_artifact", "role": "site_image", "status": "missing", "type": "image", "warning_count": 1},
+    {"generator": "report_export", "id": "synthetic-operator-session-process_review-csv", "repair_action": "rebuild_report", "role": "report_output", "status": "present", "type": "csv_export", "warning_count": 0},
+    {"generator": "report_export", "id": "synthetic-operator-session-process_review-images-zip", "repair_action": "rebuild_report", "role": "report_output", "status": "present", "type": "image_bundle", "warning_count": 0},
+    {"generator": "report_export", "id": "synthetic-operator-session-process_review-manifest", "repair_action": "rebuild_report", "role": "report_output", "status": "present", "type": "report_manifest", "warning_count": 0},
+    {"generator": "report_export", "id": "synthetic-operator-session-process_review-pdf", "repair_action": "rebuild_report", "role": "report_output", "status": "present", "type": "pdf_report", "warning_count": 0},
+    {"generator": "powerpoint_export", "id": "synthetic-operator-session-process_review-pptx", "repair_action": "rebuild_report", "role": "report_output", "status": "present", "type": "powerpoint_deck", "warning_count": 0}
+  ],
+  "render_scenes": [
+    {"id": "capture-cap-point-001-stack_image", "render_mode_id": "point_stack_schematic", "render_profile_id": "point_stack_schematic", "role": "stack_image", "status": "present", "warnings": []},
+    {"id": "capture-cap-profile-001-cross_section_image", "render_mode_id": "proportional_physical", "render_profile_id": "physical_cross_section", "role": "cross_section_image", "status": "present", "warnings": []},
+    {"id": "capture-cap-profile-001-profile_image", "render_mode_id": "profilometry_surface", "render_profile_id": "profilometry_surface_profile", "role": "profile_image", "status": "present", "warnings": ["RENDER_SIMPLIFICATION_APPLIED"]}
+  ],
+  "reports": [
+    {"artifact_roles": ["csv_export", "image_bundle", "pdf_report", "powerpoint_deck", "report_manifest"], "id": "synthetic-operator-session-process_review", "status": "ready", "type": "process_review", "warning_count": 3}
+  ],
+  "session": {"capture_count": 2, "id": "synthetic-operator-session", "mode": "process_aware_metrology", "process_output_count": 2, "report_count": 1, "warning_codes": ["ARTIFACT_MISSING"]},
+  "solver_outputs": [
+    {"artifact_roles": ["point_stack_table", "process_output_manifest", "site_image", "stack_image"], "diagnostics": ["GEOMETRY_RESOLUTION"], "frame_count": 3, "id": "process-output-cap-point-001", "status": "ready", "type": "point_stack"},
+    {"artifact_roles": ["cross_section_image", "process_output_manifest", "profile_image", "site_image"], "diagnostics": ["GEOMETRY_RESOLUTION"], "frame_count": 3, "id": "process-output-cap-profile-001", "status": "ready", "type": "line_profile"}
+  ]
+}

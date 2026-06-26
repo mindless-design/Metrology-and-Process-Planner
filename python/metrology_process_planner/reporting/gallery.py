@@ -31,7 +31,7 @@ def gallery_figures(
                 artifact.artifact_id,
                 artifact.relative_path,
                 layout=layout,
-                notes=_placeholder_note(artifact),
+                notes=_figure_note(artifact),
                 placeholder=artifact.placeholder or artifact.status != "present",
             )
         )
@@ -46,3 +46,13 @@ def _placeholder_note(artifact: ArtifactSummary) -> str:
     if artifact.placeholder or artifact.status != "present":
         return f"Placeholder: artifact {artifact.artifact_id} is {artifact.status}."
     return ""
+
+
+def _figure_note(artifact: ArtifactSummary) -> str:
+    placeholder = _placeholder_note(artifact)
+    if placeholder:
+        return placeholder
+    summary = dict(artifact.extensions or {}).get("report_summary")
+    if not isinstance(summary, dict):
+        return ""
+    return str(summary.get("measurement_caption", ""))

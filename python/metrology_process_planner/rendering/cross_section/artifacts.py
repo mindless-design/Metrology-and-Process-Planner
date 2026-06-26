@@ -13,6 +13,9 @@ from metrology_process_planner.domains.session import (
     WarningRecord,
     artifact_id,
 )
+from metrology_process_planner.rendering.cross_section.measurements import (
+    measurement_report_summary,
+)
 from metrology_process_planner.rendering.cross_section.models import CrossSectionRenderResult
 from metrology_process_planner.rendering.cross_section.scene_models import CrossSectionSceneModel
 
@@ -24,6 +27,7 @@ RENDER_WARNING_CODES = (
     "RENDER_COMPRESSION_APPLIED",
     "RENDER_SIMPLIFICATION_APPLIED",
     "RENDER_LABEL_COLLISION_UNRESOLVED",
+    "RENDER_MEASUREMENT_UNAVAILABLE",
     "RENDER_EXPORT_FAILED",
     "RENDER_BACKEND_UNAVAILABLE",
 )
@@ -123,6 +127,9 @@ def _artifact_extensions(
             "theme_id": str(metadata.get("theme_id", "engineering_dark")),
             "background_color": str(metadata.get("background_color", "#0b1120")),
             "compression_metadata": scene.compression_metadata.__dict__,
+            "measurement_annotations": tuple(
+                item.to_dict() for item in scene.measurement_annotations
+            ),
             "render_warnings": scene.warnings,
             "simplification": _simplification_metadata(scene),
             "label_layout_warnings": tuple(
@@ -132,7 +139,22 @@ def _artifact_extensions(
             "generator_version": "1",
         }
     )
-    return {"cross_section_render": metadata}
+    return {
+        "cross_section_render": metadata,
+        "report_summary": _report_summary(scene),
+    }
+
+
+def _report_summary(scene: CrossSectionSceneModel) -> dict[str, object]:
+    summary = measurement_report_summary(scene.measurement_annotations)
+    return {
+        "kind": "cross_section_render",
+        "title": scene.title,
+        "render_mode_id": scene.render_mode_id,
+        "measurement_count": summary["measurement_count"],
+        "measurement_caption": summary["caption"],
+        "measurements": summary["measurements"],
+    }
 
 
 def _source_ref(scene: CrossSectionSceneModel, key: str) -> str:

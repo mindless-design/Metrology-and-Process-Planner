@@ -30,6 +30,17 @@ class VisualQualityGalleryTestsPart1(unittest.TestCase):
         self.assertTrue((output / "visual_issues.json").exists())
         self.assertGreaterEqual(len(manifest), 10)
         self.assertTrue(all(item["status"] for item in manifest))
+        required = {
+            "visual_type",
+            "source_artifact_id",
+            "capture_id",
+            "status",
+            "warnings",
+            "output_path",
+            "metadata",
+            "comparison_status",
+        }
+        self.assertTrue(all(required.issubset(item) for item in manifest))
 
     def test_all_expected_visual_categories_appear(self) -> None:
         gallery.main()
@@ -49,6 +60,23 @@ class VisualQualityGalleryTestsPart1(unittest.TestCase):
         self.assertIn("physical_cross_section", visual_types)
         self.assertIn("fib_full_stack_compressed", visual_types)
         self.assertIn("process_flow_frame", visual_types)
+
+    def test_manifest_records_golden_comparisons_and_warning_metadata(self) -> None:
+        gallery.main()
+
+        output = Path("tests/output/visual_review_gallery")
+        manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+        by_type = {item["visual_type"]: item for item in manifest}
+
+        physical = by_type["physical_cross_section"]
+        liner = by_type["thin_conformal_liner"]
+        labeled = by_type["labeled_site_image"]
+
+        self.assertEqual("matched", physical["comparison_status"])
+        self.assertTrue((output / physical["comparison_path"]).exists())
+        self.assertIn("RENDER_THIN_LAYER_EXAGGERATED", liner["warnings"])
+        self.assertEqual("cap-001", labeled["capture_id"])
+        self.assertTrue((output / labeled["metadata_path"]).exists())
 
     def test_missing_visual_generation_produces_issue_record(self) -> None:
         with tempfile.TemporaryDirectory() as folder:

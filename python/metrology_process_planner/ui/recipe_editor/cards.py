@@ -11,6 +11,7 @@ from metrology_process_planner.domains.process import (
     ProcessStepKind,
 )
 from metrology_process_planner.domains.process.validation import validate_step
+from metrology_process_planner.domains.session.display_units import DisplayUnitPreferences
 from metrology_process_planner.ui.recipe_editor.card_actions import process_step_card_actions
 from metrology_process_planner.ui.recipe_editor.summaries import (
     layer_label,
@@ -54,7 +55,10 @@ def material_cards(recipe: ProcessRecipe) -> tuple[RecipeMaterialCardViewModel, 
     )
 
 
-def step_cards(recipe: ProcessRecipe) -> tuple[RecipeStepCardViewModel, ...]:
+def step_cards(
+    recipe: ProcessRecipe,
+    preferences: DisplayUnitPreferences | None = None,
+) -> tuple[RecipeStepCardViewModel, ...]:
     """Return ordered process-step cards with plain-language summaries."""
 
     labels = material_labels(recipe)
@@ -70,7 +74,7 @@ def step_cards(recipe: ProcessRecipe) -> tuple[RecipeStepCardViewModel, ...]:
             step_enabled(step),
             material_label(step, labels),
             layer_label(step),
-            thickness_summary(step),
+            thickness_summary(step, preferences),
             _status_label(step),
             step_summary(step, labels),
             len(validate_step(step, material_ids)),

@@ -7,6 +7,9 @@ from typing import Optional, Protocol
 
 from metrology_process_planner.domains.geometry import Box
 from metrology_process_planner.rendering.coordinates import CanvasTransform
+from metrology_process_planner.rendering.cross_section.measurement_primitives import (
+    measurement_primitives,
+)
 from metrology_process_planner.rendering.cross_section.models import (
     CrossSectionOutputSpec,
     CrossSectionRenderResult,
@@ -80,6 +83,9 @@ class SvgCrossSectionRenderer:
                 "theme_id": output_spec.theme_id,
                 "background_color": render_theme(output_spec.theme_id).background,
                 "compression_metadata": scene.compression_metadata.__dict__,
+                "measurement_annotations": tuple(
+                    item.to_dict() for item in scene.measurement_annotations
+                ),
                 "label_layout_warnings": tuple(
                     item for item in scene.warnings if item.startswith("RENDER_LABEL")
                 ),
@@ -108,6 +114,7 @@ def scene_to_drawing_scene(
         primitives.append(text(label.position, label.text, transform, theme))
         if label.leader_line:
             primitives.append(leader(label.leader_line, transform, theme))
+    primitives.extend(measurement_primitives(scene.measurement_annotations, transform, theme))
     primitives.extend(canvas_overlays(scene, output_spec, theme))
     if scene.title:
         primitives.append(
@@ -149,6 +156,12 @@ def _source_bounds(scene: CrossSectionSceneModel) -> Box:
                 bottom = min(bottom, point[1])
                 right = max(right, point[0])
                 top = max(top, point[1])
+    for annotation in scene.measurement_annotations:
+        for point in annotation.visual_span + (annotation.anchor_point,):
+            left = min(left, point[0])
+            bottom = min(bottom, point[1])
+            right = max(right, point[0])
+            top = max(top, point[1])
     width = max(1.0, right - left)
     height = max(1.0, top - bottom)
     return Box(

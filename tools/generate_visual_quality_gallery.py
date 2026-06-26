@@ -20,31 +20,58 @@ if TYPE_CHECKING:
 def main() -> None:
     """Write review-ready visuals and quality reports."""
 
+    from metrology_process_planner.testing.visual_gallery_regression import (
+        compare_gallery_item,
+    )
     from metrology_process_planner.testing.visual_quality import evaluate_visual_item
     from tools.visual_quality_gallery_items import capture_items, process_items
 
     output_root = ROOT / "tests" / "output" / "visual_review_gallery"
+    debug_root = ROOT / "tests" / "output" / "debug"
     if output_root.exists():
         shutil.rmtree(output_root)
     output_root.mkdir(parents=True, exist_ok=True)
-    manifest = [*process_items(ROOT, output_root), *capture_items(output_root)]
-    issues = [
-        issue
-        for item in manifest
-        for issue in evaluate_visual_item(output_root, item)
-    ]
-    manifest = [_with_status(output_root, item) for item in manifest]
+    raw_manifest = [*process_items(ROOT, output_root), *capture_items(output_root)]
+    manifest: list[VisualManifestItem] = []
+    issues = []
+    for item in raw_manifest:
+        item_issues = list(evaluate_visual_item(output_root, item))
+        comparison = compare_gallery_item(
+            output_root,
+            item,
+            ROOT / "tests" / "golden" / "render",
+            debug_root,
+        )
+        comparison_path = _write_comparison(output_root, item.artifact_id, comparison)
+        item = _with_review_status(item, item_issues, comparison.status, comparison_path)
+        if comparison.status == "mismatch":
+            item_issues.append(_comparison_issue(item, comparison.debug_path))
+        manifest.append(item)
+        issues.extend(item_issues)
     _write_json(output_root / "manifest.json", [item.to_dict() for item in manifest])
     _write_json(output_root / "visual_issues.json", [issue.to_dict() for issue in issues])
     (output_root / "index.html").write_text(_html_page(manifest, issues), encoding="utf-8")
 
 
-def _with_status(root: Path, item: VisualManifestItem) -> VisualManifestItem:
+def _with_review_status(
+    item: VisualManifestItem,
+    issues: list[Any],
+    comparison_status: str,
+    comparison_path: str,
+) -> VisualManifestItem:
     from dataclasses import replace
 
-    from metrology_process_planner.testing.visual_quality import evaluate_visual_item, visual_status
+    from metrology_process_planner.testing.visual_quality import visual_status
 
-    return replace(item, status=visual_status(evaluate_visual_item(root, item)))
+    status = visual_status(tuple(issues))
+    if comparison_status == "mismatch" and status == "pass":
+        status = "needs_review"
+    return replace(
+        item,
+        status=status,
+        comparison_status=comparison_status,
+        comparison_path=comparison_path,
+    )
 
 
 def _html_page(manifest: list[VisualManifestItem], issues: list[Any]) -> str:
@@ -61,7 +88,7 @@ def _html_page(manifest: list[VisualManifestItem], issues: list[Any]) -> str:
         "<p><a href=\"manifest.json\">manifest.json</a> "
         "<a href=\"visual_issues.json\">visual_issues.json</a></p>"
         "<table><thead><tr><th>Preview</th><th>Visual</th><th>Fixture</th><th>Profile</th>"
-        "<th>Status</th><th>Warnings</th><th>Metadata</th></tr></thead><tbody>"
+        "<th>Status</th><th>Comparison</th><th>Warnings</th><th>Metadata</th></tr></thead><tbody>"
         f"{rows}</tbody></table></body></html>"
     )
 
@@ -70,6 +97,10 @@ def _row(item: VisualManifestItem, issue_count: int) -> str:
     metadata = (
         f'<a href="{html.escape(item.metadata_path)}">scene json</a>'
         if item.metadata_path else ""
+    )
+    comparison = (
+        f'<a href="{html.escape(item.comparison_path)}">{html.escape(item.comparison_status)}</a>'
+        if item.comparison_path else html.escape(item.comparison_status)
     )
     warning_text = ", ".join(item.warnings)
     return (
@@ -81,6 +112,7 @@ def _row(item: VisualManifestItem, issue_count: int) -> str:
         f"<td>{html.escape(item.render_profile)}</td>"
         f'<td class="{html.escape(item.status)}">{html.escape(item.status)}'
         f"<br>{issue_count} issues</td>"
+        f"<td>{comparison}</td>"
         f"<td>{html.escape(warning_text)}</td>"
         f"<td>{metadata}</td>"
         "</tr>"
@@ -98,6 +130,33 @@ def _issue_counts(issues: list[Any]) -> dict[str, int]:
 def _write_json(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _write_comparison(output_root: Path, artifact_id: str, comparison: Any) -> str:
+    if comparison.status == "not_configured":
+        return ""
+    relative_path = f"comparisons/{_safe_name(artifact_id)}.comparison.json"
+    _write_json(output_root / relative_path, comparison.to_dict())
+    return relative_path
+
+
+def _comparison_issue(item: VisualManifestItem, debug_path: str) -> Any:
+    from metrology_process_planner.testing.visual_quality_models import VisualIssue
+
+    return VisualIssue(
+        f"{item.artifact_id}:VIS-999",
+        item.image_path,
+        item.visual_type,
+        "major",
+        "golden_mismatch",
+        "Generated visual metadata differs from the golden reference.",
+        "Render scene contract changed or the golden is stale.",
+        f"Inspect comparison output and debug artifact: {debug_path}",
+    )
+
+
+def _safe_name(value: str) -> str:
+    return "".join(char if char.isalnum() or char in {"-", "_"} else "_" for char in value)
 
 
 if __name__ == "__main__":

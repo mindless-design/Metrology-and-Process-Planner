@@ -11,6 +11,7 @@ from metrology_process_planner.domains.process import (
     ProcessStep,
     ThicknessSpec,
 )
+from metrology_process_planner.domains.units import UnitParseError, parse_length
 from metrology_process_planner.workflows.recipe_editor_results import RecipeEditorActionResult
 
 
@@ -113,12 +114,17 @@ def _with_thickness(
     value: str,
 ) -> ProcessRecipe | RecipeEditorActionResult:
     try:
-        target = float(value.strip())
-    except ValueError:
-        return _bad_edit(recipe, CommandId.EDIT_PROCESS_STEP, "Thickness must be a numeric value.")
+        parsed = parse_length(value, default_unit="um", allow_plain_angstrom=True)
+    except UnitParseError as error:
+        return _bad_edit(
+            recipe,
+            CommandId.EDIT_PROCESS_STEP,
+            f"Thickness must be a numeric length. {error}",
+        )
     current = step.thickness
-    unit = current.unit if current is not None else "um"
-    return _with_step(recipe, replace(step, thickness=ThicknessSpec(target, unit=unit)))
+    display_unit = parsed.display_unit or (current.display_unit if current is not None else "um")
+    thickness = ThicknessSpec(parsed.value_um, unit="um", display_unit=display_unit)
+    return _with_step(recipe, replace(step, thickness=thickness))
 
 
 def _with_step(recipe: ProcessRecipe, replacement: ProcessStep) -> ProcessRecipe:

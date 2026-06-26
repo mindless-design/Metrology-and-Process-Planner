@@ -3,6 +3,12 @@
 from __future__ import annotations
 
 from metrology_process_planner.domains.session import CaptureRecord, ModeRegistry, SessionRecord
+from metrology_process_planner.domains.session.display_units import (
+    DisplayUnitPreferences,
+    display_unit_preferences_from_session,
+    format_length,
+    resolved_display_unit,
+)
 from metrology_process_planner.reporting.models import CaptureSummary, MeasurementSummary
 from metrology_process_planner.reporting.visibility import visible_artifact_refs
 from metrology_process_planner.workflows.editor.document import SessionDocument
@@ -38,8 +44,15 @@ def measurement_summaries(
     """Return report measurement summaries for all session captures."""
 
     summaries: list[MeasurementSummary] = []
+    preferences = display_unit_preferences_from_session(document.session)
+    canonical_unit = document.session.coordinates.units
     for capture in document.session.captures:
         for measurement in capture.measurements:
+            display_unit = _measurement_display_unit(
+                measurement.measured_length,
+                canonical_unit,
+                preferences,
+            )
             summaries.append(
                 MeasurementSummary(
                     measurement.id,
@@ -54,6 +67,22 @@ def measurement_summaries(
                         tuple((measurement.artifact_refs or {}).values()),
                         mode_registry,
                     ),
+                    display_unit,
+                    format_length(measurement.measured_length, canonical_unit, display_unit),
+                    format_length(measurement.target, canonical_unit, display_unit),
+                    format_length(measurement.lower_spec_limit, canonical_unit, display_unit),
+                    format_length(measurement.upper_spec_limit, canonical_unit, display_unit),
                 )
             )
     return tuple(summaries)
+
+
+def _measurement_display_unit(
+    measured_length: float,
+    canonical_unit: str,
+    preferences: DisplayUnitPreferences,
+) -> str:
+    preference = preferences.reports
+    if preference == "auto":
+        preference = preferences.layout_geometry
+    return resolved_display_unit(measured_length, canonical_unit, preference)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from metrology_process_planner.domains.session.display_units import format_length
 from metrology_process_planner.rendering.cross_section.models import CrossSectionOutputSpec
 from metrology_process_planner.rendering.cross_section.scene_models import (
     CrossSectionSceneModel,
@@ -117,7 +118,7 @@ def _stack_row_primitives(
         ),
         TextMark(
             CanvasPoint(x + width + 28.0, y + min(height - 8.0, 20.0)),
-            f"{shape.material_name}  {_shape_thickness(shape):g} nm",
+            f"{shape.material_name}  {format_length(_shape_thickness(shape), 'um')}",
             DrawingStyle(stroke=theme.primary_text, fill=theme.primary_text, font_size_px=16),
             anchor="start",
         ),

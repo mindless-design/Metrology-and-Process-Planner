@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from metrology_process_planner.domains.process.steps import ProcessWindow
+from metrology_process_planner.domains.process.step_specs import ProcessWindow
 from metrology_process_planner.domains.process.validation_messages import (
     RecipeValidationMessage,
     recipe_validation_message,

@@ -47,6 +47,11 @@ class MeasurementSummary:
     lower_spec_limit: Optional[float] = None
     upper_spec_limit: Optional[float] = None
     artifact_ids: tuple[str, ...] = ()
+    display_unit: str = "layout"
+    measured_length_display: str = ""
+    target_display: str = ""
+    lower_spec_limit_display: str = ""
+    upper_spec_limit_display: str = ""
 
 
 @dataclass(frozen=True)

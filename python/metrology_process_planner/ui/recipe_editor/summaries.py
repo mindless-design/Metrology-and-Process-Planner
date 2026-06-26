@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 from metrology_process_planner.domains.process import ProcessRecipe, ProcessStep, ProcessStepKind
+from metrology_process_planner.domains.session.display_units import (
+    DisplayUnitPreferences,
+    format_length,
+)
 
 
 def material_labels(recipe: ProcessRecipe) -> dict[str, str]:
@@ -61,17 +65,31 @@ def layer_label(step: ProcessStep) -> str:
     return step.layer.name or f"{step.layer.layer}/{step.layer.datatype}"
 
 
-def thickness_summary(step: ProcessStep) -> str:
+def thickness_summary(
+    step: ProcessStep,
+    preferences: DisplayUnitPreferences | None = None,
+) -> str:
     """Return a compact thickness/depth/plane summary."""
 
+    display_preference = (
+        preferences.film_thickness if preferences is not None else "auto"
+    )
     if step.thickness is not None:
-        value = _format_float(step.thickness.target)
-        return f"{value} {step.thickness.unit} target"
+        display_unit = (
+            display_preference
+            if display_preference != "auto"
+            else step.thickness.display_unit or step.thickness.unit
+        )
+        return f"{format_length(step.thickness.target, step.thickness.unit, display_unit)} target"
     if (
         step.planarization_profile is not None
         and step.planarization_profile.target_height is not None
     ):
-        value = _format_float(step.planarization_profile.target_height)
+        value = format_length(
+            step.planarization_profile.target_height,
+            "um",
+            display_preference,
+        )
         return f"target plane {value}"
     return ""
 
@@ -86,10 +104,6 @@ def target_materials(step: ProcessStep) -> str:
     """Return target material display text."""
 
     return ", ".join(step.target_material_ids) if step.target_material_ids else "target materials"
-
-
-def _format_float(value: float) -> str:
-    return f"{value:g}"
 
 
 def _substrate_summary(step: ProcessStep, labels: dict[str, str]) -> str:

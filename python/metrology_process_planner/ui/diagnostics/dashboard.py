@@ -79,6 +79,7 @@ _COMMON_SECTIONS = (
             "Active Session Path",
             "Dirty State",
             "Mode",
+            "Display Units",
             "Active Mode",
             "Loaded Modes",
             "Mode Validation",

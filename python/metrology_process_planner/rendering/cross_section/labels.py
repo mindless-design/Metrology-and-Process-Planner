@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from metrology_process_planner.domains.session.display_units import format_length
 from metrology_process_planner.rendering.cross_section.models import LabelPolicy
 from metrology_process_planner.rendering.cross_section.scene_models import (
     LabelCandidate,
@@ -13,6 +14,7 @@ from metrology_process_planner.rendering.cross_section.scene_models import (
 def build_label_candidates(
     shapes: tuple[MaterialShape, ...],
     policy: LabelPolicy,
+    display_unit_preference: str = "auto",
 ) -> tuple[LabelCandidate, ...]:
     """Build material label candidates from projected shapes."""
 
@@ -23,7 +25,7 @@ def build_label_candidates(
         thickness = abs(shape.physical_bounds[3] - shape.physical_bounds[1])
         text = shape.material_name
         if policy.show_thickness:
-            text = f"{text}, {thickness:g} nm"
+            text = f"{text}, {format_length(thickness, 'um', display_unit_preference)}"
         priority = _priority(shape)
         inline = policy.allow_inline and not shape.thin_layer_flag
         candidates.append(
@@ -210,8 +212,6 @@ def _legend_only_label(candidate: LabelCandidate) -> PlacedLabel:
         priority=candidate.priority,
         collision_status="fallback",
     )
-
-
 def _text_width(text: str) -> float:
     return max(28.0, len(text) * 6.5)
 

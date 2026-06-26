@@ -11,6 +11,7 @@ from metrology_process_planner.domains.process import (
     SolverResult,
     StackGeometry2D,
 )
+from metrology_process_planner.domains.session.display_units import resolved_display_unit
 from metrology_process_planner.rendering.cross_section import scene_parts
 from metrology_process_planner.rendering.cross_section.advanced_scene_metadata import (
     advanced_warnings,
@@ -18,14 +19,25 @@ from metrology_process_planner.rendering.cross_section.advanced_scene_metadata i
 from metrology_process_planner.rendering.cross_section.filtering import (
     FeatureFilter,
     FilterDiagnostics,
+    FilteredStackGeometry,
 )
 from metrology_process_planner.rendering.cross_section.labels import (
     build_label_candidates,
     labels_have_collisions,
     place_labels,
 )
+from metrology_process_planner.rendering.cross_section.measurement_models import (
+    MeasurementAnnotation,
+)
+from metrology_process_planner.rendering.cross_section.measurements import (
+    build_measurement_annotations,
+    measurement_warnings,
+)
 from metrology_process_planner.rendering.cross_section.models import RenderIntent, RenderProfile
-from metrology_process_planner.rendering.cross_section.projection import build_render_projection
+from metrology_process_planner.rendering.cross_section.projection import (
+    RenderProjectionPlan,
+    build_render_projection,
+)
 from metrology_process_planner.rendering.cross_section.scene_builder import (
     cross_section_scene_model,
 )
@@ -61,40 +73,84 @@ def build_cross_section_scene(
     geometry = _geometry_from_profile(frame.profile)
     filtered = FeatureFilter().filter(geometry, render_intent, profile, materials)
     projection = build_render_projection(filtered.geometry, render_intent, materials)
-    candidates = build_label_candidates(projection.shapes, render_intent.labeling_policy)
-    scene_bounds = _visual_bounds(projection.shapes)
-    labels = _placed_labels(render_intent, projection.shapes, candidates, scene_bounds)
-    label_warnings = _label_warnings(labels)
-    shapes = _attach_candidates(projection.shapes, candidates)
-    warnings = _warnings(
-        filtered.diagnostics,
-        projection.warnings,
-        label_warnings + _shape_visual_warnings(shapes),
+    candidates = build_label_candidates(
+        projection.shapes,
+        render_intent.labeling_policy,
+        render_intent.display_unit_preference,
     )
+    scene_bounds = _visual_bounds(projection.shapes)
+    labels = place_labels(
+        candidates, projection.shapes, render_intent.labeling_policy, scene_bounds
+    )
+    shapes = _attach_candidates(projection.shapes, candidates)
+    visual_warnings = _label_warnings(labels) + _shape_visual_warnings(shapes)
     simplify_annotations = simplification_annotations(
         profile.simplification_policy, filtered.diagnostics, shapes
     )
     simplify_warnings = simplification_warnings(
         profile.simplification_policy, filtered.diagnostics, shapes
     )
+    measurement_annotations = _measurement_annotations(
+        shapes,
+        filtered,
+        projection,
+        solver_result,
+        render_intent,
+    )
     return cross_section_scene_model(
-        scene_id, title, frame, profile, render_intent, filtered, projection,
-        scene_bounds, shapes, labels, simplify_annotations,
-        unique_warning_codes(warnings + simplify_warnings + advanced_warnings(frame)),
+        scene_id, title, frame, profile, render_intent, filtered, projection, scene_bounds,
+        shapes, labels, simplify_annotations, measurement_annotations,
+        _scene_warnings(
+            filtered, projection, visual_warnings, simplify_warnings, measurement_annotations, frame
+        ),
+        solver_result.units,
     )
 
 
-def _placed_labels(
-    render_intent: RenderIntent,
+def _measurement_annotations(
     shapes: tuple[MaterialShape, ...],
-    candidates: tuple[LabelCandidate, ...],
-    scene_bounds: tuple[float, float, float, float],
-) -> tuple[PlacedLabel, ...]:
-    return place_labels(candidates, shapes, render_intent.labeling_policy, scene_bounds)
+    filtered: FilteredStackGeometry,
+    projection: RenderProjectionPlan,
+    solver_result: SolverResult,
+    render_intent: RenderIntent,
+) -> tuple[MeasurementAnnotation, ...]:
+    thicknesses = [
+        abs(shape.physical_bounds[3] - shape.physical_bounds[1])
+        for shape in shapes
+        if shape.visible
+    ]
+    return build_measurement_annotations(
+        shapes,
+        (filtered.surface.points,),
+        projection.compression_metadata,
+        solver_result.units,
+        resolved_display_unit(
+            min(thicknesses) if thicknesses else None,
+            solver_result.units,
+            render_intent.display_unit_preference,
+        ),
+    )
 
 
 def _label_warnings(labels: tuple[PlacedLabel, ...]) -> tuple[str, ...]:
     return ("RENDER_LABEL_COLLISION_UNRESOLVED",) if labels_have_collisions(labels) else ()
+
+
+def _scene_warnings(
+    filtered: FilteredStackGeometry,
+    projection: RenderProjectionPlan,
+    visual_warnings: tuple[str, ...],
+    simplify_warnings: tuple[str, ...],
+    measurement_annotations: tuple[MeasurementAnnotation, ...],
+    frame: ProcessFrame,
+) -> tuple[str, ...]:
+    warnings = _warnings(filtered.diagnostics, projection.warnings, visual_warnings)
+    return unique_warning_codes(
+        warnings
+        + simplify_warnings
+        + measurement_warnings(measurement_annotations)
+        + advanced_warnings(frame)
+    )
 
 
 def _shape_visual_warnings(shapes: tuple[MaterialShape, ...]) -> tuple[str, ...]:
@@ -116,8 +172,6 @@ def _has_compressed_shape(shapes: tuple[MaterialShape, ...]) -> bool:
 
 def _has_hidden_shape(shapes: tuple[MaterialShape, ...]) -> bool:
     return any(not shape.visible for shape in shapes)
-
-
 
 
 def _warnings(

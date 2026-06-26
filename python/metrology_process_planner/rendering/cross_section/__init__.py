@@ -19,6 +19,14 @@ from metrology_process_planner.rendering.cross_section.labels import (
     build_label_candidates,
     place_labels,
 )
+from metrology_process_planner.rendering.cross_section.measurement_models import (
+    MeasurementAnnotation,
+)
+from metrology_process_planner.rendering.cross_section.measurements import (
+    build_measurement_annotations,
+    measurement_caption,
+    measurement_report_summary,
+)
 from metrology_process_planner.rendering.cross_section.models import (
     CompressionPolicy,
     CrossSectionOutputSpec,
@@ -78,6 +86,7 @@ __all__ = [
     "LegendEntry",
     "LegendModel",
     "MaterialShape",
+    "MeasurementAnnotation",
     "PlacedLabel",
     "PROCESS_ROLE_RENDER_PROFILES",
     "RENDER_WARNING_CODES",
@@ -92,12 +101,15 @@ __all__ = [
     "build_cross_section_scene",
     "build_failed_render_warning",
     "build_label_candidates",
+    "build_measurement_annotations",
     "build_process_flow_scenes",
     "build_render_artifact_record",
     "build_render_projection",
     "built_in_render_profile",
     "built_in_render_profiles",
     "default_render_profile_id",
+    "measurement_caption",
+    "measurement_report_summary",
     "place_labels",
     "resolve_render_profile",
     "scene_from_dict",

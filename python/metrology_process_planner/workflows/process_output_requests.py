@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 
-from metrology_process_planner.domains.process import ProcessRecipe, SolverInput, SolverOptions
+from metrology_process_planner.domains.process import (
+    ProcessRecipe,
+    SolverInput,
+    SolverOptions,
+)
 from metrology_process_planner.domains.session import (
     CaptureRecord,
     ProcessContext,
@@ -12,6 +16,7 @@ from metrology_process_planner.domains.session import (
     session_mode_value,
 )
 from metrology_process_planner.workflows.process_capture_extensions import process_solver_request
+from metrology_process_planner.workflows.process_solver_inputs import normalized_recipe
 
 _ROLE_BY_OPERATION = {
     "point_stack": ("stack_image", "point_stack_table"),
@@ -124,7 +129,7 @@ class SolverInputBuilder:
                 cutline_x_min=min(start_x, end_x),
                 cutline_x_max=max(start_x, end_x),
             )
-        return SolverInput(recipe, options)
+        return SolverInput(normalized_recipe(recipe), options)
 
     def validate(
         self,

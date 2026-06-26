@@ -56,6 +56,8 @@ class CrossSectionRenderingPipelineTestsPart2(unittest.TestCase):
         self.assertEqual("full_stack_compressed_image", artifact.type)
         self.assertEqual("fib_full_stack_compressed",
                          artifact.extensions["cross_section_render"]["render_mode_id"])
+        self.assertTrue(artifact.extensions["cross_section_render"]["measurement_annotations"])
+        self.assertIn("measurement_caption", artifact.extensions["report_summary"])
         self.assertEqual("RENDER_EXPORT_FAILED", warning.code)
         self.assertEqual((artifact.id,), warning.related_artifact_refs)
 

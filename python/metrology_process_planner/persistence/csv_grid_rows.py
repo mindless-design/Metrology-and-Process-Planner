@@ -12,22 +12,37 @@ from metrology_process_planner.domains.session import (
     ModeRegistry,
     SessionRecord,
 )
+from metrology_process_planner.domains.session.display_units import (
+    DisplayUnitPreferences,
+    resolved_display_unit,
+)
 from metrology_process_planner.domains.warnings.warning_visibility import (
     warning_visible_for_session,
 )
 from metrology_process_planner.persistence.csv_capture_schema import CAPTURE_SUMMARY_FIELDS
+from metrology_process_planner.persistence.csv_units import convert_optional_length
 
 
 def grid_site_rows(
     session: SessionRecord,
     mode_registry: ModeRegistry | None = None,
+    display_preferences: DisplayUnitPreferences | None = None,
 ) -> list[dict[str, Any]]:
     """Return one CSV row for each planned site in every grid dataset."""
 
     rows: list[dict[str, Any]] = []
     for dataset in session.grid_datasets:
         for index, site in enumerate(_planned_sites(dataset), start=1):
-            rows.append(_grid_site_row(session, dataset, site, index, mode_registry))
+            rows.append(
+                _grid_site_row(
+                    session,
+                    dataset,
+                    site,
+                    index,
+                    mode_registry,
+                    display_preferences,
+                )
+            )
     return rows
 
 
@@ -37,8 +52,11 @@ def _grid_site_row(
     site: dict[str, Any],
     index: int,
     mode_registry: ModeRegistry | None,
+    display_preferences: DisplayUnitPreferences | None,
 ) -> dict[str, Any]:
     center = dict(site.get("center", {}))
+    canonical_unit = str(center.get("units", session.coordinates.units))
+    display_unit = _display_unit(center.get("x"), canonical_unit, display_preferences)
     overview = _overview_artifact(session, dataset, mode_registry)
     row = _empty_capture_columns(session)
     row.update(
@@ -50,33 +68,23 @@ def _grid_site_row(
             "type": "planned_site",
             "status": dataset.status,
             "geometry_kind": "point",
-            "center_x": center.get("x", ""),
-            "center_y": center.get("y", ""),
+            "center_x": _convert_optional(center.get("x", ""), canonical_unit, display_unit),
+            "center_y": _convert_optional(center.get("y", ""), canonical_unit, display_unit),
             "grid_dataset_id": dataset.id,
             "grid_dataset_label": dataset.label,
             "grid_site_index": str(index),
             "grid_row": str(site.get("row", "")),
             "grid_column": str(site.get("column", "")),
-            "grid_center_x": center.get("x", ""),
-            "grid_center_y": center.get("y", ""),
+            "grid_center_x": _convert_optional(center.get("x", ""), canonical_unit, display_unit),
+            "grid_center_y": _convert_optional(center.get("y", ""), canonical_unit, display_unit),
             "grid_anchor_capture_ids": ";".join(dataset.capture_ids),
-            "grid_overview_artifact_id": overview.id if overview is not None else "",
-            "grid_overview_artifact_path": (
-                overview.relative_path if overview is not None else ""
-            ),
-            "grid_overview_artifact_status": (
-                overview.status.value if overview is not None else ""
-            ),
-            "artifact_statuses": (
-                f"{overview.owner.role}:{overview.status.value}"
-                if overview is not None
-                else ""
-            ),
+            **_overview_columns(overview),
             "warning_count": str(
                 _grid_warning_count(session, dataset, overview, mode_registry)
             ),
         }
     )
+    row["units"] = display_unit
     return row
 
 
@@ -88,6 +96,22 @@ def _site_label(dataset: GridDatasetRecord, site: dict[str, Any]) -> str:
     if site.get("label"):
         return str(site["label"])
     return f"{dataset.label} R{site.get('row', '')}C{site.get('column', '')}"
+
+
+def _overview_columns(overview: Any) -> dict[str, str]:
+    if overview is None:
+        return {
+            "grid_overview_artifact_id": "",
+            "grid_overview_artifact_path": "",
+            "grid_overview_artifact_status": "",
+            "artifact_statuses": "",
+        }
+    return {
+        "grid_overview_artifact_id": overview.id,
+        "grid_overview_artifact_path": overview.relative_path,
+        "grid_overview_artifact_status": overview.status.value,
+        "artifact_statuses": f"{overview.owner.role}:{overview.status.value}",
+    }
 
 
 def _empty_capture_columns(session: SessionRecord) -> dict[str, Any]:
@@ -107,6 +131,24 @@ def _empty_capture_columns(session: SessionRecord) -> dict[str, Any]:
         }
     )
     return row
+
+
+def _display_unit(
+    representative_value: object,
+    canonical_unit: str,
+    preferences: DisplayUnitPreferences | None,
+) -> str:
+    value = (
+        float(representative_value)
+        if isinstance(representative_value, (int, float, str)) and representative_value != ""
+        else None
+    )
+    preference = preferences.layout_geometry if preferences is not None else "auto"
+    return resolved_display_unit(value, canonical_unit, preference)
+
+
+def _convert_optional(value: Any, canonical_unit: str, display_unit: str) -> Any:
+    return convert_optional_length(value, canonical_unit, display_unit)
 
 
 def _planned_sites(dataset: GridDatasetRecord) -> tuple[dict[str, Any], ...]:

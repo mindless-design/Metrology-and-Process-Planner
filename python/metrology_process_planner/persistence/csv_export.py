@@ -9,6 +9,9 @@ from typing import Any
 from metrology_process_planner.diagnostics.diagnostics_sinks import DiagnosticSink
 from metrology_process_planner.diagnostics.trace_context import TraceContext
 from metrology_process_planner.domains.session import ModeRegistry, SessionRecord
+from metrology_process_planner.domains.session.display_units import (
+    display_unit_preferences_from_session,
+)
 from metrology_process_planner.persistence.csv_capture_rows import capture_row
 from metrology_process_planner.persistence.csv_capture_schema import CAPTURE_SUMMARY_FIELDS
 from metrology_process_planner.persistence.csv_grid_rows import grid_site_rows
@@ -29,9 +32,10 @@ class CaptureCsvExporter:
         """Return CSV rows for all captures in a session."""
 
         rows: list[dict[str, Any]] = []
+        preferences = display_unit_preferences_from_session(session)
         for capture in session.captures:
-            rows.append(capture_row(session, capture, self._mode_registry))
-        rows.extend(grid_site_rows(session, self._mode_registry))
+            rows.append(capture_row(session, capture, self._mode_registry, preferences))
+        rows.extend(grid_site_rows(session, self._mode_registry, preferences))
         return rows
 
     def export(self, session: SessionRecord, destination: Path) -> Path:
@@ -39,9 +43,15 @@ class CaptureCsvExporter:
 
         self._emit("CsvWriteStarted", session, destination)
         destination.parent.mkdir(parents=True, exist_ok=True)
+        fieldnames = _fieldnames_for_session(session)
         with destination.open("w", newline="", encoding="utf-8") as handle:
             writer = csv.DictWriter(handle, fieldnames=CAPTURE_SUMMARY_FIELDS, lineterminator="\n")
-            writer.writeheader()
+            writer.writerow(
+                {
+                    field: fieldnames[index]
+                    for index, field in enumerate(CAPTURE_SUMMARY_FIELDS)
+                }
+            )
             writer.writerows(self.rows_for_session(session))
         self._emit("CsvWriteCompleted", session, destination)
         return destination
@@ -59,3 +69,45 @@ class CaptureCsvExporter:
                 "related_artifact_paths": (str(path),),
             },
         )
+
+
+def _fieldnames_for_session(session: SessionRecord) -> tuple[str, ...]:
+    preferences = display_unit_preferences_from_session(session)
+    if preferences.layout_geometry == "auto":
+        return CAPTURE_SUMMARY_FIELDS
+    return tuple(
+        _display_header(field, preferences.layout_geometry) for field in CAPTURE_SUMMARY_FIELDS
+    )
+
+
+def _display_header(field: str, unit: str) -> str:
+    display_fields = {
+        "left",
+        "right",
+        "bottom",
+        "top",
+        "center_x",
+        "center_y",
+        "width",
+        "height",
+        "feature_start_x",
+        "feature_start_y",
+        "feature_end_x",
+        "feature_end_y",
+        "feature_point_x",
+        "feature_point_y",
+        "feature_midpoint_x",
+        "feature_midpoint_y",
+        "feature_length",
+        "measurement_start_x",
+        "measurement_start_y",
+        "measurement_end_x",
+        "measurement_end_y",
+        "measurement_length",
+        "target",
+        "lsl",
+        "usl",
+        "grid_center_x",
+        "grid_center_y",
+    }
+    return f"{field} ({unit})" if field in display_fields else field

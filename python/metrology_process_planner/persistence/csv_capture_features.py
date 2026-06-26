@@ -4,8 +4,14 @@ from __future__ import annotations
 
 from typing import Any
 
+from metrology_process_planner.persistence.csv_units import convert_optional_length
 
-def feature_columns(capture: Any) -> dict[str, Any]:
+
+def feature_columns(
+    capture: Any,
+    canonical_unit: str = "layout",
+    display_unit: str = "layout",
+) -> dict[str, Any]:
     """Return feature metadata columns for one capture row."""
 
     if not capture.geometry.features:
@@ -18,29 +24,48 @@ def feature_columns(capture: Any) -> dict[str, Any]:
             "feature_id": feature.get("id", ""),
             "feature_kind": feature.get("kind", ""),
             "feature_shape": geometry.get("shape", ""),
-            "feature_units": geometry.get("units", ""),
+            "feature_units": display_unit if geometry.get("units", "") else "",
         }
     )
     if geometry.get("shape") == "line":
-        row.update(_line_feature_columns(geometry))
+        row.update(_line_feature_columns(geometry, canonical_unit, display_unit))
     if geometry.get("shape") == "point":
         point = dict(geometry.get("point", {}))
-        row.update({"feature_point_x": point.get("x", ""), "feature_point_y": point.get("y", "")})
+        row.update(
+            {
+                "feature_point_x": _convert_optional(
+                    point.get("x", ""), canonical_unit, display_unit
+                ),
+                "feature_point_y": _convert_optional(
+                    point.get("y", ""), canonical_unit, display_unit
+                ),
+            }
+        )
     return row
 
 
-def _line_feature_columns(geometry: dict[str, Any]) -> dict[str, Any]:
+def _line_feature_columns(
+    geometry: dict[str, Any],
+    canonical_unit: str,
+    display_unit: str,
+) -> dict[str, Any]:
     start = dict(geometry.get("start", {}))
     end = dict(geometry.get("end", {}))
     midpoint = dict(geometry.get("midpoint", {}))
     return {
-        "feature_start_x": start.get("x", ""),
-        "feature_start_y": start.get("y", ""),
-        "feature_end_x": end.get("x", ""),
-        "feature_end_y": end.get("y", ""),
-        "feature_midpoint_x": midpoint.get("x", ""),
-        "feature_midpoint_y": midpoint.get("y", ""),
-        "feature_length": geometry.get("length", ""),
+        "feature_start_x": _convert_optional(start.get("x", ""), canonical_unit, display_unit),
+        "feature_start_y": _convert_optional(start.get("y", ""), canonical_unit, display_unit),
+        "feature_end_x": _convert_optional(end.get("x", ""), canonical_unit, display_unit),
+        "feature_end_y": _convert_optional(end.get("y", ""), canonical_unit, display_unit),
+        "feature_midpoint_x": _convert_optional(
+            midpoint.get("x", ""), canonical_unit, display_unit
+        ),
+        "feature_midpoint_y": _convert_optional(
+            midpoint.get("y", ""), canonical_unit, display_unit
+        ),
+        "feature_length": _convert_optional(
+            geometry.get("length", ""), canonical_unit, display_unit
+        ),
     }
 
 
@@ -60,3 +85,7 @@ def _empty_feature_columns() -> dict[str, str]:
         "feature_length": "",
         "feature_units": "",
     }
+
+
+def _convert_optional(value: Any, canonical_unit: str, display_unit: str) -> Any:
+    return convert_optional_length(value, canonical_unit, display_unit)

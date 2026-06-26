@@ -7,6 +7,7 @@ from metrology_process_planner.domains.process import (
     ProcessRecipe,
     ProcessStep,
 )
+from metrology_process_planner.domains.session.display_units import DisplayUnitPreferences
 from metrology_process_planner.ui.recipe_editor.card_actions import (
     material_card_actions,
     process_step_card_actions,
@@ -28,14 +29,17 @@ from metrology_process_planner.ui.shell.view_models import (
 )
 
 
-def selected_detail(recipe: ProcessRecipe) -> RecipeDetailPanelViewModel | None:
+def selected_detail(
+    recipe: ProcessRecipe,
+    preferences: DisplayUnitPreferences | None = None,
+) -> RecipeDetailPanelViewModel | None:
     """Return editable details for the selected recipe card."""
 
     selected = str(dict(recipe.metadata or {}).get("selected_card_id", ""))
     if selected.startswith("material:"):
         return _material_detail(recipe, selected.removeprefix("material:"))
     if selected.startswith("step:"):
-        return _step_detail(recipe, selected.removeprefix("step:"))
+        return _step_detail(recipe, selected.removeprefix("step:"), preferences)
     if selected.startswith("layer:"):
         return _layer_detail(recipe, selected)
     return None
@@ -66,7 +70,11 @@ def _material_detail(
     )
 
 
-def _step_detail(recipe: ProcessRecipe, step_id: str) -> RecipeDetailPanelViewModel | None:
+def _step_detail(
+    recipe: ProcessRecipe,
+    step_id: str,
+    preferences: DisplayUnitPreferences | None = None,
+) -> RecipeDetailPanelViewModel | None:
     step = _step_by_id(recipe, step_id)
     if step is None:
         return None
@@ -75,7 +83,7 @@ def _step_detail(recipe: ProcessRecipe, step_id: str) -> RecipeDetailPanelViewMo
         f"step:{step.id}",
         "step",
         step_name(step),
-        _step_fields(step, labels),
+        _step_fields(step, labels, preferences),
         process_step_card_actions(step.id, step_enabled(step)),
         summary=step_summary(step, labels),
     )
@@ -106,6 +114,7 @@ def _layer_detail(recipe: ProcessRecipe, card_id: str) -> RecipeDetailPanelViewM
 def _step_fields(
     step: ProcessStep,
     labels: dict[str, str],
+    preferences: DisplayUnitPreferences | None = None,
 ) -> tuple[MetadataFieldViewModel, ...]:
     return (
         MetadataFieldViewModel("name", "Step Name", step_name(step), required=True),
@@ -129,7 +138,11 @@ def _step_fields(
         ),
         MetadataFieldViewModel("layer", "Layer / Mask", layer_label(step)),
         MetadataFieldViewModel("mask_polarity", "Mask Polarity", step.mask_polarity.value),
-        MetadataFieldViewModel("thickness", "Thickness / Depth / Plane", thickness_summary(step)),
+        MetadataFieldViewModel(
+            "thickness",
+            "Thickness / Depth / Plane",
+            thickness_summary(step, preferences),
+        ),
         MetadataFieldViewModel("notes", "Notes", step.notes),
     )
 

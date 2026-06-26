@@ -38,14 +38,20 @@ def measurement_table(measurements: tuple[MeasurementSummary, ...]) -> TableMode
             "measurement_id": item.measurement_id,
             "capture": item.capture_id,
             "label": item.label,
-            "length": f"{item.measured_length:.3f}",
-            "target": _optional_number(item.target),
-            "lsl": _optional_number(item.lower_spec_limit),
-            "usl": _optional_number(item.upper_spec_limit),
+            "length": item.measured_length_display or f"{item.measured_length:.3f}",
+            "target": item.target_display or _optional_number(item.target),
+            "lsl": item.lower_spec_limit_display or _optional_number(item.lower_spec_limit),
+            "usl": item.upper_spec_limit_display or _optional_number(item.upper_spec_limit),
+            "display_unit": item.display_unit,
         }
         for item in measurements
     )
-    return TableModel("measurements", "Measurement Summary", _measurement_columns(), rows)
+    return TableModel(
+        "measurements",
+        "Measurement Summary",
+        _measurement_columns(_measurement_display_unit(measurements)),
+        rows,
+    )
 
 
 def artifact_table(artifacts: tuple[ArtifactSummary, ...]) -> TableModel:
@@ -121,15 +127,16 @@ def _capture_columns() -> tuple[tuple[str, str], ...]:
     )
 
 
-def _measurement_columns() -> tuple[tuple[str, str], ...]:
+def _measurement_columns(display_unit: str = "") -> tuple[tuple[str, str], ...]:
+    suffix = f" ({display_unit})" if display_unit else ""
     return (
         ("measurement_id", "Measurement ID"),
         ("capture", "Capture"),
         ("label", "Label"),
-        ("length", "Length"),
-        ("target", "Target"),
-        ("lsl", "LSL"),
-        ("usl", "USL"),
+        ("length", f"Length{suffix}"),
+        ("target", f"Target{suffix}"),
+        ("lsl", f"LSL{suffix}"),
+        ("usl", f"USL{suffix}"),
     )
 
 
@@ -172,3 +179,8 @@ def _grid_columns() -> tuple[tuple[str, str], ...]:
 
 def _optional_number(value: float | None) -> str:
     return "" if value is None else f"{value:.3f}"
+
+
+def _measurement_display_unit(measurements: tuple[MeasurementSummary, ...]) -> str:
+    units = {item.display_unit for item in measurements if item.display_unit}
+    return next(iter(units)) if len(units) == 1 else ""

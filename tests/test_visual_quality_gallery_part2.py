@@ -5,6 +5,7 @@ from pathlib import Path
 
 import tools.generate_visual_quality_gallery as gallery
 
+from metrology_process_planner.testing.visual_gallery_regression import compare_gallery_item
 from metrology_process_planner.testing.visual_quality import (
     VisualManifestItem,
     evaluate_image_path,
@@ -108,3 +109,40 @@ class VisualQualityGalleryTestsPart2(unittest.TestCase):
         self.assertIn("Materials", svg_text)
         self.assertTrue(scene.exists())
         self.assertEqual((), issues)
+
+    def test_golden_mismatch_writes_debug_artifact(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "scene.json").write_text(
+                json.dumps(
+                    {
+                        "render_mode_id": "demo",
+                        "material_shapes": [{"material_id": "oxide", "exaggerated_flag": False}],
+                        "labels": [],
+                        "warnings": [],
+                        "compression_metadata": {"enabled": False, "affected_materials": []},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            golden_root = root / "golden"
+            golden_root.mkdir()
+            (golden_root / "fixture.profile.expected.json").write_text(
+                json.dumps({"shape_count": 99}),
+                encoding="utf-8",
+            )
+            item = VisualManifestItem(
+                "artifact:demo",
+                "physical_cross_section",
+                "fixture",
+                "demo",
+                "profile",
+                "visual.svg",
+                "pending",
+                metadata_path="scene.json",
+            )
+
+            result = compare_gallery_item(root, item, golden_root, root / "debug")
+
+        self.assertEqual("mismatch", result.status)
+        self.assertTrue(result.debug_path.endswith("artifact_demo.visual-gallery-comparison.json"))

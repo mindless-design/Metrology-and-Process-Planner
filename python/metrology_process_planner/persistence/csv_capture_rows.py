@@ -7,6 +7,10 @@ from pathlib import Path
 from typing import Any
 
 from metrology_process_planner.domains.session import ModeRegistry, SessionRecord
+from metrology_process_planner.domains.session.display_units import (
+    DisplayUnitPreferences,
+    resolved_display_unit,
+)
 from metrology_process_planner.persistence import csv_capture_artifacts
 from metrology_process_planner.persistence.csv_capture_features import feature_columns
 from metrology_process_planner.persistence.csv_capture_measurements import (
@@ -15,24 +19,32 @@ from metrology_process_planner.persistence.csv_capture_measurements import (
 )
 from metrology_process_planner.persistence.csv_capture_schema import GRID_SUMMARY_FIELDS
 from metrology_process_planner.persistence.csv_capture_warnings import capture_warning_count
+from metrology_process_planner.persistence.csv_units import convert_optional_length
 
 
 def capture_row(
     session: SessionRecord,
     capture: Any,
     mode_registry: ModeRegistry | None = None,
+    display_preferences: DisplayUnitPreferences | None = None,
 ) -> dict[str, Any]:
     """Return one spreadsheet-friendly capture summary row."""
 
     bounds = capture.geometry.bounds
+    canonical_unit = _capture_unit(session, capture)
+    display_unit = _display_unit(
+        bounds.width if bounds is not None else None,
+        canonical_unit,
+        display_preferences,
+    )
     row = _base_columns(session, capture, mode_registry)
-    row.update(_coordinate_columns(session, capture))
-    row.update(_geometry_columns(bounds))
+    row.update(_coordinate_columns(session, capture, display_unit))
+    row.update(_geometry_columns(bounds, canonical_unit, display_unit))
     row.update(_source_columns(session))
-    row.update(feature_columns(capture))
+    row.update(feature_columns(capture, canonical_unit, display_unit))
     row.update(_mode_metadata_columns(capture))
     row.update(_review_columns(capture))
-    row.update(capture_measurement_columns(capture))
+    row.update(capture_measurement_columns(capture, canonical_unit, display_unit))
     row.update(
         csv_capture_artifacts.artifact_columns(
             session,
@@ -95,25 +107,59 @@ def _join(values: Iterable[object] | object) -> str:
     return ";".join(str(value) for value in values)
 
 
-def _coordinate_columns(session: SessionRecord, capture: Any) -> dict[str, Any]:
+def _capture_unit(session: SessionRecord, capture: Any) -> str:
     primary = capture.geometry.primary_metadata() if capture.geometry is not None else None
     metadata = dict(capture.geometry.metadata or {}) if capture.geometry is not None else {}
+    return str((primary or {}).get("units", metadata.get("units", session.coordinates.units)))
+
+
+def _display_unit(
+    representative_value: float | None,
+    canonical_unit: str,
+    preferences: DisplayUnitPreferences | None,
+) -> str:
+    preference = preferences.layout_geometry if preferences is not None else "auto"
+    return resolved_display_unit(representative_value, canonical_unit, preference)
+
+
+def _coordinate_columns(session: SessionRecord, capture: Any, display_unit: str) -> dict[str, Any]:
+    primary = capture.geometry.primary_metadata() if capture.geometry is not None else None
     return {
         "coordinate_mode": (primary or {}).get("coordinate_mode", "global"),
-        "units": (primary or {}).get("units", metadata.get("units", session.coordinates.units)),
+        "units": display_unit,
     }
 
 
-def _geometry_columns(bounds: Any) -> dict[str, Any]:
+def _geometry_columns(bounds: Any, canonical_unit: str, display_unit: str) -> dict[str, Any]:
     return {
-        "left": bounds.left if bounds is not None else "",
-        "bottom": bounds.bottom if bounds is not None else "",
-        "right": bounds.right if bounds is not None else "",
-        "top": bounds.top if bounds is not None else "",
-        "center_x": bounds.center.x if bounds is not None else "",
-        "center_y": bounds.center.y if bounds is not None else "",
-        "width": bounds.width if bounds is not None else "",
-        "height": bounds.height if bounds is not None else "",
+        "left": _convert_optional(
+            bounds.left if bounds is not None else "", canonical_unit, display_unit
+        ),
+        "bottom": _convert_optional(
+            bounds.bottom if bounds is not None else "", canonical_unit, display_unit
+        ),
+        "right": _convert_optional(
+            bounds.right if bounds is not None else "", canonical_unit, display_unit
+        ),
+        "top": _convert_optional(
+            bounds.top if bounds is not None else "", canonical_unit, display_unit
+        ),
+        "center_x": _convert_optional(
+            bounds.center.x if bounds is not None else "",
+            canonical_unit,
+            display_unit,
+        ),
+        "center_y": _convert_optional(
+            bounds.center.y if bounds is not None else "",
+            canonical_unit,
+            display_unit,
+        ),
+        "width": _convert_optional(
+            bounds.width if bounds is not None else "", canonical_unit, display_unit
+        ),
+        "height": _convert_optional(
+            bounds.height if bounds is not None else "", canonical_unit, display_unit
+        ),
     }
 
 
@@ -140,3 +186,7 @@ def _review_columns(capture: Any) -> dict[str, str]:
         "review_severity": str(metadata.get("severity", "")),
         "review_owner": str(metadata.get("owner", "")),
     }
+
+
+def _convert_optional(value: Any, canonical_unit: str, display_unit: str) -> Any:
+    return convert_optional_length(value, canonical_unit, display_unit)

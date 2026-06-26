@@ -4,21 +4,22 @@ from __future__ import annotations
 
 from metrology_process_planner.domains.process import (
     CrossSectionProfile,
-    Material,
     MaterialInterval,
     ProcessFrame,
     SolverResult,
     StackColumn,
 )
+from metrology_process_planner.domains.process.materials import material_catalog_with
 
-MATERIALS = (
-    Material("si", "Si substrate", "#777777"),
-    Material("oxide", "Oxide", "#69aee8"),
-    Material("metal", "Metal", "#b8bcc4"),
-    Material("al2o3", "ALD Al2O3", "#f2c94c"),
-    Material("native_oxide", "Native oxide", "#c4e6ff"),
-    Material("dielectric", "Dielectric", "#98d8c8"),
+MATERIAL_IDS = (
+    "si",
+    "oxide",
+    "metal",
+    "al2o3",
+    "native_oxide",
+    "dielectric",
 )
+MATERIALS = material_catalog_with(MATERIAL_IDS)
 
 
 def simple_stack_result() -> SolverResult:
@@ -93,7 +94,7 @@ def process_flow_result() -> SolverResult:
 
 
 def _result(step_id: str, columns: tuple[StackColumn, ...]) -> SolverResult:
-    return SolverResult((_frame(step_id, step_id, columns),))
+    return SolverResult((_frame(step_id, step_id, columns),), units="nm")
 
 
 def _frame(step_id: str, title: str, columns: tuple[StackColumn, ...]) -> ProcessFrame:

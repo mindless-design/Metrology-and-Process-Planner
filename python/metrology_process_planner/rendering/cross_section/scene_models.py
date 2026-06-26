@@ -1,15 +1,18 @@
 """Serializable cross-section scene model independent of drawing backends."""
-
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from typing import Any
 
+from metrology_process_planner.rendering.cross_section.measurement_models import (
+    MeasurementAnnotation,
+    measurement_from_dict,
+)
+
 
 @dataclass(frozen=True)
 class LabelCandidate:
     """Potential label target generated before collision-aware placement."""
-
     target_id: str
     text: str
     priority: int
@@ -21,12 +24,9 @@ class LabelCandidate:
     min_font_size: int = 9
     max_font_size: int = 13
     collision_group: str = "material"
-
-
 @dataclass(frozen=True)
 class PlacedLabel:
     """A concrete label placement with collision status."""
-
     label_id: str
     target_id: str
     text: str
@@ -37,7 +37,6 @@ class PlacedLabel:
     leader_line: tuple[tuple[float, float], tuple[float, float]] | None = None
     priority: int = 0
     collision_status: str = "resolved"
-
 
 @dataclass(frozen=True)
 class LegendEntry:
@@ -115,6 +114,7 @@ class CrossSectionSceneModel:
     callouts: tuple[dict[str, object], ...] = ()
     legend: LegendModel | None = None
     annotations: tuple[dict[str, object], ...] = ()
+    measurement_annotations: tuple[MeasurementAnnotation, ...] = ()
     highlights: tuple[dict[str, object], ...] = ()
     compression_metadata: CompressionMetadata = CompressionMetadata(False, "physical_linear")
     warnings: tuple[str, ...] = ()
@@ -145,33 +145,33 @@ def scene_from_dict(data: dict[str, Any]) -> CrossSectionSceneModel:
         callouts=_dict_tuple(data, "callouts"),
         legend=_legend(legend_data) if isinstance(legend_data, dict) else None,
         annotations=_dict_tuple(data, "annotations"),
+        measurement_annotations=tuple(
+            measurement_from_dict(dict(item))
+            for item in data.get("measurement_annotations", ())
+        ),
         highlights=_dict_tuple(data, "highlights"),
         compression_metadata=compression,
         warnings=tuple(str(item) for item in data.get("warnings", ())),
         source_refs=dict(data.get("source_refs", {})),
     )
 
-
 def _scene_identity(data: dict[str, Any]) -> dict[str, Any]:
     return {
         "scene_id": str(data.get("scene_id", "")),
         "render_mode_id": str(data.get("render_mode_id", "")),
         "title": str(data.get("title", "")),
-        "physical_units": str(data.get("physical_units", "nm")),
+        "physical_units": str(data.get("physical_units", "um")),
         "visual_units": str(data.get("visual_units", "px")),
         "coordinate_frame": dict(data.get("coordinate_frame", {})),
     }
 
 
 def _surface_profiles(data: dict[str, Any]) -> tuple[tuple[tuple[Any, ...], ...], ...]:
-    return tuple(
-        tuple(tuple(point) for point in item)
-        for item in data.get("surface_profiles", ())
-    )
-
+    return tuple(tuple(tuple(point) for point in item) for item in data.get("surface_profiles", ()))
 
 def _dict_tuple(data: dict[str, Any], key: str) -> tuple[dict[str, Any], ...]:
     return tuple(dict(item) for item in data.get(key, ()))
+
 
 def _shape(data: dict[str, Any]) -> MaterialShape:
     candidates = tuple(LabelCandidate(**item) for item in data.get("label_candidates", ()))

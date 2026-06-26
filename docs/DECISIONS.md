@@ -47,6 +47,17 @@ Last updated: 2026-06-25
   `point_stack_schematic`, FIB uses `fib_full_stack_compressed`, and process-flow frames use
   `process_flow_frame`. Missing or invalid profile selections fall back to
   `physical_cross_section` with `RENDER_PROFILE_MISSING` rather than crashing generation.
+- Length parsing and conversion use the shared `domains.units` contract. Session display-unit
+  preferences are additive session extensions that control UI/report/export formatting without
+  changing canonical recipe, solver, capture, or artifact values. Legacy unitless recipe thickness
+  values continue to load as micrometers.
+- Process material identity, aliases, colors, and unknown-material behavior live in the shared
+  process material catalog. Renderers, recipe import, reports, and tests should resolve aliases
+  through that catalog instead of maintaining local material/color palettes.
+- Cross-section scenes keep solver geometry separate from presentation. Scene axes, ticks, scale
+  bars, measurement labels, and report captions format from the solver result's source units
+  through display-unit preferences; `coordinate_frame.source_units` records the source unit while
+  the legacy `coordinate_frame.canonical_units` key remains load-compatible.
 - Process-aware renderers, site images, annotation images, and overview diagrams default to the
   shared `engineering_dark` theme. Labels, leaders, legends, placeholders, and warning badges use
   theme-owned colors and sizes so foreground marks stay visible on the selected background without

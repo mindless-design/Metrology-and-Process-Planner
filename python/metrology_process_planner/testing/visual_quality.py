@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -41,12 +41,18 @@ class VisualManifestItem:
     status: str
     warnings: tuple[str, ...] = ()
     metadata_path: str = ""
+    source_artifact_id: str = ""
+    capture_id: str = ""
+    comparison_status: str = "not_configured"
+    comparison_path: str = ""
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         """Return JSON-compatible manifest data."""
 
         data = asdict(self)
         data["warnings"] = list(self.warnings)
+        data["output_path"] = self.image_path
         return data
 
 

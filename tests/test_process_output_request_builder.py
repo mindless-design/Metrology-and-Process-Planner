@@ -3,6 +3,14 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from metrology_process_planner.domains.process import (
+    Material,
+    ProcessRecipe,
+    ProcessStep,
+    ProcessStepKind,
+    ThicknessSpec,
+    validate_solver_input,
+)
 from metrology_process_planner.workflows.process_output_requests import SolverInputBuilder
 from tests.process_context_fixtures import custom_process_capture_session
 from tests.process_output_fixtures import profile_session_with_recipe
@@ -50,6 +58,45 @@ class ProcessOutputRequestBuilderTests(unittest.TestCase):
         self.assertEqual(("full_stack_compressed_image",), fib_request.output_roles)
         self.assertEqual("process_flow_frames", flow_request.operation)
         self.assertEqual(("process_flow_frame",), flow_request.output_roles)
+
+    def test_solver_input_builder_normalizes_mixed_unit_recipe(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            session = profile_session_with_recipe(Path(folder))
+            capture = session.captures[0]
+            recipe = ProcessRecipe(
+                "mixed",
+                "Mixed units",
+                (Material("oxide", "Oxide", "#99ccee"),),
+                (
+                    ProcessStep(
+                        "deposit-nm",
+                        ProcessStepKind.BLANKET_DEPOSITION,
+                        material_id="oxide",
+                        thickness=ThicknessSpec(120, unit="nm"),
+                    ),
+                    ProcessStep(
+                        "deposit-a",
+                        ProcessStepKind.BLANKET_DEPOSITION,
+                        material_id="oxide",
+                        thickness=ThicknessSpec(1200, unit="A"),
+                    ),
+                ),
+            )
+
+            solver_input = SolverInputBuilder().build(session, capture, recipe)
+
+        targets = [
+            step.thickness.target
+            for step in solver_input.recipe.steps
+            if step.thickness is not None
+        ]
+        diagnostics = validate_solver_input(solver_input)
+
+        self.assertEqual("um", solver_input.units)
+        self.assertEqual(["um", "um"], [step.thickness.unit for step in solver_input.recipe.steps])
+        self.assertEqual([], [item for item in diagnostics if item.code == "INCONSISTENT_UNITS"])
+        for target in targets:
+            self.assertAlmostEqual(0.12, target)
 
 
 def _result_recipe(session):

@@ -23,6 +23,10 @@ from metrology_process_planner.domains.session import (
     ModeRegistry,
     SessionRecord,
 )
+from metrology_process_planner.domains.session.display_units import (
+    display_unit_preferences_from_session,
+    format_unit_summary,
+)
 from metrology_process_planner.domains.warnings.warning_visibility import (
     warning_visible_for_session,
 )
@@ -43,6 +47,7 @@ def diagnostics_summary_rows(
         ("Message", "Advanced diagnostics resolved."),
         ("Session", f"{session.name} ({session.id})"),
         ("Mode", session.mode.value),
+        ("Display Units", format_unit_summary(display_unit_preferences_from_session(session))),
         ("Loaded Mode Definition", _loaded_mode_definition(session, mode_registry)),
         *mode_policy_rows(session, mode_registry),
         *workflow_state_rows(session, mode_registry),

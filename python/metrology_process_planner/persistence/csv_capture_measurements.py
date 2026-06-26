@@ -5,13 +5,24 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any
 
+from metrology_process_planner.persistence.csv_units import (
+    convert_optional_length,
+    convert_optional_length_text,
+)
 
-def capture_measurement_columns(capture: Any) -> dict[str, str]:
+
+def capture_measurement_columns(
+    capture: Any,
+    canonical_unit: str = "layout",
+    display_unit: str = "layout",
+) -> dict[str, str]:
     """Return measurement detail and inventory columns for one capture row."""
 
     first = first_measurement(capture)
-    columns = _first_measurement_columns(capture, first)
-    columns.update(_measurement_inventory_columns(capture.measurements))
+    columns = _first_measurement_columns(capture, first, canonical_unit, display_unit)
+    columns.update(
+        _measurement_inventory_columns(capture.measurements, canonical_unit, display_unit)
+    )
     return columns
 
 
@@ -21,22 +32,27 @@ def first_measurement(capture: Any) -> Any:
     return capture.measurements[0] if capture.measurements else None
 
 
-def _first_measurement_columns(capture: Any, first: Any) -> dict[str, str]:
+def _first_measurement_columns(
+    capture: Any,
+    first: Any,
+    canonical_unit: str,
+    display_unit: str,
+) -> dict[str, str]:
     if first is None:
         return _capture_measurement_metadata_columns(capture)
     return {
         "measurement_id": first.id,
         "measurement_label": first.label,
         "measurement_type": _measurement_type(first),
-        "measurement_start_x": first.start.x,
-        "measurement_start_y": first.start.y,
-        "measurement_end_x": first.end.x,
-        "measurement_end_y": first.end.y,
-        "measurement_length": first.measured_length,
-        "measurement_units": "layout",
-        "target": _number_or_empty(first.target),
-        "lsl": _number_or_empty(first.lower_spec_limit),
-        "usl": _number_or_empty(first.upper_spec_limit),
+        "measurement_start_x": _convert(first.start.x, canonical_unit, display_unit),
+        "measurement_start_y": _convert(first.start.y, canonical_unit, display_unit),
+        "measurement_end_x": _convert(first.end.x, canonical_unit, display_unit),
+        "measurement_end_y": _convert(first.end.y, canonical_unit, display_unit),
+        "measurement_length": _convert(first.measured_length, canonical_unit, display_unit),
+        "measurement_units": display_unit,
+        "target": _convert_optional(first.target, canonical_unit, display_unit),
+        "lsl": _convert_optional(first.lower_spec_limit, canonical_unit, display_unit),
+        "usl": _convert_optional(first.upper_spec_limit, canonical_unit, display_unit),
         "edge_convention": first.edge_detection_convention,
     }
 
@@ -74,15 +90,31 @@ def _empty_measurement_columns() -> dict[str, str]:
     }
 
 
-def _measurement_inventory_columns(measurements: Iterable[Any]) -> dict[str, str]:
+def _measurement_inventory_columns(
+    measurements: Iterable[Any],
+    canonical_unit: str,
+    display_unit: str,
+) -> dict[str, str]:
     return {
         "measurement_ids": _join(measurement.id for measurement in measurements),
         "measurement_labels": _join(measurement.label for measurement in measurements),
         "measurement_types": _join(_measurement_type(measurement) for measurement in measurements),
-        "measurement_lengths": _join(str(item.measured_length) for item in measurements),
-        "measurement_targets": _join(_number_or_empty(item.target) for item in measurements),
-        "measurement_lsl": _join(_number_or_empty(item.lower_spec_limit) for item in measurements),
-        "measurement_usl": _join(_number_or_empty(item.upper_spec_limit) for item in measurements),
+        "measurement_lengths": _join(
+            str(_convert(item.measured_length, canonical_unit, display_unit))
+            for item in measurements
+        ),
+        "measurement_targets": _join(
+            _convert_optional(item.target, canonical_unit, display_unit)
+            for item in measurements
+        ),
+        "measurement_lsl": _join(
+            _convert_optional(item.lower_spec_limit, canonical_unit, display_unit)
+            for item in measurements
+        ),
+        "measurement_usl": _join(
+            _convert_optional(item.upper_spec_limit, canonical_unit, display_unit)
+            for item in measurements
+        ),
         "measurement_edge_conventions": _join(
             item.edge_detection_convention for item in measurements
         ),
@@ -99,8 +131,12 @@ def _join(values: Iterable[object] | object) -> str:
     return ";".join(str(value) for value in values)
 
 
-def _number_or_empty(value: object) -> str:
-    return "" if value is None else str(value)
+def _convert(value: float, canonical_unit: str, display_unit: str) -> float:
+    return float(convert_optional_length(value, canonical_unit, display_unit))
+
+
+def _convert_optional(value: object, canonical_unit: str, display_unit: str) -> str:
+    return convert_optional_length_text(value, canonical_unit, display_unit)
 
 
 def _measurement_type(measurement: Any) -> str:

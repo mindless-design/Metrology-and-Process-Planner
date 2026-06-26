@@ -1,0 +1,13 @@
+{
+  "artifact_registry": [
+    {"generator": "process_output_service", "id": "capture-cap-profile-001-cross_section_image", "repair_action": "regenerate_process_output", "role": "cross_section_image", "status": "placeholder", "type": "process_output", "warning_count": 1},
+    {"generator": "process_output_service", "id": "capture-cap-profile-001-process_output_manifest", "repair_action": "regenerate_process_output", "role": "process_output_manifest", "status": "placeholder", "type": "process_output", "warning_count": 1},
+    {"generator": "process_output_service", "id": "capture-cap-profile-001-profile_image", "repair_action": "regenerate_process_output", "role": "profile_image", "status": "placeholder", "type": "process_output", "warning_count": 1}
+  ],
+  "render_scenes": [],
+  "reports": [],
+  "session": {"capture_count": 1, "id": "synthetic-missing-recipe", "mode": "process_aware_metrology", "process_output_count": 1, "report_count": 0, "warning_codes": ["PROCESS_RECIPE_FILE_NOT_FOUND"]},
+  "solver_outputs": [
+    {"artifact_roles": ["cross_section_image", "process_output_manifest", "profile_image", "site_image"], "diagnostics": [], "frame_count": 0, "id": "process-output-cap-profile-001", "status": "pending_solver", "type": "line_profile"}
+  ]
+}

@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from metrology_process_planner.domains.process import Material, MaterialInterval, StackGeometry2D
+from metrology_process_planner.domains.process import (
+    Material,
+    MaterialInterval,
+    StackGeometry2D,
+    resolve_material,
+)
 from metrology_process_planner.rendering.cross_section.models import RenderIntent, VisualTransform
 from metrology_process_planner.rendering.cross_section.projection_helpers import (
     column_edges,
@@ -35,7 +40,7 @@ def build_render_projection(
 ) -> RenderProjectionPlan:
     """Build material shapes for physical, compressed, or illustrative modes."""
 
-    material_lookup = {material.id: material for material in materials}
+    material_lookup = _material_lookup(materials)
     bounds = geometry_bounds(geometry)
     mapper = _ZMapper(bounds[1], bounds[3], intent)
     shapes: list[MaterialShape] = []
@@ -96,7 +101,7 @@ def _project_interval(
         physical_thickness,
         intent,
     )
-    material = material_lookup.get(material_id)
+    material = material_lookup.get(_material_key(material_id)) or resolve_material(material_id)
     compressed = mapper.compressed and interval.z_min < mapper.threshold
     shape = material_shape(
         column_index,
@@ -114,6 +119,20 @@ def _project_interval(
     if exaggerated:
         override = (material_id, physical_thickness, abs(visual_max - visual_min))
     return shape, override
+
+
+def _material_lookup(materials: tuple[Material, ...]) -> dict[str, Material]:
+    lookup: dict[str, Material] = {}
+    for material in materials:
+        lookup[_material_key(material.id)] = material
+        lookup[_material_key(material.name)] = material
+        for alias in material.aliases:
+            lookup[_material_key(alias)] = material
+    return lookup
+
+
+def _material_key(value: str) -> str:
+    return str(value or "").strip().lower().replace("_", " ")
 
 
 class _ZMapper:
@@ -188,4 +207,3 @@ def _enforce_min_thickness(
     center = (visual_min + visual_max) / 2.0
     half = policy.min_visual_thickness_px / 2.0
     return center - half, center + half, True
-

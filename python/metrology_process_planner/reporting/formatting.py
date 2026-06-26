@@ -33,7 +33,7 @@ def figure_caption(figure: FigureModel) -> str:
     """Return a renderer-neutral figure caption."""
 
     status = "placeholder" if figure.placeholder else "present"
-    detail = figure.notes if figure.placeholder and figure.notes else f"Path: {figure.path}"
+    detail = figure.notes if figure.notes else f"Path: {figure.path}"
     return (
         f"Figure {figure.number}: {figure.title} | Artifact {figure.artifact_id} | "
         f"Status: {status} | {detail}"
@@ -44,7 +44,11 @@ def table_caption(table: TableModel) -> str:
     """Return a renderer-neutral table caption."""
 
     row_label = "row" if len(table.rows) == 1 else "rows"
-    return f"Table {table.number}: {table.title} | {len(table.rows)} {row_label}"
+    unit_context = _unit_context(table)
+    return (
+        f"Table {table.number}: {table.title} | {len(table.rows)} {row_label}"
+        f"{unit_context}"
+    )
 
 
 def toc_lines(document: ReportDocument) -> tuple[str, ...]:
@@ -61,3 +65,16 @@ def concise(value: object, limit: int = 64) -> str:
 
     text = str(value)
     return text if len(text) <= limit else text[: max(0, limit - 3)] + "..."
+
+
+def _unit_context(table: TableModel) -> str:
+    units = {
+        str(value)
+        for row in table.rows
+        for key, value in row.items()
+        if key.endswith("_unit") or key == "display_unit"
+    }
+    if not units:
+        labels = [label for _, label in table.columns if "(" in label and label.endswith(")")]
+        return f" | Units: {', '.join(labels)}" if labels else ""
+    return f" | Units: {', '.join(sorted(units))}"

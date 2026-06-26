@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from metrology_process_planner.domains.geometry import Box, Point
 from metrology_process_planner.rendering.coordinates import CanvasTransform
+from metrology_process_planner.rendering.cross_section.axis_primitives import axis_primitives
 from metrology_process_planner.rendering.cross_section.models import CrossSectionOutputSpec
 from metrology_process_planner.rendering.cross_section.note_primitives import note_primitives
 from metrology_process_planner.rendering.cross_section.scene_models import CrossSectionSceneModel
@@ -110,6 +111,7 @@ def canvas_overlays(
     """Return legend, scale bar, and render-note overlays."""
 
     primitives: list[DrawingPrimitive] = []
+    primitives.extend(axis_primitives(scene, output_spec, theme))
     primitives.extend(_legend_primitives(scene, output_spec, theme))
     primitives.extend(_scale_bar_primitives(scene, output_spec, theme))
     primitives.extend(note_primitives(scene, output_spec, theme))
