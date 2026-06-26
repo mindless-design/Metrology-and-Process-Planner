@@ -2,7 +2,13 @@ import unittest
 from dataclasses import replace
 
 from metrology_process_planner.app.session_editor_command_map import command_for_action
-from metrology_process_planner.domains.session import SessionMode, SetupState, WorkflowState
+from metrology_process_planner.domains.modes.mode_non_process_builtins import non_process_modes
+from metrology_process_planner.domains.session import (
+    SessionMode,
+    SetupState,
+    WorkflowState,
+    session_mode_id,
+)
 from metrology_process_planner.workflows.editor import (
     DefaultSessionModeAdapter,
     EditorAction,
@@ -80,12 +86,13 @@ class NonProcessDashboardTests(unittest.TestCase):
         actions = default_actions(document.session, document.items_by_id["pending:pending-001"])
 
         self.assertNotIn("take_measurement", {action.action_type.value for action in actions})
+        self.assertNotIn(EditorActionType.EXIT_SESSION, {action.action_type for action in actions})
         self.assertTrue(all(command_for_action(action) is not None for action in actions))
 
     def test_visible_recipe_free_actions_have_command_or_workflow_routes(self) -> None:
-        for mode in _RECIPE_FREE_MODES:
-            with self.subTest(mode=mode.value):
-                source = replace(session_without_pending(), mode=mode)
+        for mode_id in _recipe_free_mode_ids():
+            with self.subTest(mode=mode_id):
+                source = replace(session_without_pending(), mode=session_mode_id(mode_id))
                 document = SessionDocumentBuilder().build(source)
                 gaps = _unrouted_actions(source, document)
 
@@ -149,14 +156,8 @@ def _unrouted_actions(source, document) -> tuple[str, ...]:
     return tuple(sorted(set(gaps)))
 
 
-_RECIPE_FREE_MODES = (
-    SessionMode.SIMPLE_CAPTURE,
-    SessionMode.FAST_BATCH_CAPTURE,
-    SessionMode.CAD_REVIEW,
-    SessionMode.OPTICAL_METROLOGY,
-    SessionMode.CDSEM_MEASUREMENT,
-    SessionMode.GRID_MEASUREMENT,
-)
+def _recipe_free_mode_ids() -> tuple[str, ...]:
+    return tuple(dict.fromkeys(definition.mode_id for definition in non_process_modes()))
 
 
 if __name__ == "__main__":

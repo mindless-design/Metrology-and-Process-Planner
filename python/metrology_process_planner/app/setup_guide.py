@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from metrology_process_planner.app.commands import command_id_from_view_action
+from metrology_process_planner.app.commands import CommandId, command_id_from_view_action
 from metrology_process_planner.app.window_registry import (
     WindowOpenStatus,
     WindowRegistry,
@@ -93,7 +93,17 @@ class SetupGuideController:
     def route_action(self, action_id: str) -> CommandRouteResult:
         """Route one setup guide action through the app command router."""
 
-        command_id = command_id_from_view_action(action_id)
+        try:
+            command_id = command_id_from_view_action(action_id)
+        except ValueError:
+            result = CommandRouteResult(
+                CommandId.OPEN_SETUP_GUIDE,
+                "unavailable",
+                f"Unknown setup guide action: {action_id}",
+            )
+            self.last_action_result = result
+            self._render_current()
+            return result
         if self._command_router is None:
             result = CommandRouteResult(
                 command_id,

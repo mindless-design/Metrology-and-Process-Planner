@@ -59,6 +59,7 @@ def _capture_metadata(
     role: str,
     capture_type: str,
 ) -> dict[str, object]:
+    metadata = _with_mode_metadata_defaults(definition, metadata)
     metadata["label"] = label
     metadata["capture_role"] = role
     metadata["capture_type"] = capture_type
@@ -67,6 +68,19 @@ def _capture_metadata(
         metadata.setdefault("severity", "medium")
         metadata = normalized_cad_review_metadata(metadata)
     return metadata
+
+
+def _with_mode_metadata_defaults(
+    definition: ModeDefinition,
+    metadata: dict[str, object],
+) -> dict[str, object]:
+    updated = dict(metadata)
+    for field in definition.metadata.capture_fields:
+        if not field.id or field.id in updated:
+            continue
+        if field.default:
+            updated[field.id] = field.default
+    return updated
 
 
 def _role_for_mode(definition: ModeDefinition) -> str:

@@ -29,7 +29,7 @@ def capture_mode_fields(
     return mode_metadata_fields(
         session.mode.value,
         values,
-        exclude={"label", "notes", "capture_role"},
+        exclude={"label", "notes", "capture_role", "capture_type"},
         mode_registry=mode_registry,
     )
 

@@ -92,6 +92,8 @@ def _artifact_ref_from_record(
         path=artifact.relative_path,
         artifact_id=artifact.id,
         artifact_type=artifact.type,
+        owner_type=artifact.owner.owner_type,
+        owner_id=artifact.owner.owner_id,
         status=status,
         message=message,
         warning_ids=artifact.warning_ids,

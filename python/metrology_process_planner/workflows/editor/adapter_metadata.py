@@ -149,7 +149,8 @@ def _capture_fields(
     fields = (
         MetadataField("label", "Label", capture.label, required=True),
         MetadataField("notes", "Notes", capture.notes),
-        MetadataField("type", "Capture Role", capture.type),
+        MetadataField("capture_role", "Capture Role", capture.role),
+        MetadataField("capture_type", "Capture Type", capture.type),
     )
     return (
         fields

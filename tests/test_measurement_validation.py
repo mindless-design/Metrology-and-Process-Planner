@@ -3,6 +3,7 @@ from dataclasses import replace
 
 from metrology_process_planner.domains.geometry import Box, Point
 from metrology_process_planner.domains.measurement.records import MeasurementRecord
+from metrology_process_planner.domains.session import CaptureGeometry
 from metrology_process_planner.workflows.measurement_validation import measurement_validation_errors
 from metrology_process_planner.workflows.measurement_workflow import add_pending_measurement_line
 from tests.measurement_child_fixtures import saved_capture_session
@@ -80,6 +81,14 @@ class MeasurementValidationTests(unittest.TestCase):
         source = replace(saved_capture_session(), captures=())
 
         with self.assertRaisesRegex(ValueError, "existing parent capture"):
+            add_pending_measurement_line(source, "canvas-cap", Point(1, 1), Point(4, 1))
+
+    def test_pending_measurement_requires_parent_capture_box_geometry(self) -> None:
+        source = saved_capture_session()
+        capture = replace(source.captures[0], geometry=CaptureGeometry.point_capture(Point(1, 1)))
+        source = replace(source, captures=(capture,))
+
+        with self.assertRaisesRegex(ValueError, "parent capture box"):
             add_pending_measurement_line(source, "canvas-cap", Point(1, 1), Point(4, 1))
 
 

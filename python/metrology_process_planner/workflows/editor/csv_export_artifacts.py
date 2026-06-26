@@ -13,6 +13,7 @@ from metrology_process_planner.domains.session import (
     ArtifactRecord,
     ArtifactRepairMetadata,
     ArtifactStatus,
+    ModeRegistry,
     SessionRecord,
     artifact_id,
 )
@@ -24,6 +25,7 @@ def with_csv_export_artifact(
     session: SessionRecord,
     paths: SessionPaths,
     destination: Path,
+    mode_registry: ModeRegistry | None = None,
 ) -> SessionRecord:
     """Return a session with the canonical capture CSV artifact upserted."""
 
@@ -45,7 +47,7 @@ def with_csv_export_artifact(
             ArtifactDependencyRef(
                 kind="session_data",
                 id=session.id,
-                signature=current_signature(session, "session_data", session.id),
+                signature=current_signature(session, "session_data", session.id, mode_registry),
             ),
         ),
         generator="csv_export",

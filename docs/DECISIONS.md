@@ -611,6 +611,35 @@ Last updated: 2026-06-25
 - Enabled visible editor actions for recipe-free modes must have either an app command route or a
   workflow dispatcher route. Overview user labels and capture copy actions are handled modelessly in
   workflow dispatchers so they remain available without adding blocking dialogs.
+- The visible `Build Report` action is a real recipe-free workflow action. The app bridge opens the
+  modeless Reporting Workbench, while the headless editor dispatcher generates the default report
+  through the same reporting defaults and artifact registrar; without a session folder it returns a
+  structured unavailable result instead of acting like a dead enabled action.
+- Dashboard artifact lifecycle actions must work through both app-command routing and direct
+  workflow dispatch. `Scan Artifacts`, bulk missing/stale repair, and artifact-manifest export all
+  preserve the active recipe-free visibility boundary, so embedded editor shells do not need app
+  command wiring to avoid dead dashboard buttons.
+- Setup-guide action IDs are view-model commands, not free-form callbacks. Optical/CDSEM visible
+  setup actions must normalize to registered app commands, and stale unknown action IDs return a
+  structured setup-guide unavailable result rather than raising through the modeless UI.
+- Saved recipe-free box captures must expose routable metadata, replacement, measurement,
+  regeneration, CSV, and report actions without recipe/process controls. Non-box captures and
+  legacy captures missing a saved canvas box keep measurement/replacement actions visible only with
+  explicit disabled reasons.
+- Stale pending-capture review actions are unavailable, not successful no-ops. Save, retake, and
+  discard actions parse their pending id defensively and report that the pending capture is no
+  longer available when a stale editor surface dispatches an old action.
+- Grid dataset creation from the dashboard must be directly routable. When at least two saved box
+  captures exist, the default action carries anchor IDs and conservative 1x1 counts so embedded
+  editor surfaces do not expose an enabled action that immediately fails for missing payload; richer
+  grid sizing can still override the payload.
+- Grid dataset creation failures return the structured grid validation warning in the action result.
+  Invalid anchor geometry or invalid row/column counts must be visible immediately to the editor
+  caller, while the same warning is also kept in the session warnings list for navigator and
+  diagnostics views.
+- CDSEM capture metadata treats feature type as required and defaults it to `line`. Mode-declared
+  capture-field defaults are persisted when pending captures are promoted, so CSV/report consumers
+  do not need to infer required CDSEM metadata from inspector-only defaults.
 - Saved recipe-free capture repair actions use image language. The normal capture action is
   `Regenerate Image`; drawing-specific labels are reserved for explicit session drawing items and
   measurement annotation artifacts.
@@ -1212,14 +1241,41 @@ Last updated: 2026-06-25
   `measurement_detail` artifact satisfies the recipe-free measurement contract. Hidden legacy
   process-output artifacts may remain referenced in old JSON, but they must not suppress creation of
   a visible pending measurement-detail artifact and repair warning.
+- Pending measurement ID generation reserves IDs from nested measurement records and unsaved
+  measurement canvas lines. Repeated measurement drags before save must produce stable unique
+  measurement IDs and matching canvas record IDs.
+- Pending measurement creation validates the canonical parent `CaptureRecord.geometry`, not only
+  the visible canvas object. A child measurement line may only be added when the saved parent capture
+  is a box; stale or inconsistent canvas boxes must not create measurements under point/line
+  captures.
+- Advanced Diagnostics exposes measurement workflow state, active target, and available workflow
+  actions. Armed and pending measurement states must be explainable from diagnostics without opening
+  raw session JSON.
+- Recipe-free Advanced Diagnostics derives solver and renderer backend rows from mode policy, not
+  stale `process_context` data. If the active mode is not process-aware, diagnostics must report
+  `Solver Backend = none` and `Renderer Backend = none` even if legacy session JSON still carries
+  recipe, solver, or render-profile fields.
+- App-level line-capture commands follow the same measurement policy as the unified editor
+  `Add Measurement` action. Measurement line capture must stay blocked unless the active mode
+  supports measurements and a saved box capture is selected.
 - Non-process mode validation treats process-output manifest/json/csv aliases as process artifacts.
   External mode declarations such as `process_output_manifest`, `process-output-json`, or
   `Process Output CSV` must warn before they can leak process-output artifacts into recipe-free
   capture workflows.
+- Non-process mode validation treats singular and plural process regeneration commands, recipe-file
+  open commands, and normalized action aliases as process UI. External recipe-free modes must warn
+  on actions such as `Regenerate Process Outputs`, `Open Recipe File`, or
+  `validate-process-context`.
+- Non-process mode validation treats singular and plural process-output navigator groups as process
+  UI. External declarations such as `Process Output` and `Process Outputs` must both warn before
+  they can surface recipe/solver concepts in recipe-free editors.
 - Report inspector artifact/warning counts and Advanced Diagnostics report-readiness rows use the
   active `ModeRegistry` before counting report artifacts. Loaded recipe-free overrides may preserve
   legacy process report refs in JSON, but those hidden refs must not make reports look ready or add
   process warnings to recipe-free report metadata.
+- Recipe-free dashboard readiness ignores superseded and intentionally ignored artifacts. Replaced
+  or dismissed records remain in canonical JSON and artifact health history, but they must not count
+  as current CSV/report readiness, missing-artifact, or repair-attention work.
 - Grid planned-site CSV rows use the active `ModeRegistry` for overview artifact and warning
   visibility, matching capture rows. Loaded recipe-free overrides for process-named modes must not
   expose legacy stack/profile/process artifacts through grid overview CSV columns.
@@ -1242,6 +1298,63 @@ Last updated: 2026-06-25
   `ModeRegistry`, matching scanner freshness checks. Hidden legacy process artifacts may remain in
   saved recipe-free sessions without making freshly exported report decks, manifests, or bundles
   immediately stale.
+- Capture CSV export registration stores `session_data` dependency signatures through the active
+  editor `ModeRegistry`. A recipe-free CSV exported from a loaded override must stay fresh when only
+  hidden legacy process artifacts or process warnings change.
+- Artifact repair generator handlers may opt into the active `ModeRegistry`. CSV and report repair
+  rebuilds must use the same recipe-free visibility, row generation, report modeling, and dependency
+  signatures as explicit export commands.
+- Editor artifact placeholder previews prefer canonical owner context such as `capture cap-001`,
+  `measurement meas-001`, `grid_dataset grid-001`, or `report report-001` over raw artifact ids.
+  This keeps missing/stale/failed previews tied to the affected session item while preserving the
+  raw artifact id as a fallback for reusable preview widgets and standalone artifact refs.
+- Measurement inspector fields use recipe-free operator vocabulary: `lsl`, `usl`, and `color`.
+  Canonical records still store `lower_spec_limit`, `upper_spec_limit`, and `annotation_color`, and
+  edit application continues to accept legacy aliases, but normal editor view models should expose
+  the concise workflow terms used by measurement CSVs and mode metadata.
+- Capture inspector fields expose `capture_role` and `capture_type` as the operator-facing capture
+  classification terms. Pending captures show the resolved saved-capture role from mode policy
+  rather than the low-level canvas primitive, and saved-capture role/type edits update the canonical
+  `CaptureRecord.role` / `CaptureRecord.type` fields as well as metadata mirrors.
+- Pending capture review actions stay scoped to the pending capture workflow: save, retake, discard,
+  CSV export, and report build. Closing or ending the editor session remains a header/lifecycle
+  command, not an inspector action that appears to modify the pending capture but only returns a
+  generic close request.
+- Optical and CDSEM setup guides expose only recipe-free setup commands. Coordinate, origin
+  reference, optical alignment, SEM alignment, skip, completion, and return actions are valid;
+  attach/validate/open recipe actions must stay out of these setup cards and modeless command rows.
+- Non-process mode validation treats recipe-reference setup stages and recipe fingerprint refresh
+  actions as process-context leaks. External recipe-free modes must warn on `recipe_reference` setup
+  stages and `Refresh Recipe Fingerprint` actions before they can surface stale recipe maintenance
+  UI in capture-only workflows.
+- App-level process commands may remain globally registered for menu/shortcut consistency, but the
+  active session editor route is still mode-scoped. In recipe-free sessions, direct `Attach Recipe`,
+  `Detach Recipe`, `Validate Process Context`, and `Regenerate Process Output` command invocations
+  must return structured unavailable results and leave legacy process context, warnings, and process
+  outputs unchanged.
+- Recipe-free editor action sweeps must iterate the registered non-process mode definitions rather
+  than a hand-maintained canonical subset. Hidden load aliases such as `simple_labeled_capture`,
+  `cad_review_capture`, and `cdsem_planning` still need routable, process-free editor actions when
+  old sessions are opened.
+- Recipe-free CSV warning counts must apply artifact visibility before relating artifact warnings to
+  capture or measurement rows. Hidden legacy process artifact refs may remain in capture JSON, but
+  generic artifact warnings such as `ARTIFACT_MISSING` for those hidden refs must not inflate
+  capture `warning_count` or make CSV/report readiness look worse.
+- Bulk artifact repair actions are visibility-scoped. Recipe-free `Regenerate Missing` and
+  `Regenerate Stale` actions may scan sessions that still contain legacy process artifacts, but they
+  must count and repair only visible recipe-free artifacts and must not add recipe/solver repair
+  warnings to hidden process records.
+- Optical and CDSEM setup readiness is durable session state, not transient guide UI state. Completed
+  required setup items plus `is_capture_ready=True` must survive `session.json` save/reopen and
+  rebuild the guide directly into `setup_ready` for canonical `optical_metrology` and
+  `cdsem_measurement` sessions.
+- Hidden recipe-free load aliases must keep full workflow parity even when they are not shown in new
+  session pickers. Loaded `cdsem_planning` sessions use the same CDSEM setup commands, optical/SEM
+  readiness guards, CSV columns, copy-row behavior, and report template support as
+  `cdsem_measurement`.
+- Editor action modules must not import the reporting service at module import time. Report
+  generation stays behind the `Build Report` action handler so lightweight report-template imports
+  do not form a reporting/editor circular import.
 
 ## Visual Review Decisions
 

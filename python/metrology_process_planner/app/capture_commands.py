@@ -24,6 +24,12 @@ from metrology_process_planner.workflows import CanvasInteractionEngine, Interac
 from metrology_process_planner.workflows.capture_readiness import (
     capture_blocked_by_setup_message,
 )
+from metrology_process_planner.workflows.editor.adapter_measurement_policy import (
+    mode_supports_measurements,
+)
+from metrology_process_planner.workflows.measurement_workflow import (
+    measurement_parent_unavailable_reason,
+)
 
 
 class SessionProvider(Protocol):
@@ -78,6 +84,18 @@ class CaptureCommandService:
         """Arm generic Shift-drag line capture."""
 
         session = self._session()
+        if not mode_supports_measurements(session, self._mode_registry):
+            raise CommandBlockedError(
+                "The active mode does not support measurements.",
+                "Switch to a measurement-capable mode before drawing measurement lines.",
+            )
+        capture_id = _selected_capture_parent_id(session)
+        parent_unavailable = measurement_parent_unavailable_reason(session, capture_id)
+        if parent_unavailable:
+            raise CommandBlockedError(
+                parent_unavailable,
+                "Select a saved box capture before drawing a measurement line.",
+            )
         parent_id = _selected_canvas_parent(session)
         self.context = self._canvas_engine.arm_line_capture(self.context, parent_id)
         self._set_session(_armed_session(session, "line_capture", CanvasObjectType.MEASUREMENT))
@@ -170,3 +188,10 @@ def _selected_canvas_parent(session: SessionRecord) -> str | None:
         if CanvasVisualFlag.SELECTED in canvas_object.visual_state:
             return canvas_object.id
     return None
+
+
+def _selected_capture_parent_id(session: SessionRecord) -> str:
+    for canvas_object in session.canvas_objects:
+        if CanvasVisualFlag.SELECTED in canvas_object.visual_state:
+            return canvas_object.record_id
+    return ""

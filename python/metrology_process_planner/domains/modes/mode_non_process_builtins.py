@@ -29,13 +29,7 @@ from metrology_process_planner.domains.modes.mode_registry import ModeDefinition
 from metrology_process_planner.domains.session.record import SessionMode
 
 SETUP_EDITOR_GROUPS = (
-    "dashboard",
-    "setup",
-    "pending",
-    "captures",
-    "measurements",
-    "reports",
-    "warnings",
+    "dashboard", "setup", "pending", "captures", "measurements", "reports", "warnings",
 )
 
 def non_process_modes() -> tuple[ModeDefinition, ...]:
@@ -173,7 +167,13 @@ def _cdsem_measurement_mode(mode: SessionMode) -> ModeDefinition:
         ),
         metadata=_metadata(
             "label",
-            _field("feature_type", "Feature Type", options=CDSEM_FEATURE_TYPES),
+            _field(
+                "feature_type",
+                "Feature Type",
+                required=True,
+                default="line",
+                options=CDSEM_FEATURE_TYPES,
+            ),
             _field(
                 "measurement_type",
                 "Measurement Type",
@@ -205,14 +205,9 @@ def _metadata(*fields: str | MetadataFieldDefinition) -> MetadataSchema:
     )
 
 
-def _field(
-    field_id: str,
-    label: str = "",
-    field_type: str = "text",
-    required: bool = False,
-    default: str = "",
-    options: tuple[str, ...] = (),
-) -> MetadataFieldDefinition:
+def _field(field_id: str, label: str = "", field_type: str = "text",
+           required: bool = False, default: str = "",
+           options: tuple[str, ...] = ()) -> MetadataFieldDefinition:
     return MetadataFieldDefinition(field_id, label, field_type, required, default, options)
 
 

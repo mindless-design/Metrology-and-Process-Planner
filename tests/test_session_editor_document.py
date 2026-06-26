@@ -103,7 +103,7 @@ class SessionEditorDocumentTestsPart1(unittest.TestCase):
 
         self.assertEqual("missing", previews[0].status)
         self.assertIn("Missing artifact", previews[0].placeholder)
-        self.assertIn("Belongs to capture-cap-001-crop (crop)", previews[0].placeholder)
+        self.assertIn("Belongs to capture cap-001 (crop)", previews[0].placeholder)
         self.assertIn("CSV export can continue", previews[0].placeholder)
         self.assertIn("reports may use this placeholder", previews[0].placeholder)
         self.assertIn("Repair: Regenerate the artifact from the editor", previews[0].placeholder)

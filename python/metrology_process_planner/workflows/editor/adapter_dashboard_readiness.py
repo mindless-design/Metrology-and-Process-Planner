@@ -5,7 +5,12 @@ from __future__ import annotations
 from metrology_process_planner.domains.artifacts.artifact_visibility import (
     artifact_visible_for_session,
 )
-from metrology_process_planner.domains.session import ArtifactRecord, ModeRegistry, SessionRecord
+from metrology_process_planner.domains.session import (
+    ArtifactRecord,
+    ArtifactStatus,
+    ModeRegistry,
+    SessionRecord,
+)
 from metrology_process_planner.workflows.editor.warning_visibility import (
     editor_visible_warning_count,
 )
@@ -96,7 +101,8 @@ def visible_dashboard_artifacts(
     return tuple(
         artifact
         for artifact in (session.artifacts or {}).values()
-        if artifact_visible_for_session(session, artifact, mode_registry)
+        if _active_dashboard_artifact(artifact)
+        and artifact_visible_for_session(session, artifact, mode_registry)
     )
 
 
@@ -125,3 +131,10 @@ def _is_csv_export_artifact(artifact: ArtifactRecord) -> bool:
     return artifact.owner.owner_type == "session" and (
         artifact.owner.role == "csv_export" or artifact.type == "csv_export"
     )
+
+
+def _active_dashboard_artifact(artifact: ArtifactRecord) -> bool:
+    return artifact.status not in {
+        ArtifactStatus.SUPERSEDED,
+        ArtifactStatus.INTENTIONALLY_IGNORED,
+    }

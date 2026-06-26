@@ -23,6 +23,8 @@ class ArtifactRef:
     path: str
     artifact_id: str = ""
     artifact_type: str = ""
+    owner_type: str = ""
+    owner_id: str = ""
     status: str = "available"
     message: str = ""
     warning_ids: tuple[str, ...] = ()

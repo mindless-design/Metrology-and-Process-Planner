@@ -25,7 +25,8 @@ from metrology_process_planner.app.setup_commands import (
 )
 from metrology_process_planner.ui.shell import CommandRouteResult
 from metrology_process_planner.workflows.artifacts import ArtifactRepairService
-from metrology_process_planner.workflows.editor.view_models import EditorActionType
+from metrology_process_planner.workflows.editor.builder_basics import mode_is_process_aware
+from metrology_process_planner.workflows.editor.view_models import EditorAction, EditorActionType
 from metrology_process_planner.workflows.overlays import CanvasOverlayManager
 
 
@@ -124,4 +125,18 @@ def _attach_recipe_from_active_surface(
     routed = ui.session_editor.routed_action
     if routed is not None and routed.action_type is EditorActionType.ATTACH_RECIPE:
         return dispatch_editor_action(ui.session_editor, CommandId.ATTACH_RECIPE, routed)
+    document = ui.session_editor.current_document
+    if document is not None and not mode_is_process_aware(
+        document.session,
+        ui.session_editor.mode_registry,
+    ):
+        return dispatch_editor_action(
+            ui.session_editor,
+            CommandId.ATTACH_RECIPE,
+            EditorAction(
+                EditorActionType.ATTACH_RECIPE,
+                "Attach Recipe",
+                document.selection.selected_item_id,
+            ),
+        )
     return setup_commands.attach_recipe()

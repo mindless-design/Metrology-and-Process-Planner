@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
 
@@ -14,13 +13,17 @@ from metrology_process_planner.domains.session import (
 )
 from metrology_process_planner.persistence.paths import SessionPaths
 from metrology_process_planner.workflows.artifacts.generators import (
-    ArtifactGenerationResult,
     ArtifactGenerator,
     ArtifactGeneratorRegistry,
     built_in_generator_registry,
 )
 from metrology_process_planner.workflows.artifacts.layout_crop_generator import LayoutImageExporter
 from metrology_process_planner.workflows.artifacts.relink import relink_artifact_record
+from metrology_process_planner.workflows.artifacts.repair_bulk import repair_all_with_status
+from metrology_process_planner.workflows.artifacts.repair_generation import (
+    call_handler,
+    generation_result,
+)
 from metrology_process_planner.workflows.artifacts.repair_operations import (
     repair_candidate_artifacts,
     repair_request_with_generator,
@@ -107,7 +110,13 @@ class ArtifactRepairService:
         registration = self._generators.generator_for(artifact)
         if registration is None or registration.handler is None:
             return with_unavailable(session, artifact, request)
-        return _repair_with_handler(session, artifact, paths, registration.handler)
+        return _repair_with_handler(
+            session,
+            artifact,
+            paths,
+            registration.handler,
+            mode_registry,
+        )
 
     def repair_all_missing(
         self,
@@ -173,46 +182,16 @@ def _repair_with_handler(
     artifact: ArtifactRecord,
     paths: SessionPaths,
     handler: ArtifactGenerator,
+    mode_registry: ModeRegistry | None = None,
 ) -> SessionRecord:
     try:
-        generated = handler(session, artifact, paths)
+        generated = call_handler(session, artifact, paths, handler, mode_registry)
     except Exception as exc:  # noqa: BLE001 - failed generators are captured as diagnostics.
         return with_failed_generation(session, artifact, str(exc))
-    generated_session, repaired = _generation_result(session, generated)
+    generated_session, repaired = generation_result(session, generated)
     artifacts = dict(session.artifacts or {})
     if generated_session is not session:
         artifacts = dict(generated_session.artifacts or {})
     artifacts[artifact.id] = repaired
     return replace(generated_session, artifacts=artifacts)
 
-
-def _generation_result(
-    session: SessionRecord,
-    generated: ArtifactRecord | ArtifactGenerationResult,
-) -> tuple[SessionRecord, ArtifactRecord]:
-    if isinstance(generated, ArtifactGenerationResult):
-        return generated.session or session, generated.artifact
-    return session, generated
-
-
-def repair_all_with_status(
-    session: SessionRecord,
-    paths: SessionPaths,
-    status: ArtifactStatus,
-    repair_one: Callable[
-        [SessionRecord, str, SessionPaths, ModeRegistry | None],
-        SessionRecord,
-    ],
-    mode_registry: ModeRegistry | None = None,
-) -> SessionRecord:
-    """Repair all artifacts with one lifecycle status."""
-
-    current = session
-    for artifact in tuple((current.artifacts or {}).values()):
-        if artifact.status is status and not is_process_only_repair_artifact(
-            current,
-            artifact,
-            mode_registry,
-        ):
-            current = repair_one(current, artifact.id, paths, mode_registry)
-    return current

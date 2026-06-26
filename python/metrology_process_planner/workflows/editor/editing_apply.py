@@ -95,8 +95,14 @@ def _replace_capture_field(capture: CaptureRecord, field_key: str, value: str) -
         return replace(capture, label=value, metadata=metadata)
     if field_key == "notes":
         return replace(capture, notes=value)
-    if field_key == "type":
-        return replace(capture, type=value)
+    if field_key in {"type", "capture_type"}:
+        metadata = dict(capture.metadata or {})
+        metadata["capture_type"] = value
+        return replace(capture, type=value, metadata=metadata)
+    if field_key in {"role", "capture_role"}:
+        metadata = dict(capture.metadata or {})
+        metadata["capture_role"] = value
+        return replace(capture, role=value, metadata=metadata)
     metadata = dict(capture.metadata or {})
     metadata[field_key] = _metadata_value(field_key, value)
     if _is_cad_review_capture(capture):

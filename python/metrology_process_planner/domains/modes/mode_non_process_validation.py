@@ -164,6 +164,7 @@ _PROCESS_EDITOR_GROUPS = {
     "cross_section",
     "cross_sections",
     "process_context",
+    "process_output",
     "process_outputs",
     "process_report",
     "process_summary",
@@ -176,7 +177,10 @@ _PROCESS_EDITOR_GROUPS = {
 _PROCESS_EDITOR_ACTIONS = {
     "attach_recipe",
     "detach_recipe",
+    "open_recipe_file",
+    "refresh_recipe_fingerprint",
     "regenerate_process_output",
+    "regenerate_process_outputs",
     "validate_process_context",
 }
 
@@ -185,6 +189,7 @@ _RECIPE_SETUP_STAGES = {
     "process_recipe",
     "recipe",
     "recipe_context",
+    "recipe_reference",
     "recipe_setup",
     "validate_process_context",
 }

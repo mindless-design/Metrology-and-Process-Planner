@@ -17,6 +17,8 @@ from metrology_process_planner.workflows.editor import (
 )
 from metrology_process_planner.workflows.grid_measurement import create_grid_dataset
 
+_CREATED_AT = "2026-06-24T00:00:00Z"
+
 
 def _session(overlap: bool = False) -> SessionRecord:
     first = _capture("cap-a", Box(0, 0, 10, 10))
@@ -32,12 +34,7 @@ def _session(overlap: bool = False) -> SessionRecord:
     )
 
 def _capture(capture_id: str, bounds: Box) -> CaptureRecord:
-    return CaptureRecord(
-        capture_id,
-        capture_id,
-        CaptureGeometry.box(bounds),
-        "2026-06-24T00:00:00Z",
-    )
+    return CaptureRecord(capture_id, capture_id, CaptureGeometry.box(bounds), _CREATED_AT)
 
 if __name__ == "__main__":
     unittest.main()
@@ -127,6 +124,48 @@ class GridMeasurementWorkflowTestsPart2(unittest.TestCase):
             6,
             result.document.session.grid_datasets[0].metadata["planned_site_count"],
         )
+
+    def test_dashboard_grid_dataset_action_is_directly_routable(self) -> None:
+        document = SessionDocumentBuilder().build(_session())
+        action = next(
+            action
+            for action in DefaultSessionModeAdapter().actions(
+                document.session,
+                document.items_by_id["dashboard"],
+            )
+            if action.action_type is EditorActionType.CREATE_GRID_DATASET
+        )
+
+        result = EditorActionDispatcher().dispatch(document, action)
+
+        self.assertEqual("success", result.status)
+        self.assertEqual("grid:grid-001", result.document.selection.selected_item_id)
+        self.assertEqual(1, result.document.session.grid_datasets[0].metadata["planned_site_count"])
+        self.assertEqual(
+            ("cap-a", "cap-b"),
+            result.document.session.grid_datasets[0].metadata["anchor_capture_ids"],
+        )
+
+    def test_grid_dataset_creation_action_reports_validation_warning(self) -> None:
+        document = SessionDocumentBuilder().build(_session(overlap=True))
+        action = EditorAction(
+            EditorActionType.CREATE_GRID_DATASET,
+            "Create Grid Dataset",
+            "dashboard",
+            payload=(
+                ("first_anchor_capture_id", "cap-a"),
+                ("diagonal_anchor_capture_id", "cap-b"),
+                ("row_count", "2"),
+                ("column_count", "2"),
+            ),
+        )
+
+        result = EditorActionDispatcher().dispatch(document, action)
+
+        self.assertEqual("warning", result.status)
+        self.assertIn("GRID_GEOMETRY_INVALID", result.message)
+        self.assertIn("Grid anchors must not overlap exactly", result.message)
+        self.assertEqual((), result.document.session.grid_datasets)
 
     def test_grid_dataset_creation_action_requires_payload(self) -> None:
         document = SessionDocumentBuilder().build(_session())

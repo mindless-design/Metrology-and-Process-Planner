@@ -159,3 +159,13 @@ class NonProcessDashboardArtifactTestsPart1(unittest.TestCase):
         self.assertEqual("0", fields["missing_artifact_count"])
         self.assertEqual("0", fields["artifact_attention_count"])
         self.assertEqual("ready", fields["report_readiness"])
+
+    def test_dashboard_readiness_ignores_superseded_artifacts(self) -> None:
+        old = _visible_artifact("old-capture-image", ArtifactStatus.SUPERSEDED)
+        source = replace(session_without_pending(), artifacts={old.id: old})
+
+        fields = _dashboard_fields(source)
+
+        self.assertEqual("0", fields["missing_artifact_count"])
+        self.assertEqual("0", fields["artifact_attention_count"])
+        self.assertEqual("ready", fields["report_readiness"])

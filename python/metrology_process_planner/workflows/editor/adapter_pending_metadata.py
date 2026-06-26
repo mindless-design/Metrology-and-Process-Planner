@@ -7,6 +7,7 @@ from metrology_process_planner.workflows.editor.adapter_mode_fields import mode_
 from metrology_process_planner.workflows.editor.adapter_mode_metadata import pending_mode_fields
 from metrology_process_planner.workflows.editor.builder_basics import mode_is_process_aware
 from metrology_process_planner.workflows.editor.view_models import MetadataField
+from metrology_process_planner.workflows.mode_capture_defaults import capture_defaults
 
 _CDSEM_MODES = {"cdsem_capture", "cdsem_measurement", "cdsem_planning"}
 
@@ -46,10 +47,11 @@ def _simple_pending_fields(
     mode_registry: ModeRegistry | None,
     metadata: dict[str, object],
 ) -> tuple[MetadataField, ...]:
+    defaults = capture_defaults(session, pending, "cap-001", "", mode_registry)
     fields: tuple[MetadataField, ...] = (
         MetadataField("label", "Label", str(metadata.get("label", "")), required=True),
         MetadataField("notes", "Notes", str(metadata.get("notes", ""))),
-        MetadataField("capture_role", "Capture Role", pending.object_type.value),
+        MetadataField("capture_role", "Capture Role", defaults.role),
     )
     return fields + cdsem_guidance_fields(session) + pending_mode_fields(
         session,
@@ -65,12 +67,13 @@ def _compound_pending_fields(
     metadata: dict[str, object],
     compound: dict[str, object],
 ) -> tuple[MetadataField, ...]:
+    defaults = capture_defaults(session, pending, "cap-001", "", mode_registry)
     raw_feature = compound.get("feature", {})
     feature = dict(raw_feature) if isinstance(raw_feature, dict) else {}
     fields: tuple[MetadataField, ...] = (
         MetadataField("label", "Label", str(metadata.get("label", "")), required=True),
         MetadataField("notes", "Notes", str(metadata.get("notes", ""))),
-        MetadataField("capture_role", "Capture Role", pending.object_type.value),
+        MetadataField("capture_role", "Capture Role", defaults.role),
         MetadataField("child_role", "Child Role", str(compound.get("child_role", ""))),
         MetadataField("child_kind", "Child Feature", str(compound.get("child_kind", ""))),
         MetadataField("feature_id", "Feature ID", str(feature.get("id", ""))),

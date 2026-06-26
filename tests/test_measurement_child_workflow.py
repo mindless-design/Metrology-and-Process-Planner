@@ -24,6 +24,7 @@ from metrology_process_planner.workflows.editor import (
     SessionDocumentStore,
     SessionRenderBridge,
 )
+from metrology_process_planner.workflows.measurement_workflow import add_pending_measurement_line
 from tests.editor_render_fixtures import FakeRasterizer
 from tests.measurement_child_fixtures import (
     document_with_pending_measurement,
@@ -58,6 +59,32 @@ class MeasurementChildWorkflowTestsPart1(unittest.TestCase):
         self.assertEqual(CanvasObjectType.MEASUREMENT, line.object_type)
         self.assertEqual("canvas-cap", line.parent_id)
         self.assertIn(CanvasVisualFlag.ACTIVE_PARENT, parent.visual_state)
+
+    def test_repeated_pending_measurements_use_stable_unique_ids_before_save(self) -> None:
+        first = add_pending_measurement_line(
+            saved_capture_session(),
+            "canvas-cap",
+            Point(1, 1),
+            Point(4, 1),
+        )
+        second = add_pending_measurement_line(
+            first,
+            "canvas-cap",
+            Point(1, 2),
+            Point(4, 2),
+        )
+
+        measurement_ids = tuple(
+            measurement.id for measurement in second.captures[0].measurements
+        )
+        canvas_record_ids = tuple(
+            item.record_id
+            for item in second.canvas_objects
+            if item.object_type is CanvasObjectType.MEASUREMENT
+        )
+
+        self.assertEqual(("meas-001", "meas-002"), measurement_ids)
+        self.assertEqual(("meas-001", "meas-002"), canvas_record_ids)
 
     def test_add_measurement_then_save_promotes_child_measurement(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

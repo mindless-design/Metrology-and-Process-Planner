@@ -53,7 +53,11 @@ class DiagnosticsVisibilityTestsPart2(unittest.TestCase):
         services = build_app_services()
         source = replace(
             session_without_pending(),
-            process_context=ProcessContext(recipe_id="legacy-recipe"),
+            process_context=ProcessContext(
+                recipe_id="legacy-recipe",
+                solver_backend="legacy_solver",
+                render_profile="legacy_stack_profile",
+            ),
         )
         services.diagnostics_controller.set_active_session(source)
 
@@ -64,6 +68,8 @@ class DiagnosticsVisibilityTestsPart2(unittest.TestCase):
         self.assertEqual("false", summary["Recipe Required"])
         self.assertEqual("none", summary["Solver Operation"])
         self.assertEqual("false", summary["Process Context Visible"])
+        self.assertEqual("none", summary["Solver Backend"])
+        self.assertEqual("none", summary["Renderer Backend"])
 
     def test_mode_policy_rows_use_injected_registry_for_external_recipe_free_modes(self) -> None:
         registry = ModeRegistry((ModeDefinition("external_capture", "External Capture"),))

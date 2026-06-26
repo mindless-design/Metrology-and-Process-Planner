@@ -76,7 +76,6 @@ def _pending_actions(item: SessionItem) -> tuple[EditorAction, ...]:
         EditorAction(EditorActionType.PENDING_SAVE, "Save", item.item_id),
         EditorAction(EditorActionType.PENDING_RETAKE, "Retake", item.item_id),
         EditorAction(EditorActionType.PENDING_DISCARD, "Discard", item.item_id),
-        EditorAction(EditorActionType.EXIT_SESSION, "Exit Session", item.item_id),
     )
 
 

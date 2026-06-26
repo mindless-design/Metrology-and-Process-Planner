@@ -15,7 +15,6 @@ from metrology_process_planner.workflows.editor.dispatcher_support import (
     _empty_context,
     _payload_value,
     _rebuild_document,
-    _record_id,
     _with_session,
 )
 from metrology_process_planner.workflows.editor.document import SessionDocument
@@ -98,7 +97,7 @@ def _pending_save(
     action: EditorAction,
 ) -> EditorActionResult:
     document = apply_metadata_edits(document, dispatcher._mode_registry)
-    pending_id = _record_id(document, action.item_id)
+    pending_id = _pending_id(document, action.item_id)
     pending_metadata = _pending_metadata(document.session, pending_id)
     label = _payload_value(action, "label") or pending_metadata.get("label", "")
     notes = _payload_value(action, "notes") or pending_metadata.get("notes", "")
@@ -111,6 +110,12 @@ def _pending_save(
         label=label,
         notes=notes,
     )
+    if not result.handled:
+        return EditorActionResult(
+            "unavailable",
+            document,
+            "Pending capture is no longer available.",
+        )
     session = result.session
     render_result = None
     refresh_capture_id = replacement_id or _new_capture_id(before_capture_ids, session)
@@ -171,6 +176,15 @@ def _pending_metadata(session: SessionRecord, pending_id: str) -> dict[str, str]
         if pending.id == pending_id:
             return {key: str(value) for key, value in dict(pending.metadata or {}).items()}
     return {}
+
+
+def _pending_id(document: SessionDocument, item_id: str) -> str:
+    item = document.items_by_id.get(item_id)
+    if item is not None and item.record_ref is not None:
+        return item.record_ref.record_id
+    if item_id.startswith("pending:"):
+        return item_id.split(":", 1)[1]
+    return item_id
 
 
 def _new_capture_id(previous_ids: set[str], session: SessionRecord) -> Optional[str]:

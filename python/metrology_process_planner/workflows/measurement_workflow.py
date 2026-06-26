@@ -73,8 +73,11 @@ def add_pending_measurement_line(
     parent = find_canvas_object(session, parent_canvas_id)
     if parent is None or parent.geometry.bounds is None:
         raise ValueError("Measurement line requires a parent site box.")
-    if _capture_by_id(session, parent.record_id) is None:
+    capture = _capture_by_id(session, parent.record_id)
+    if capture is None:
         raise ValueError("Measurement line requires an existing parent capture.")
+    if capture.geometry.bounds is None:
+        raise ValueError("Measurement line requires a parent capture box.")
     measurement = _pending_measurement(session, start, end)
     warnings = measurement.validate_against_capture_bounds(parent.geometry.bounds)
     if warnings:
@@ -128,11 +131,7 @@ def _capture_by_id(session: SessionRecord, capture_id: str) -> CaptureRecord | N
 
 
 def _pending_measurement(session: SessionRecord, start: Point, end: Point) -> MeasurementRecord:
-    existing = (
-        measurement.id
-        for capture in session.captures
-        for measurement in capture.measurements
-    )
+    existing = _existing_measurement_ids(session)
     measurement_id = next_id("meas", existing)
     return MeasurementRecord(
         measurement_id,
@@ -141,6 +140,20 @@ def _pending_measurement(session: SessionRecord, start: Point, end: Point) -> Me
         end,
         metadata={"workflow_state": "pending"},
     )
+
+
+def _existing_measurement_ids(session: SessionRecord) -> tuple[str, ...]:
+    durable_ids = tuple(
+        measurement.id
+        for capture in session.captures
+        for measurement in capture.measurements
+    )
+    canvas_ids = tuple(
+        item.record_id
+        for item in session.canvas_objects
+        if item.object_type is CanvasObjectType.MEASUREMENT and item.record_id
+    )
+    return durable_ids + canvas_ids
 
 
 def _pending_measurement_count(session: SessionRecord) -> int:
@@ -202,4 +215,3 @@ def _promote_measurement_canvas(session: SessionRecord) -> SessionRecord:
         for item in session.canvas_objects
     )
     return replace(session, canvas_objects=objects)
-

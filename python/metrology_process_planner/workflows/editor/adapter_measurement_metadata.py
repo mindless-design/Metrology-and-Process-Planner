@@ -23,8 +23,8 @@ def measurement_fields(measurement: MeasurementRecord) -> tuple[MetadataField, .
             options=MEASUREMENT_TYPE_OPTIONS,
         ),
         MetadataField("target", "Target", optional_number(measurement.target)),
-        MetadataField("lower_spec_limit", "LSL", optional_number(measurement.lower_spec_limit)),
-        MetadataField("upper_spec_limit", "USL", optional_number(measurement.upper_spec_limit)),
+        MetadataField("lsl", "LSL", optional_number(measurement.lower_spec_limit)),
+        MetadataField("usl", "USL", optional_number(measurement.upper_spec_limit)),
         MetadataField("notes", "Notes", measurement.notes),
         MetadataField(
             "edge_convention",
@@ -32,6 +32,6 @@ def measurement_fields(measurement: MeasurementRecord) -> tuple[MetadataField, .
             measurement.edge_detection_convention,
             options=EDGE_CONVENTION_OPTIONS,
         ),
-        MetadataField("annotation_color", "Annotation Color", measurement.annotation_color),
+        MetadataField("color", "Color", measurement.annotation_color),
         MetadataField("line_weight", "Line Weight", str(measurement.line_weight)),
     )

@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 
 from metrology_process_planner.app.bootstrap import build_app_services
 from metrology_process_planner.app.commands import CommandId
-from metrology_process_planner.domains.session import SessionMode
+from metrology_process_planner.domains.session import ProcessContext, SessionMode
 from metrology_process_planner.persistence.paths import SessionPaths
 from metrology_process_planner.workflows.editor import (
     EditorAction,
@@ -34,6 +34,33 @@ if __name__ == "__main__":
 
 
 class SessionEditorCommandBridgeTestsPart2(unittest.TestCase):
+    def test_process_commands_are_unavailable_for_recipe_free_editor_session(self) -> None:
+        services = build_app_services()
+        source = replace(
+            session_without_pending(),
+            process_context=ProcessContext(recipe_id="legacy-recipe"),
+        )
+        document = SessionDocumentBuilder().build(source)
+        services.session_editor_controller.open_document(document)
+
+        for command_id in (
+            CommandId.ATTACH_RECIPE,
+            CommandId.DETACH_RECIPE,
+            CommandId.VALIDATE_PROCESS_CONTEXT,
+            CommandId.REGENERATE_PROCESS_OUTPUT,
+        ):
+            with self.subTest(command_id=command_id.value):
+                routed = services.command_router.route(command_id)
+                current = services.session_editor_controller.current_document
+
+                self.assertEqual(command_id, routed.command_id)
+                self.assertEqual("unavailable", routed.status)
+                self.assertIn("recipe-free mode", routed.message)
+                self.assertIsNotNone(current)
+                self.assertEqual("legacy-recipe", current.session.process_context.recipe_id)
+                self.assertEqual((), current.session.process_outputs)
+                self.assertEqual((), current.session.warnings)
+
     def test_add_measurement_command_uses_selected_capture_item(self) -> None:
         services = build_app_services()
         document = SessionDocumentBuilder().build(saved_capture_session())

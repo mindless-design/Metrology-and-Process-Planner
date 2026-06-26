@@ -60,6 +60,12 @@ class MeasurementMetadataOptionTests(unittest.TestCase):
 
         self.assertEqual(MEASUREMENT_TYPE_OPTIONS, fields["measurement_type"].options)
         self.assertEqual(EDGE_CONVENTION_OPTIONS, fields["edge_convention"].options)
+        self.assertIn("lsl", fields)
+        self.assertIn("usl", fields)
+        self.assertIn("color", fields)
+        self.assertNotIn("lower_spec_limit", fields)
+        self.assertNotIn("upper_spec_limit", fields)
+        self.assertNotIn("annotation_color", fields)
 
 
 def _mode_fields(mode_id: str):

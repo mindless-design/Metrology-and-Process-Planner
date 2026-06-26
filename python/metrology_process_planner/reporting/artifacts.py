@@ -11,9 +11,9 @@ from metrology_process_planner.domains.session import (
     ArtifactRecord,
     ArtifactRepairMetadata,
     ArtifactStatus,
+    ModeRegistry,
     ReportRecord,
     SessionRecord,
-    ModeRegistry,
 )
 from metrology_process_planner.reporting.backends import ExportedReport
 from metrology_process_planner.reporting.models import ReportDocument

@@ -153,3 +153,19 @@ class NonProcessDashboardArtifactTestsPart2(unittest.TestCase):
 
         self.assertEqual("not exported", fields["csv_readiness"])
         self.assertEqual("stale outputs", fields["report_readiness"])
+
+    def test_dashboard_ignores_superseded_capture_csv_readiness(self) -> None:
+        csv_artifact = ArtifactRecord(
+            "session-session-001-csv_export-old",
+            "csv_export",
+            "Old Capture CSV",
+            "exports/old-captures.csv",
+            ArtifactOwnerRef("session", "session-001", "csv_export"),
+            status=ArtifactStatus.SUPERSEDED,
+        )
+        source = replace(session_without_pending(), artifacts={csv_artifact.id: csv_artifact})
+
+        fields = _dashboard_fields(source)
+
+        self.assertEqual("not exported", fields["csv_readiness"])
+        self.assertEqual("ready", fields["report_readiness"])

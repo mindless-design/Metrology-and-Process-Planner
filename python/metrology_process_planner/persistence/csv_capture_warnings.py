@@ -22,7 +22,11 @@ def capture_warning_count(
     """Return open warnings linked to a capture, its measurements, or artifacts."""
 
     warning_ids = _visible_warning_ids(session, set(capture.warning_ids), mode_registry)
-    artifact_ids = set(dict(capture.artifact_refs or {}).values())
+    artifact_ids = _visible_artifact_ref_ids(
+        session,
+        set(dict(capture.artifact_refs or {}).values()),
+        mode_registry,
+    )
     artifact_ids.update(_visible_owned_artifact_ids(session, "capture", capture.id, mode_registry))
     item_refs = {f"capture:{capture.id}"}
     for measurement in capture.measurements:
@@ -97,7 +101,13 @@ def _add_measurement_refs(
     mode_registry: ModeRegistry | None,
 ) -> None:
     warning_ids.update(_visible_warning_ids(session, set(measurement.warning_ids), mode_registry))
-    artifact_ids.update(dict(measurement.artifact_refs or {}).values())
+    artifact_ids.update(
+        _visible_artifact_ref_ids(
+            session,
+            set(dict(measurement.artifact_refs or {}).values()),
+            mode_registry,
+        )
+    )
     artifact_ids.update(
         _visible_owned_artifact_ids(session, "measurement", measurement.id, mode_registry)
     )
@@ -114,6 +124,18 @@ def _visible_owned_artifact_ids(
         artifact.id
         for artifact in artifacts_for_owner(session.artifacts or {}, owner_type, owner_id)
         if artifact_visible_for_session(session, artifact, mode_registry)
+    }
+
+
+def _visible_artifact_ref_ids(
+    session: SessionRecord,
+    artifact_ids: set[str],
+    mode_registry: ModeRegistry | None,
+) -> set[str]:
+    return {
+        artifact_id
+        for artifact_id in artifact_ids
+        if _artifact_visible(session, artifact_id, mode_registry)
     }
 
 

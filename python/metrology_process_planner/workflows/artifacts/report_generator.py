@@ -7,6 +7,7 @@ from pathlib import Path
 
 from metrology_process_planner.domains.session import (
     ArtifactRecord,
+    ModeRegistry,
     ReportRecord,
     SessionRecord,
 )
@@ -27,6 +28,7 @@ def regenerate_report_artifact(
     session: SessionRecord,
     artifact: ArtifactRecord,
     paths: SessionPaths,
+    mode_registry: ModeRegistry | None = None,
 ) -> ArtifactGenerationResult:
     """Regenerate a saved report output from canonical session data."""
 
@@ -40,8 +42,8 @@ def regenerate_report_artifact(
         output_formats=_output_formats(session, report, artifact),
         output_dir=_output_dir(paths, artifact),
     )
-    result = ReportGenerationService().generate(
-        SessionDocumentBuilder().build(clean_session),
+    result = ReportGenerationService(mode_registry=mode_registry).generate(
+        SessionDocumentBuilder(mode_registry=mode_registry).build(clean_session),
         request,
         paths.folder,
     )

@@ -5,6 +5,12 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
+from metrology_process_planner.workflows.editor.dispatcher_artifact_lifecycle import (
+    export_artifact_manifest_action,
+    regenerate_missing_artifacts_action,
+    regenerate_stale_artifacts_action,
+    scan_artifacts_action,
+)
 from metrology_process_planner.workflows.editor.dispatcher_artifact_ops import (
     relink_artifact,
 )
@@ -47,6 +53,7 @@ from metrology_process_planner.workflows.editor.dispatcher_process_context impor
     regenerate_process_output_action,
     validate_process_context_action,
 )
+from metrology_process_planner.workflows.editor.dispatcher_reporting import build_report_action
 from metrology_process_planner.workflows.editor.dispatcher_results import EditorActionResult
 from metrology_process_planner.workflows.editor.document import SessionDocument
 from metrology_process_planner.workflows.editor.view_models import EditorAction, EditorActionType
@@ -166,6 +173,7 @@ _ACTION_HANDLERS: dict[EditorActionType, ActionHandler] = {
     EditorActionType.UPDATE_METADATA_FIELD: update_metadata_field_action,
     EditorActionType.BATCH_RENAME: batch_rename_action,
     EditorActionType.EXPORT_CSV: export_csv_action,
+    EditorActionType.BUILD_POWERPOINT: build_report_action,
     EditorActionType.OPEN_OUTPUT_FOLDER: open_output_folder_action,
     EditorActionType.SELECT_ITEM: select_item_action,
     EditorActionType.SELECT_CANVAS_OBJECT: select_canvas_action,
@@ -179,6 +187,10 @@ _ACTION_HANDLERS: dict[EditorActionType, ActionHandler] = {
     EditorActionType.COMPOSITE_EXIT: composite_exit_action,
     EditorActionType.REGENERATE_ARTIFACT: _regenerate_artifact_action,
     EditorActionType.RELINK_ARTIFACT: _relink_artifact_action,
+    EditorActionType.SCAN_ARTIFACTS: scan_artifacts_action,
+    EditorActionType.REGENERATE_MISSING_ARTIFACTS: regenerate_missing_artifacts_action,
+    EditorActionType.REGENERATE_STALE_ARTIFACTS: regenerate_stale_artifacts_action,
+    EditorActionType.EXPORT_ARTIFACT_MANIFEST: export_artifact_manifest_action,
     EditorActionType.ADD_MEASUREMENT: _add_measurement_action,
     EditorActionType.GENERATE_SESSION_OVERVIEW: generate_session_overview_action,
     EditorActionType.GENERATE_METROLOGY_OVERVIEW: generate_metrology_overview_action,

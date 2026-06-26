@@ -27,11 +27,14 @@ def workflow_state_rows(
 ) -> tuple[tuple[str, str], ...]:
     """Return durable workflow state rows for the diagnostics summary."""
 
+    measurement = MeasurementWorkflowStateMachine().evaluate(session)
     return (
         ("Workflow State", SessionUIStateMachine().evaluate(session).state),
         ("Setup State", _setup_state(session, mode_registry)),
         ("Capture State", _capture_state(session)),
-        ("Measurement Workflow", MeasurementWorkflowStateMachine().evaluate(session).state),
+        ("Measurement Workflow", measurement.state),
+        ("Measurement Workflow Target", measurement.active_item_ref or "none"),
+        ("Measurement Workflow Actions", _action_summary(measurement.action_ids)),
         *_grid_state_rows(session, mode_registry),
         ("Armed Capture Tool", session.workflow.active_primitive or "none"),
         ("Recipe Context", RecipeContextStateMachine(mode_registry).evaluate(session).state),
@@ -125,3 +128,7 @@ def _metadata_int(metadata: object, key: str) -> int:
         return int(metadata.get(key, 0))
     except (TypeError, ValueError):
         return 0
+
+
+def _action_summary(action_ids: tuple[str, ...]) -> str:
+    return ", ".join(action_ids) if action_ids else "none"

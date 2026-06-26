@@ -6,10 +6,7 @@ from typing import Protocol
 
 from metrology_process_planner.domains.session import SessionRecord
 from metrology_process_planner.workflows.editor.dispatcher_results import EditorActionResult
-from metrology_process_planner.workflows.editor.dispatcher_support import (
-    _empty_context,
-    _record_id,
-)
+from metrology_process_planner.workflows.editor.dispatcher_support import _empty_context
 from metrology_process_planner.workflows.editor.document import SessionDocument
 from metrology_process_planner.workflows.editor.view_models import EditorAction
 from metrology_process_planner.workflows.pending_capture_review import PendingCaptureReviewService
@@ -32,8 +29,14 @@ def pending_retake_action(
     result = dispatcher._pending.retake_pending(
         document.session,
         _empty_context(),
-        _record_id(document, action.item_id),
+        _pending_id(document, action.item_id),
     )
+    if not result.handled:
+        return EditorActionResult(
+            "unavailable",
+            document,
+            "Pending capture is no longer available.",
+        )
     return EditorActionResult(
         "success",
         dispatcher._rebuild(result.session, document),
@@ -51,10 +54,25 @@ def pending_discard_action(
     result = dispatcher._pending.discard_pending(
         document.session,
         _empty_context(),
-        _record_id(document, action.item_id),
+        _pending_id(document, action.item_id),
     )
+    if not result.handled:
+        return EditorActionResult(
+            "unavailable",
+            document,
+            "Pending capture is no longer available.",
+        )
     return EditorActionResult(
         "success",
         dispatcher._rebuild(result.session, document),
         "Discarded pending capture.",
     )
+
+
+def _pending_id(document: SessionDocument, item_id: str) -> str:
+    item = document.items_by_id.get(item_id)
+    if item is not None and item.record_ref is not None:
+        return item.record_ref.record_id
+    if item_id.startswith("pending:"):
+        return item_id.split(":", 1)[1]
+    return item_id

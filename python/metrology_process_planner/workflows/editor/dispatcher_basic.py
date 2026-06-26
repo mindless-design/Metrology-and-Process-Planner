@@ -50,7 +50,12 @@ def export_csv_action(
     if dispatcher._paths is None:
         return EditorActionResult("unavailable", document, "No session folder is configured.")
     destination = dispatcher._csv.export(document.session, dispatcher._paths.capture_csv)
-    session = with_csv_export_artifact(document.session, dispatcher._paths, destination)
+    session = with_csv_export_artifact(
+        document.session,
+        dispatcher._paths,
+        destination,
+        dispatcher._mode_registry,
+    )
     return EditorActionResult(
         "success",
         dispatcher._rebuild(session, document),

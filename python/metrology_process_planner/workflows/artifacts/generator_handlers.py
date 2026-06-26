@@ -9,6 +9,7 @@ from metrology_process_planner.domains.session import (
     ArtifactFileMetadata,
     ArtifactRecord,
     ArtifactStatus,
+    ModeRegistry,
     SessionRecord,
 )
 from metrology_process_planner.persistence.csv_export import CaptureCsvExporter
@@ -39,11 +40,12 @@ def rebuild_csv_export(
     session: SessionRecord,
     artifact: ArtifactRecord,
     paths: SessionPaths,
+    mode_registry: ModeRegistry | None = None,
 ) -> ArtifactGenerationResult:
     """Rebuild the canonical capture CSV and return its registry record."""
 
-    destination = CaptureCsvExporter().export(session, paths.capture_csv)
-    updated = with_csv_export_artifact(session, paths, destination)
+    destination = CaptureCsvExporter(mode_registry=mode_registry).export(session, paths.capture_csv)
+    updated = with_csv_export_artifact(session, paths, destination, mode_registry)
     generated = _generated_artifact(updated, artifact) or artifact
     return ArtifactGenerationResult(generated, updated)
 

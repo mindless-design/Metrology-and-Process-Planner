@@ -62,7 +62,7 @@ class DiagnosticsVisibilityTestsPart1(unittest.TestCase):
         self.assertEqual("dirty", summary["Dirty State"])
         self.assertEqual("simple_capture", summary["Active Mode"])
         self.assertEqual("none", summary["Solver Backend"])
-        self.assertEqual("default", summary["Renderer Backend"])
+        self.assertEqual("none", summary["Renderer Backend"])
         self.assertIn("Report Readiness", summary)
 
     def test_summary_includes_mode_validation_and_recent_failures(self) -> None:

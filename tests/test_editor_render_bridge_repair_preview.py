@@ -52,7 +52,7 @@ class EditorRenderBridgeRepairPreviewTests(unittest.TestCase):
         self.assertEqual("failed", previews[0].status)
         self.assertIn("disk full", previews[0].placeholder)
         self.assertIn(
-            "Belongs to measurement-meas-001-measurement_annotation_svg",
+            "Belongs to measurement meas-001",
             previews[0].placeholder,
         )
         self.assertIn("CSV export can continue", previews[0].placeholder)

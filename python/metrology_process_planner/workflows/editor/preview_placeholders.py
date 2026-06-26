@@ -9,7 +9,7 @@ def artifact_placeholder_message(artifact: ArtifactRef) -> str:
     """Return user-facing placeholder detail for a missing or blocked artifact."""
 
     problem = _artifact_problem(artifact)
-    owner = artifact.artifact_id or artifact.role
+    owner = _artifact_owner(artifact)
     repair = (
         artifact.repair_suggestion
         or artifact.repair_action
@@ -19,6 +19,14 @@ def artifact_placeholder_message(artifact: ArtifactRef) -> str:
         f"{problem} Belongs to {owner} ({artifact.role}). "
         f"{_artifact_impact()} Repair: {repair}"
     )
+
+
+def _artifact_owner(artifact: ArtifactRef) -> str:
+    """Return the user-facing owner for a preview placeholder."""
+
+    if artifact.owner_type and artifact.owner_id:
+        return f"{artifact.owner_type} {artifact.owner_id}"
+    return artifact.artifact_id or artifact.role
 
 
 def _artifact_problem(artifact: ArtifactRef) -> str:

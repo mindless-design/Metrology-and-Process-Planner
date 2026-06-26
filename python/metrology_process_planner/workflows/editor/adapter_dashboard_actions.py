@@ -79,12 +79,14 @@ def _overview_actions(
             )
         )
     if supports_grid:
+        grid_payload = _grid_creation_payload(session)
         enabled, disabled_reason = _grid_creation_availability(session)
         actions.append(
-            _action(
+            EditorAction(
                 EditorActionType.CREATE_GRID_DATASET,
                 "Create Grid Dataset",
                 item.item_id,
+                payload=grid_payload,
                 enabled=enabled,
                 disabled_reason=disabled_reason,
             )
@@ -120,6 +122,21 @@ def _grid_creation_availability(session: SessionRecord) -> tuple[bool, str]:
     if len(_box_captures(session.captures)) >= 2:
         return True, ""
     return False, "Grid datasets require at least two saved box captures."
+
+
+def _grid_creation_payload(session: SessionRecord) -> tuple[tuple[str, str], ...]:
+    captures = _box_captures(session.captures)
+    if len(captures) < 2:
+        return ()
+    first = captures[0]
+    diagonal = captures[1]
+    return (
+        ("first_anchor_capture_id", first.id),
+        ("diagonal_anchor_capture_id", diagonal.id),
+        ("row_count", "1"),
+        ("column_count", "1"),
+        ("label", "Grid"),
+    )
 
 
 def _box_captures(captures: tuple[CaptureRecord, ...]) -> tuple[CaptureRecord, ...]:

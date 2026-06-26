@@ -3,7 +3,12 @@ from dataclasses import replace
 
 from metrology_process_planner.app.bootstrap import build_app_services
 from metrology_process_planner.app.commands import CommandId
-from metrology_process_planner.domains.session import CanvasVisualFlag
+from metrology_process_planner.domains.session import (
+    CanvasVisualFlag,
+    ModeDefinition,
+    ModeRegistry,
+    SessionModeId,
+)
 from metrology_process_planner.workflows.editor import SessionDocumentBuilder
 from tests.editor_render_fixtures import session_without_pending
 
@@ -58,6 +63,40 @@ class CaptureCommandTests(unittest.TestCase):
         self.assertEqual("line_capture", editor_session.workflow.stage)
         self.assertEqual("measurement", editor_session.workflow.active_primitive)
         self.assertEqual("canvas-cap", services.capture_command_service.context.active_parent_id)
+
+    def test_start_line_capture_blocks_without_selected_saved_box_parent(self) -> None:
+        services = build_app_services()
+        services.session_editor_controller.open_document(
+            SessionDocumentBuilder().build(session_without_pending())
+        )
+
+        result = services.command_router.route(CommandId.START_LINE_CAPTURE)
+        editor_session = services.session_editor_controller.current_document.session
+
+        self.assertEqual("blocked", result.status)
+        self.assertIn("Measurements require a saved capture", result.message)
+        self.assertFalse(editor_session.workflow.active)
+
+    def test_start_line_capture_blocks_when_mode_disallows_measurements(self) -> None:
+        registry = ModeRegistry((ModeDefinition("review_only", "Review Only"),))
+        services = build_app_services(mode_registry=registry)
+        source = replace(session_without_pending(), mode=SessionModeId("review_only"))
+        selected_canvas = replace(
+            source.canvas_objects[0],
+            visual_state=(CanvasVisualFlag.SELECTED,),
+        )
+        services.session_editor_controller.open_document(
+            SessionDocumentBuilder(mode_registry=registry).build(
+                replace(source, canvas_objects=(selected_canvas,))
+            )
+        )
+
+        result = services.command_router.route(CommandId.START_LINE_CAPTURE)
+        editor_session = services.session_editor_controller.current_document.session
+
+        self.assertEqual("blocked", result.status)
+        self.assertIn("does not support measurements", result.message)
+        self.assertFalse(editor_session.workflow.active)
 
     def test_start_point_capture_sets_point_primitive_without_prompting(self) -> None:
         services = build_app_services()

@@ -13,7 +13,11 @@ from metrology_process_planner.domains.session import (
     SessionRecord,
 )
 from metrology_process_planner.workflows import CanvasInteractionEngine, InteractionContext
-from metrology_process_planner.workflows.editor import SessionDocumentBuilder
+from metrology_process_planner.workflows.editor import (
+    DefaultSessionModeAdapter,
+    SessionDocumentBuilder,
+)
+from metrology_process_planner.workflows.editor.view_models import EditorActionType
 
 
 class FastBatchCaptureCommitTests(unittest.TestCase):
@@ -34,6 +38,14 @@ class FastBatchCaptureCommitTests(unittest.TestCase):
         self.assertIn("capture:cap-001", document.items_by_id)
         self.assertIn("Saved Captures", _group_labels(document))
         self.assertNotIn("Pending", _group_labels(document))
+        self.assertNotIn(
+            EditorActionType.PENDING_SAVE,
+            _visible_action_types(document),
+        )
+        self.assertIn(
+            EditorActionType.ADD_MEASUREMENT,
+            _visible_action_types(document, "capture:cap-001"),
+        )
 
     def test_shift_drag_uses_next_stable_batch_label(self) -> None:
         existing = CaptureRecord(
@@ -101,6 +113,19 @@ def _session(mode: SessionMode | SessionModeId = SessionMode.FAST_BATCH_CAPTURE)
 
 def _group_labels(document: object) -> tuple[str, ...]:
     return tuple(group.label for group in document.navigator_groups)
+
+
+def _visible_action_types(
+    document: object,
+    item_id: str = "dashboard",
+) -> tuple[EditorActionType, ...]:
+    return tuple(
+        action.action_type
+        for action in DefaultSessionModeAdapter().actions(
+            document.session,
+            document.items_by_id[item_id],
+        )
+    )
 
 
 def _capture_labels(session: SessionRecord) -> tuple[str, ...]:
