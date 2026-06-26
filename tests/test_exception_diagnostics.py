@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 from metrology_process_planner.app.commands import CommandId, CommandRegistry
-from metrology_process_planner.infrastructure.diagnostics import InMemoryDiagnosticSink
+from metrology_process_planner.diagnostics import InMemoryDiagnosticSink
 from metrology_process_planner.persistence.json_store import SessionJsonStore
 from metrology_process_planner.persistence.paths import SessionPaths
 from metrology_process_planner.ui.shell.command_router import CommandRouter

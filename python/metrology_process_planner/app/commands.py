@@ -13,6 +13,7 @@ from metrology_process_planner.app.command_types import (
     CommandSpec,
     CoverageLane,
 )
+from metrology_process_planner.domains.commands import command_id_from_view_action
 
 
 class CommandRegistry:
@@ -54,20 +55,9 @@ def build_default_registry() -> CommandRegistry:
     return registry
 
 
-def command_id_from_view_action(action_id: str) -> CommandId:
-    """Normalize view-model action IDs into typed command IDs."""
-
-    command_name = action_id.split(":", 1)[0]
-    normalized = []
-    for index, char in enumerate(command_name):
-        if char.isupper() and index:
-            normalized.append("_")
-        normalized.append(char.lower())
-    return CommandId("".join(normalized))
-
-
 def _missing_ui_handler(command_id: CommandId) -> CommandHandler:
     def handler() -> None:
+        """Handle handler."""
         raise NotImplementedError(
             f"{command_id.value} is registered, but its UI controller is not implemented yet."
         )

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-from metrology_process_planner.domains.session import CaptureRecord, SessionRecord
+from metrology_process_planner.domains.session import CaptureRecord, ModeRegistry, SessionRecord
 from metrology_process_planner.workflows.editor.builder_artifact_refs import (
     _artifact_refs_for_owner,
 )
@@ -15,16 +15,21 @@ from metrology_process_planner.workflows.editor.references import ArtifactRef, R
 def feature_items_for_capture(
     session: SessionRecord,
     capture: CaptureRecord,
+    mode_registry: ModeRegistry | None = None,
 ) -> tuple[SessionItem, ...]:
     """Return editor child items for composite geometry features."""
 
-    return tuple(_feature_item(session, capture, feature) for feature in capture.geometry.features)
+    return tuple(
+        _feature_item(session, capture, feature, mode_registry)
+        for feature in capture.geometry.features
+    )
 
 
 def _feature_item(
     session: SessionRecord,
     capture: CaptureRecord,
     feature: Mapping[str, object],
+    mode_registry: ModeRegistry | None,
 ) -> SessionItem:
     feature_id = str(feature.get("id", ""))
     role = str(feature.get("role", feature.get("kind", "feature")))
@@ -38,16 +43,17 @@ def _feature_item(
         canvas_object_ids=tuple(
             item.id for item in session.canvas_objects if item.record_id == feature_id
         ),
-        artifact_refs=_feature_artifacts(session, capture.id),
+        artifact_refs=_feature_artifacts(session, capture.id, mode_registry),
     )
 
 
 def _feature_artifacts(
     session: SessionRecord,
     capture_id: str,
+    mode_registry: ModeRegistry | None,
 ) -> tuple[ArtifactRef, ...]:
     return tuple(
         artifact
-        for artifact in _artifact_refs_for_owner(session, "capture", capture_id)
+        for artifact in _artifact_refs_for_owner(session, "capture", capture_id, mode_registry)
         if artifact.artifact_type == "layout_annotation"
     )

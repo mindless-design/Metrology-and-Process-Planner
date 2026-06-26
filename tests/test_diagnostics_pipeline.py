@@ -7,9 +7,7 @@ from pathlib import Path
 from metrology_process_planner.app.bootstrap import build_app_services
 from metrology_process_planner.app.commands import CommandId
 from metrology_process_planner.app.diagnostics import AdvancedDiagnosticsController
-from metrology_process_planner.domains.geometry import Point
-from metrology_process_planner.domains.session import ArtifactStatus, WarningRecord
-from metrology_process_planner.infrastructure.diagnostics import (
+from metrology_process_planner.diagnostics import (
     DiagnosticsService,
     InMemoryDiagnosticSink,
     JsonlDiagnosticSink,
@@ -18,6 +16,11 @@ from metrology_process_planner.infrastructure.diagnostics import (
     check_pending_to_saved_seam,
     check_session_to_filesystem_seam,
     summarize_trace_timeline,
+)
+from metrology_process_planner.domains.geometry import Point
+from metrology_process_planner.domains.session import (
+    ArtifactStatus,
+    WarningRecord,
 )
 from metrology_process_planner.persistence.paths import SessionPaths
 from metrology_process_planner.workflows import (
@@ -48,15 +51,16 @@ class DiagnosticsPipelineTests(unittest.TestCase):
             True,
             trace_context=trace,
         )
+        pending_id = released.session.pending_captures[0].id
         saved = PendingCaptureReviewService(sink).save_pending_box(
             released.session,
             released.context,
-            "pending-001",
+            pending_id,
             label="Site 1",
             trace_context=trace,
         )
 
-        result = check_pending_to_saved_seam(released.session, saved.session, "pending-001")
+        result = check_pending_to_saved_seam(released.session, saved.session, pending_id)
 
         self.assertTrue(result.ok)
         assert_trace_contains(sink, trace.session_trace_id, "PendingCaptureCreated")
@@ -135,7 +139,7 @@ class DiagnosticsPipelineTests(unittest.TestCase):
         self.assertEqual("simple_capture", summary["Mode"])
         self.assertEqual("idle", summary["Workflow State"])
         self.assertEqual("none", summary["Armed Capture Tool"])
-        self.assertEqual("none", summary["Recipe Context"])
+        self.assertEqual("hidden", summary["Recipe Context"])
         self.assertEqual("open_tasks", summary["Artifact Repair"])
         self.assertIn("simple_capture", summary["Loaded Modes"])
         self.assertEqual("1 total; missing=1", summary["Artifacts"])

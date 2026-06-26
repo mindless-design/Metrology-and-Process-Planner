@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from metrology_process_planner.app.commands import CommandBlockedError, CommandId, CommandRegistry
-from metrology_process_planner.infrastructure.diagnostics_exceptions import exception_payload
-from metrology_process_planner.infrastructure.diagnostics_models import DiagnosticEvent
-from metrology_process_planner.infrastructure.diagnostics_sinks import DiagnosticSink
+from metrology_process_planner.diagnostics.diagnostics_exceptions import exception_payload
+from metrology_process_planner.diagnostics.diagnostics_models import DiagnosticEvent
+from metrology_process_planner.diagnostics.diagnostics_sinks import DiagnosticSink
 
 
 @dataclass(frozen=True)
@@ -22,6 +23,7 @@ class CommandRouteResult:
     warning_ids: tuple[str, ...] = ()
     next_ui_hint: str = ""
     output_path: str = ""
+    post_action_prompt: Any = None
 
 
 class CommandRouter:

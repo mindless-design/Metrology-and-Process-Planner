@@ -50,6 +50,16 @@ class ModeValidationTests(unittest.TestCase):
         )
         self.assertTrue(any(warning.code == "unsupported_mode" for warning in loaded.warnings))
 
+    def test_user_named_non_process_alias_mode_loads_without_fallback(self) -> None:
+        payload = _sample_session().to_dict()
+        payload["session"]["mode"] = "cad_review_capture"
+
+        loaded = _load_payload(payload)
+
+        self.assertEqual(SessionMode.CAD_REVIEW_CAPTURE, loaded.mode)
+        self.assertNotIn("mode_validation", loaded.extensions)
+        self.assertFalse(any(warning.code == "unsupported_mode" for warning in loaded.warnings))
+
 
 def _load_payload(payload: dict) -> object:
     with tempfile.TemporaryDirectory() as temp_dir:

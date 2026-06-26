@@ -1,0 +1,16 @@
+{
+  "id": "simple_stack_recipe",
+  "name": "Synthetic Simple Stack",
+  "materials": [
+    {"id": "si", "name": "Silicon", "color": "#777777", "visible": true},
+    {"id": "oxide", "name": "Oxide", "color": "#69aee8", "visible": true},
+    {"id": "metal", "name": "Metal", "color": "#b8bcc4", "visible": true}
+  ],
+  "steps": [
+    {"id": "substrate", "kind": "substrate", "material_id": "si", "thickness": {"target": 1000.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [], "parameters": {}, "notes": "Si substrate"},
+    {"id": "blanket-oxide", "kind": "blanket_deposition", "material_id": "oxide", "thickness": {"target": 100.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [], "parameters": {}, "notes": "Blanket oxide"},
+    {"id": "patterned-metal", "kind": "patterned_deposition", "material_id": "metal", "thickness": {"target": 80.0, "unit": "um"}, "layer": {"source": "layout", "layer": 4, "datatype": 0, "name": "METAL1"}, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [{"x_min": 4.0, "x_max": 6.0}], "parameters": {}, "notes": "Patterned metal line"}
+  ],
+  "process_windows": [],
+  "metadata": {"fixture_target": "basic deposition, material ordering, labels", "accuracy_envelope": {"model": "sampled_2d_heuristic", "claim": "contract_fixture", "covers": ["blanket deposition", "patterned deposition", "material ordering"], "excludes": ["process calibration", "topography-dependent rates", "mask bias"]}}
+}

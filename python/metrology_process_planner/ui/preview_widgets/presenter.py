@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 from metrology_process_planner.ui.shell import PreviewModel
+from metrology_process_planner.workflows.editor.preview_labels import artifact_preview_label
+from metrology_process_planner.workflows.editor.preview_placeholders import (
+    artifact_placeholder_message,
+)
 from metrology_process_planner.workflows.editor.references import ArtifactRef
 
 
@@ -26,14 +30,16 @@ class PreviewPresenter:
 
 def _preview(artifact: ArtifactRef) -> PreviewModel:
     placeholder = ""
-    if artifact.status in {"missing", "stale", "error", "failed"}:
-        placeholder = artifact.message or f"{artifact.status.title()} artifact"
+    if artifact.status in {"missing", "stale", "error", "failed", "placeholder"}:
+        placeholder = artifact_placeholder_message(artifact)
     return PreviewModel(
         role=artifact.role,
-        label=artifact.role.replace("_", " ").title(),
+        label=artifact_preview_label(artifact.role, artifact.artifact_type),
         artifact_id=artifact.artifact_id,
         artifact_path=artifact.path,
         status=artifact.status,
         placeholder=placeholder,
         warning_ids=artifact.warning_ids,
+        repair_action=artifact.repair_action,
+        repair_suggestion=artifact.repair_suggestion,
     )

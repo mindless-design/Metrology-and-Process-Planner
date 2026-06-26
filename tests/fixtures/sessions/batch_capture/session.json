@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "fixture-batch-capture",
+  "name": "Batch Capture Fixture",
+  "mode": "fast_batch_capture",
+  "created_at": "2026-06-24T00:00:00Z",
+  "updated_at": "2026-06-24T00:00:00Z",
+  "setup": {"coordinate_mode": "global", "origin": null, "alignments": [], "is_capture_ready": true},
+  "captures": [],
+  "grid_datasets": [],
+  "exports": [],
+  "warnings": [],
+  "metadata": {"fixture": "batch_capture"}
+}

@@ -10,7 +10,10 @@ from metrology_process_planner.workflows.compound_capture_models import (
     PendingCompositeCapture,
 )
 from metrology_process_planner.workflows.compound_capture_records import required_bounds
-from metrology_process_planner.workflows.compound_capture_support import optional_float
+from metrology_process_planner.workflows.compound_capture_support import (
+    optional_float,
+    process_outputs_enabled,
+)
 
 
 def composite_save_warnings(
@@ -43,8 +46,9 @@ def _mode_warnings(composite: PendingCompositeCapture) -> tuple[str, ...]:
         "saved capture type": request.saved_capture_type,
         "extension key": request.extension_key,
         "feature id field": request.feature_id_field,
-        "process output key": request.process_output_key,
     }
+    if process_outputs_enabled(request):
+        required["process output key"] = request.process_output_key
     for label, value in required.items():
         if not value:
             warnings.append(f"Mode {request.mode_id} missing {label}.")

@@ -19,8 +19,8 @@ from metrology_process_planner.app.window_registry_types import (
     WindowOpenStatus,
     WindowRecord,
 )
-from metrology_process_planner.infrastructure.diagnostics_exceptions import emit_exception_event
-from metrology_process_planner.infrastructure.diagnostics_sinks import DiagnosticSink
+from metrology_process_planner.diagnostics.diagnostics_exceptions import emit_exception_event
+from metrology_process_planner.diagnostics.diagnostics_sinks import DiagnosticSink
 
 WindowT = TypeVar("WindowT")
 

@@ -32,6 +32,7 @@ def command_result(command_id: CommandId, result: EditorActionResult) -> Command
         selected_item_id=document.selection.selected_item_id,
         next_ui_hint=_next_hint(command_id, result.status),
         output_path=str(result.output_path or ""),
+        post_action_prompt=result.post_action_prompt,
     )
 
 

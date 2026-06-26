@@ -1,0 +1,16 @@
+{
+  "id": "profilometry_surface_recipe",
+  "name": "Synthetic Profilometry Surface",
+  "materials": [
+    {"id": "si", "name": "Silicon", "color": "#777777", "visible": true},
+    {"id": "buried", "name": "Buried Film", "color": "#c4e6ff", "visible": true},
+    {"id": "dielectric", "name": "Top Dielectric", "color": "#98d8c8", "visible": true}
+  ],
+  "steps": [
+    {"id": "substrate", "kind": "substrate", "material_id": "si", "thickness": {"target": 1000.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [], "parameters": {}, "notes": "Si substrate"},
+    {"id": "buried-pattern", "kind": "patterned_deposition", "material_id": "buried", "thickness": {"target": 50.0, "unit": "um"}, "layer": {"source": "layout", "layer": 4, "datatype": 0, "name": "METAL1"}, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [{"x_min": 2.0, "x_max": 4.0}], "parameters": {}, "notes": "Buried detail"},
+    {"id": "surface-step", "kind": "patterned_deposition", "material_id": "dielectric", "thickness": {"target": 120.0, "unit": "um"}, "layer": {"source": "layout", "layer": 13, "datatype": 0, "name": "PROFILE_TEST"}, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [{"x_min": 5.0, "x_max": 9.0}], "parameters": {}, "notes": "Surface-forming step"}
+  ],
+  "process_windows": [],
+  "metadata": {"fixture_target": "surface-only filtering, buried exclusion, step height", "accuracy_envelope": {"model": "sampled_2d_heuristic", "claim": "qualitative_profile", "covers": ["top-surface extraction", "buried-feature exclusion", "step-height visualization"], "excludes": ["instrument response", "surface roughness", "scan artifacts"]}}
+}

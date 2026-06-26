@@ -1,4 +1,9 @@
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from tests.klayout_boundary_fixtures import FakePya, SourceLayoutTrap
+from tests.klayout_widget_fixtures import FakeButton, FakeLabel, FakeVBoxLayout, FakeWidget
 
 
 class KLayoutBoundaryTests(unittest.TestCase):
@@ -21,129 +26,71 @@ class KLayoutBoundaryTests(unittest.TestCase):
         self.assertFalse(source_layout.mutated)
         self.assertEqual(1, len(backend.commands))
 
-    def test_klayout_line_gesture_adapter_uses_overlays_only(self) -> None:
-        from metrology_process_planner.infrastructure.klayout.capture_adapter import (
-            KLayoutCaptureGestureAdapter,
-            KLayoutGestureEvent,
-        )
-        from metrology_process_planner.infrastructure.klayout.overlays import KLayoutOverlayBackend
-        from metrology_process_planner.workflows import CanvasOverlayManager, OverlayCommandKind
-        from tests.measurement_child_fixtures import saved_capture_session
-
-        source_layout = SourceLayoutTrap()
-        backend = KLayoutOverlayBackend(
-            marker_factory=lambda command: ("marker", command.object_id)
-        )
-        adapter = KLayoutCaptureGestureAdapter(
-            saved_capture_session(),
-            CanvasOverlayManager(backend),
+    def test_klayout_session_layout_adapter_reads_active_cellview_metadata(self) -> None:
+        from metrology_process_planner.infrastructure.klayout.session_layout_adapter import (
+            KLayoutSessionLayoutAdapter,
         )
 
-        adapter.arm_line_capture("canvas-cap")
-        ignored = adapter.handle(KLayoutGestureEvent("drag_start", 1, 1))
-        started = adapter.handle(KLayoutGestureEvent("drag_start", 1, 1, True))
-        adapter.handle(KLayoutGestureEvent("drag_update", 3, 1, True))
-        released = adapter.handle(KLayoutGestureEvent("drag_release", 4, 1, True))
+        with TemporaryDirectory() as temp_dir:
+            layout_path = Path(temp_dir) / "demo.gds"
+            layout_path.write_bytes(b"gds")
+            pya = FakePya(str(layout_path), "TOP")
 
-        self.assertFalse(ignored.handled)
-        self.assertTrue(started.handled)
-        self.assertTrue(released.handled)
-        self.assertFalse(source_layout.mutated)
-        self.assertEqual("meas-001", adapter.session.captures[0].measurements[0].id)
-        self.assertEqual("canvas-cap", adapter.session.canvas_objects[1].parent_id)
-        self.assertIn("canvas-001", {command.object_id for command in backend.commands})
-        self.assertIn(
-            OverlayCommandKind.ACTIVE_PARENT,
-            {command.kind for command in backend.commands if command.object_id == "canvas-cap"},
+            selection = KLayoutSessionLayoutAdapter(pya).select_current_layout()
+
+        self.assertEqual("selected", selection.status)
+        self.assertEqual(str(layout_path), selection.source_layout.layout_path)
+        self.assertEqual("demo.gds", selection.source_layout.layout_name)
+        self.assertEqual("TOP", selection.source_layout.top_cell)
+        self.assertEqual("0.29.fake", selection.source_layout.klayout_version)
+        self.assertIn("TOP", selection.source_layout.layout_fingerprint)
+
+    def test_klayout_session_editor_shell_renders_document_regions(self) -> None:
+        from metrology_process_planner.infrastructure.klayout.session_editor_shell import (
+            KLayoutSessionEditorWidgetFactory,
+        )
+        from metrology_process_planner.ui.session_editor import (
+            SessionEditorCallbacks,
+            SessionEditorShell,
+        )
+        from metrology_process_planner.workflows.editor import (
+            DefaultSessionModeAdapter,
+            SessionDocumentBuilder,
+        )
+        from tests.editor_render_fixtures import session_without_pending
+
+        selected: list[str] = []
+        pya = FakePya("layout.gds", "TOP")
+        pya.QWidget = FakeWidget
+        pya.QVBoxLayout = FakeVBoxLayout
+        pya.QLabel = FakeLabel
+        pya.QPushButton = FakeButton
+        window = SessionEditorShell(KLayoutSessionEditorWidgetFactory(pya)).open(
+            SessionDocumentBuilder().build(session_without_pending()),
+            DefaultSessionModeAdapter(),
+            SessionEditorCallbacks(selected.append, lambda _action: None),
         )
 
-    def test_klayout_line_gesture_adapter_commits_profilometry_child_line(self) -> None:
-        from metrology_process_planner.domains.session import SessionMode
-        from metrology_process_planner.infrastructure.klayout.capture_adapter import (
-            KLayoutCaptureGestureAdapter,
-            KLayoutGestureEvent,
-        )
-        from metrology_process_planner.infrastructure.klayout.overlays import KLayoutOverlayBackend
-        from metrology_process_planner.workflows import CanvasOverlayManager
-        from metrology_process_planner.workflows.compound_capture import (
-            arm_inner_feature_capture,
-            profilometry_request,
-        )
-        from tests.compound_capture_fixtures import pending_parent
+        window._mpp_state["on_select"]("dashboard")
 
-        source_layout = SourceLayoutTrap()
-        backend = KLayoutOverlayBackend(
-            marker_factory=lambda command: ("marker", command.object_id)
-        )
-        session = arm_inner_feature_capture(
-            pending_parent(SessionMode.PROFILOMETRY_PLANNER),
-            "pending-001",
-            profilometry_request(),
-        )
-        adapter = KLayoutCaptureGestureAdapter(session, CanvasOverlayManager(backend))
-
-        adapter.arm_line_capture("canvas-parent")
-        adapter.handle(KLayoutGestureEvent("drag_start", 1, 1, True))
-        adapter.handle(KLayoutGestureEvent("drag_update", 5, 5, True))
-        released = adapter.handle(KLayoutGestureEvent("drag_release", 9, 9, True))
-
-        pending = adapter.session.pending_captures[0]
-        feature = dict(dict(pending.metadata)["compound"])["feature"]
-        self.assertTrue(released.handled)
-        self.assertFalse(source_layout.mutated)
-        self.assertEqual("profilometry_line", feature["role"])
-        self.assertEqual("profilometry_line", adapter.session.canvas_objects[1].object_type.value)
-        self.assertEqual("canvas-parent", adapter.session.canvas_objects[1].parent_id)
-
-    def test_klayout_adapter_leaves_navigation_unhandled_when_unarmed(self) -> None:
-        from metrology_process_planner.infrastructure.klayout.capture_adapter import (
-            KLayoutCaptureGestureAdapter,
-            KLayoutGestureEvent,
-        )
-        from metrology_process_planner.infrastructure.klayout.overlays import KLayoutOverlayBackend
-        from metrology_process_planner.workflows import CanvasOverlayManager
-        from tests.measurement_child_fixtures import saved_capture_session
-
-        backend = KLayoutOverlayBackend()
-        adapter = KLayoutCaptureGestureAdapter(
-            saved_capture_session(),
-            CanvasOverlayManager(backend),
-        )
-
-        result = adapter.handle(KLayoutGestureEvent("drag_start", 1, 1, True))
-
-        self.assertFalse(result.handled)
-        self.assertEqual((), backend.commands)
-
-    def test_klayout_point_capture_reports_unavailable_without_overlay_churn(self) -> None:
-        from metrology_process_planner.infrastructure.klayout.capture_adapter import (
-            KLayoutCaptureGestureAdapter,
-            KLayoutGestureEvent,
-        )
-        from metrology_process_planner.infrastructure.klayout.overlays import KLayoutOverlayBackend
-        from metrology_process_planner.workflows import CanvasOverlayManager
-        from tests.measurement_child_fixtures import saved_capture_session
-
-        backend = KLayoutOverlayBackend()
-        adapter = KLayoutCaptureGestureAdapter(
-            saved_capture_session(),
-            CanvasOverlayManager(backend),
-        )
-
-        adapter.arm_point_capture("canvas-cap")
-        result = adapter.handle(KLayoutGestureEvent("click", 2, 2, True))
-
-        self.assertTrue(result.handled)
-        self.assertEqual(("Point capture is not implemented yet.",), result.messages)
-        self.assertEqual((), backend.commands)
-
-
-class SourceLayoutTrap:
-    def __init__(self) -> None:
-        self.mutated = False
-
-    def insert_shape(self) -> None:
-        self.mutated = True
+        self.assertTrue(window.shown)
+        self.assertTrue(window.layout.widgets)
+        self.assertEqual("Session Editor - Demo", window.title)
+        self.assertIn(("Session", "Demo"), window._mpp_state["header"])
+        self.assertIn("header", window._mpp_state["qt_regions"])
+        self.assertIn("primary_actions", window._mpp_state["qt_regions"])
+        self.assertIn("Session | Demo", window._mpp_state["qt_region_labels"]["header"])
+        self.assertTrue(window._mpp_state["navigator"])
+        self.assertTrue(window._mpp_state["preview"])
+        self.assertTrue(window._mpp_state["fields"])
+        controls = {
+            control["key"]: control
+            for control in window._mpp_state["metadata_controls"]
+        }
+        self.assertEqual("text", controls["session_name"]["control_type"])
+        self.assertEqual("label", controls["mode"]["control_type"])
+        self.assertEqual("Ready; selected Demo", window._mpp_state["status"])
+        self.assertEqual(["dashboard"], selected)
 
 
 if __name__ == "__main__":

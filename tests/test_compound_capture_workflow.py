@@ -1,18 +1,18 @@
 import unittest
 
 from metrology_process_planner.domains.geometry import Point
+from metrology_process_planner.domains.modes.mode_output_policies import ProcessPolicy
+from metrology_process_planner.domains.modes.mode_policies import (
+    CaptureSequenceDefinition,
+)
+from metrology_process_planner.domains.modes.mode_registry import (
+    ModeDefinition,
+    built_in_mode_registry,
+)
 from metrology_process_planner.domains.session import (
     CanvasWorkflowState,
     SessionMode,
     SessionRecord,
-)
-from metrology_process_planner.domains.session.mode_output_policies import ProcessPolicy
-from metrology_process_planner.domains.session.mode_policies import (
-    CaptureSequenceDefinition,
-)
-from metrology_process_planner.domains.session.mode_registry import (
-    ModeDefinition,
-    built_in_mode_registry,
 )
 from metrology_process_planner.workflows.compound_capture import (
     SaveCompositeCaptureCommand,

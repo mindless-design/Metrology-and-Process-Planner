@@ -5,8 +5,9 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import Optional
 
-from metrology_process_planner.domains.measurements import MeasurementRecord
+from metrology_process_planner.domains.measurement.records import MeasurementRecord
 from metrology_process_planner.domains.session import ArtifactRecord, CaptureRecord
+from metrology_process_planner.rendering.annotation_features import feature_primitives
 from metrology_process_planner.rendering.coordinates import CanvasTransform
 from metrology_process_planner.rendering.primitives import (
     CanvasPoint,
@@ -23,9 +24,11 @@ from metrology_process_planner.rendering.scene import (
     ImageLayer,
 )
 from metrology_process_planner.rendering.styles import DrawingStyle
+from metrology_process_planner.rendering.theme import render_theme
 
 DEFAULT_CANVAS_WIDTH = 1024
 DEFAULT_CANVAS_HEIGHT = 768
+THEME = render_theme("engineering_dark")
 
 
 def build_layout_annotation_scene(
@@ -40,6 +43,8 @@ def build_layout_annotation_scene(
     canvas = _canvas_for_image(base_image)
     transform = CanvasTransform(capture.geometry.bounds, canvas)
     primitives: list[DrawingPrimitive] = [_capture_border(canvas)]
+    for feature in capture.geometry.features:
+        primitives.extend(feature_primitives(transform, feature))
     for measurement in capture.measurements:
         primitives.extend(_measurement_primitives(transform, measurement))
     return DrawingScene(
@@ -72,11 +77,12 @@ def build_measurement_annotation_scene(
 
 
 def _canvas_for_image(image: Optional[ArtifactRecord]) -> CanvasSpec:
-    if image is None:
-        return CanvasSpec(width_px=DEFAULT_CANVAS_WIDTH, height_px=DEFAULT_CANVAS_HEIGHT)
+    width = image.file.width_px if image is not None else DEFAULT_CANVAS_WIDTH
+    height = image.file.height_px if image is not None else DEFAULT_CANVAS_HEIGHT
     return CanvasSpec(
-        width_px=image.file.width_px or DEFAULT_CANVAS_WIDTH,
-        height_px=image.file.height_px or DEFAULT_CANVAS_HEIGHT,
+        width_px=width or DEFAULT_CANVAS_WIDTH,
+        height_px=height or DEFAULT_CANVAS_HEIGHT,
+        background=THEME.background,
     )
 
 
@@ -85,6 +91,7 @@ def _image_layer(image: ArtifactRecord, canvas: CanvasSpec) -> ImageLayer:
         path=image.relative_path,
         width_px=image.file.width_px or canvas.width_px,
         height_px=image.file.height_px or canvas.height_px,
+        opacity=0.86,
     )
 
 
@@ -94,7 +101,7 @@ def _capture_border(canvas: CanvasSpec) -> RectangleMark:
         y=0,
         width=canvas.width_px,
         height=canvas.height_px,
-        style=DrawingStyle(stroke="#ffffff", fill=None, stroke_width=1.0, opacity=0.65),
+        style=DrawingStyle(stroke=THEME.panel_stroke, fill=None, stroke_width=2.0, opacity=0.75),
         label="capture bounds",
     )
 
@@ -108,8 +115,8 @@ def _measurement_primitives(
     style = DrawingStyle(
         stroke=measurement.annotation_color,
         fill=None,
-        stroke_width=measurement.line_weight,
-        font_size_px=14,
+        stroke_width=max(3.0, measurement.line_weight),
+        font_size_px=16,
     )
     return [
         LineMark(start=start, end=end, style=style, label=measurement.label, end_marker="arrow"),
@@ -126,7 +133,7 @@ def _endpoint_circle(point: CanvasPoint, style: DrawingStyle, label: str) -> Ell
         radius_y=5.0,
         style=DrawingStyle(
             stroke=style.stroke,
-            fill="#ffffff",
+            fill=THEME.background,
             stroke_width=style.stroke_width,
             font_size_px=style.font_size_px,
         ),
@@ -143,5 +150,5 @@ def _measurement_label(
     return TextMark(
         position=CanvasPoint(x=(start.x + end.x) / 2.0, y=(start.y + end.y) / 2.0 - 8.0),
         text=label,
-        style=DrawingStyle(stroke=style.stroke, fill=style.stroke, font_size_px=14),
+        style=DrawingStyle(stroke=style.stroke, fill=style.stroke, font_size_px=16),
     )

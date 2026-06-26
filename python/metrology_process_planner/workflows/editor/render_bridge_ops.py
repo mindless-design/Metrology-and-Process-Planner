@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import TYPE_CHECKING
 
 from metrology_process_planner.domains.session import CaptureRecord, SessionRecord
-from metrology_process_planner.domains.session.artifact_query import first_display_artifact
 from metrology_process_planner.persistence.drawing_store import StoredDrawingExport
 from metrology_process_planner.rendering import (
     build_cross_section_drawing_scene,
     build_layout_annotation_scene,
+)
+from metrology_process_planner.rendering.scene import DrawingScene
+from metrology_process_planner.workflows.editor.render_bridge_artifacts import (
+    first_visible_display_artifact,
 )
 from metrology_process_planner.workflows.editor.render_bridge_models import (
     CrossSectionRenderInput,
@@ -53,10 +57,8 @@ def refresh_target(
             target.owner.owner_id,
             target.role,
         )
-        scene = build_layout_annotation_scene(
-            capture,
-            first_display_artifact(session.artifacts or {}, "capture", capture.id),
-        )
+        scene = _annotation_scene(bridge, session, capture)
+        scene = replace(scene, role=target.role)
     except ValueError as exc:
         warning = _warning(target.owner, target.role, "validation", str(exc))
         bridge.emit_render_failure("ArtifactRegenerationFailed", target.owner.owner_id, exc)
@@ -75,7 +77,7 @@ def refresh_target(
         stored,
     )
     bridge.emit_render_event("ArtifactRegistered", target.owner.owner_id, target.role)
-    return _capture_success(session, capture.id, stored)
+    return _capture_success(session, capture.id, stored, bridge._mode_registry)
 
 
 def _emit_export_diagnostics(
@@ -106,6 +108,22 @@ def _emit_export_diagnostics(
             message,
             "warning",
         )
+
+
+def _annotation_scene(
+    bridge: SessionRenderBridge,
+    session: SessionRecord,
+    capture: CaptureRecord,
+) -> DrawingScene:
+    return build_layout_annotation_scene(
+        capture,
+        first_visible_display_artifact(
+            session,
+            "capture",
+            capture.id,
+            bridge._mode_registry,
+        ),
+    )
 
 
 def refresh_cross_section(
@@ -147,14 +165,22 @@ def refresh_cross_section(
         stored,
     )
     bridge.emit_render_event("ArtifactRegistered", source.owner.owner_id, role)
-    return _session_drawing_success(session, source.owner, role, stored)
+    return _session_drawing_success(session, source.owner, role, stored, bridge._mode_registry)
 
 
 def _invalid_target(session: SessionRecord, target: RenderTarget) -> RenderRefreshResult | None:
     if target.owner.owner_type != "capture":
         warning = _warning(target.owner, target.role, "unsupported-owner", "Unsupported owner.")
         return _with_warning(session, target.owner, target.role, warning, "error")
-    if target.role != "layout_annotation":
+    if target.role not in {
+        "layout_annotation",
+        "line_annotation",
+        "point_annotation",
+        "measurement_annotation",
+        "cross_section_line_image",
+        "fib_cut_line_image",
+        "ellipsometry_point_image",
+    }:
         warning = _warning(target.owner, target.role, "unsupported-role", "Unsupported role.")
         return _with_warning(session, target.owner, target.role, warning, "error")
     return None

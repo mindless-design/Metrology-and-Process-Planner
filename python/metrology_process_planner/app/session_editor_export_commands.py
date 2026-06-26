@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from metrology_process_planner.app.commands import CommandId, CommandRegistry
 from metrology_process_planner.app.session_editor import SessionEditorController
-from metrology_process_planner.app.session_editor_commands import _dispatch_selected
+from metrology_process_planner.app.session_editor_command_dispatch import (
+    dispatch_selected_editor_action as _dispatch_selected,
+)
 from metrology_process_planner.ui.shell import CommandRouteResult
 from metrology_process_planner.workflows.editor.view_models import EditorActionType
 

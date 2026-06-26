@@ -6,6 +6,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import replace
 from typing import Optional
 
+from metrology_process_planner.domains.artifacts.artifact_ids import artifact_id
 from metrology_process_planner.domains.session import (
     ArtifactFileMetadata,
     ArtifactOwnerRef,
@@ -17,7 +18,6 @@ from metrology_process_planner.domains.session import (
     PendingCapture,
     SessionRecord,
 )
-from metrology_process_planner.domains.session.artifact_ids import artifact_id
 from metrology_process_planner.workflows.canvas_interaction_models import InteractionContext
 from metrology_process_planner.workflows.canvas_state import find_canvas_object
 
@@ -97,6 +97,26 @@ def pending_capture_artifact(
         label="crop",
         relative_path=pending.image_artifact_path,
         owner=ArtifactOwnerRef("capture", capture_id, "crop"),
+        status=ArtifactStatus.PRESENT,
+        file=ArtifactFileMetadata(content_type=_content_type(pending.image_artifact_path)),
+        trace_ids=pending.trace_ids,
+    )
+
+
+def _pending_capture_site_image_artifact(
+    pending: PendingCapture,
+    capture_id: str,
+) -> ArtifactRecord | None:
+    """Return the required site-image artifact for a saved pending capture."""
+
+    if pending.image_artifact_path is None:
+        return None
+    return ArtifactRecord(
+        id=artifact_id("capture", capture_id, "site_image"),
+        type="image",
+        label="site_image",
+        relative_path=pending.image_artifact_path,
+        owner=ArtifactOwnerRef("capture", capture_id, "site_image"),
         status=ArtifactStatus.PRESENT,
         file=ArtifactFileMetadata(content_type=_content_type(pending.image_artifact_path)),
         trace_ids=pending.trace_ids,

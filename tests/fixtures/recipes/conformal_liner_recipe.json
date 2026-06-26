@@ -1,0 +1,18 @@
+{
+  "id": "conformal_liner_recipe",
+  "name": "Synthetic Conformal Liner",
+  "materials": [
+    {"id": "si", "name": "Silicon", "color": "#777777", "visible": true},
+    {"id": "oxide", "name": "Oxide", "color": "#69aee8", "visible": true},
+    {"id": "al2o3", "name": "ALD Al2O3", "color": "#f2c94c", "visible": true},
+    {"id": "metal", "name": "Metal Fill", "color": "#b8bcc4", "visible": true}
+  ],
+  "steps": [
+    {"id": "substrate", "kind": "substrate", "material_id": "si", "thickness": {"target": 1000.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [], "parameters": {}, "notes": "Si substrate"},
+    {"id": "oxide-topography", "kind": "patterned_deposition", "material_id": "oxide", "thickness": {"target": 500.0, "unit": "um"}, "layer": {"source": "layout", "layer": 8, "datatype": 0, "name": "LINER_TEST"}, "mask_polarity": "inverted", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [{"x_min": 4.8, "x_max": 5.2}], "parameters": {}, "notes": "Narrow trench oxide topography"},
+    {"id": "ald-liner", "kind": "conformal_coating", "material_id": "al2o3", "thickness": {"target": 8.0, "unit": "um"}, "layer": {"source": "layout", "layer": 8, "datatype": 0, "name": "LINER_TEST"}, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [{"x_min": 4.8, "x_max": 5.2}], "parameters": {"top_coverage": 1.0, "sidewall_coverage": 1.0, "bottom_coverage": 1.0}, "notes": "Thin ALD liner with pinch-off challenge"},
+    {"id": "metal-fill", "kind": "patterned_deposition", "material_id": "metal", "thickness": {"target": 100.0, "unit": "um"}, "layer": {"source": "layout", "layer": 4, "datatype": 0, "name": "METAL1"}, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [{"x_min": 4.8, "x_max": 5.2}], "parameters": {}, "notes": "Optional trench fill"}
+  ],
+  "process_windows": [],
+  "metadata": {"fixture_target": "conformal liner, thin-layer callouts, pinch-off warning", "accuracy_envelope": {"model": "sampled_2d_heuristic", "claim": "qualitative_cross_section", "covers": ["top and sidewall coverage metadata", "thin-layer visibility", "pinch-off diagnostics"], "excludes": ["true conformal surface evolution", "void nucleation", "aspect-ratio dependent deposition rates"]}}
+}

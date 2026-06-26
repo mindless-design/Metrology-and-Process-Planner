@@ -85,6 +85,20 @@ class HybridCrossSectionSolverTests(unittest.TestCase):
         )
         result = _solve(_recipe(_substrate(), _blanket("oxide", 0.5), blocker, etch))
         self.assertTrue(any(item.material_id == "oxide" for item in _stack(result, 5.0)))
+        self.assertIn("ETCH_BLOCKED_BY_NON_TARGET", _codes(result))
+
+    def test_directional_etch_reports_exhausted_target_material(self) -> None:
+        etch = ProcessStep(
+            "etch",
+            ProcessStepKind.DIRECTIONAL_ETCH,
+            thickness=ThicknessSpec(1.0),
+            target_material_ids=("oxide",),
+            stop_material_ids=("si",),
+        )
+        result = _solve(_recipe(_substrate(), _blanket("oxide", 0.2), etch))
+
+        self.assertIn("ETCH_TARGET_EXHAUSTED", _codes(result))
+        self.assertTrue(all(item.material_id != "oxide" for item in _stack(result, 5.0)))
 
     def test_isotropic_undercut_diagnostic(self) -> None:
         etch = ProcessStep(

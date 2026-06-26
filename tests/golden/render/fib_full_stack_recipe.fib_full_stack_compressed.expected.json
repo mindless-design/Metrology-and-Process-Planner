@@ -1,0 +1,22 @@
+{
+  "compressed_materials": [],
+  "compression_enabled": true,
+  "label_count": 5,
+  "materials": {
+    "al2o3": 31,
+    "dielectric": 31,
+    "metal": 13,
+    "oxide": 31,
+    "si": 31
+  },
+  "profile_id": "fib_full_stack_compressed",
+  "recipe_id": "fib_full_stack_recipe",
+  "render_mode_id": "fib_full_stack_compressed",
+  "shape_count": 137,
+  "thin_layer_shape_count": 31,
+  "warnings": [
+    "RENDER_COMPRESSION_APPLIED",
+    "RENDER_SIMPLIFICATION_APPLIED",
+    "RENDER_THIN_LAYER_EXAGGERATED"
+  ]
+}

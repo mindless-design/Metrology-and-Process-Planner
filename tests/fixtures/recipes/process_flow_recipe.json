@@ -1,0 +1,20 @@
+{
+  "id": "process_flow_recipe",
+  "name": "Synthetic Process Flow",
+  "materials": [
+    {"id": "si", "name": "Silicon", "color": "#777777", "visible": true},
+    {"id": "oxide", "name": "Oxide", "color": "#69aee8", "visible": true},
+    {"id": "metal", "name": "Metal", "color": "#b8bcc4", "visible": true},
+    {"id": "al2o3", "name": "ALD Al2O3", "color": "#f2c94c", "visible": true}
+  ],
+  "steps": [
+    {"id": "substrate", "kind": "substrate", "material_id": "si", "thickness": {"target": 1000.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [], "parameters": {}, "notes": "Substrate"},
+    {"id": "oxide", "kind": "blanket_deposition", "material_id": "oxide", "thickness": {"target": 100.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [], "parameters": {}, "notes": "Blanket oxide"},
+    {"id": "metal", "kind": "patterned_deposition", "material_id": "metal", "thickness": {"target": 80.0, "unit": "um"}, "layer": {"source": "layout", "layer": 4, "datatype": 0, "name": "METAL1"}, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [{"x_min": 4.0, "x_max": 6.0}], "parameters": {}, "notes": "Patterned metal"},
+    {"id": "liner", "kind": "conformal_coating", "material_id": "al2o3", "thickness": {"target": 8.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [{"x_min": 4.0, "x_max": 6.0}], "parameters": {}, "notes": "Conformal liner"},
+    {"id": "etch", "kind": "directional_etch", "material_id": null, "thickness": {"target": 40.0, "unit": "um"}, "layer": {"source": "layout", "layer": 7, "datatype": 0, "name": "TRENCH"}, "mask_polarity": "direct", "target_material_ids": ["oxide", "al2o3"], "stop_material_ids": ["si"], "mask_intervals": [{"x_min": 1.0, "x_max": 2.0}], "parameters": {}, "notes": "Etch opening"},
+    {"id": "planarize", "kind": "planarization", "material_id": null, "thickness": {"target": 1110.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [], "parameters": {}, "notes": "Planarize"}
+  ],
+  "process_windows": [{"name": "liner_thickness", "lower": 6.0, "target": 8.0, "upper": 10.0, "unit": "um"}],
+  "metadata": {"fixture_target": "process-frame sequence and changed-frame emission", "accuracy_envelope": {"model": "sampled_2d_heuristic", "claim": "workflow_contract_fixture", "covers": ["frame ordering", "changed-frame detection", "process-window variant labels"], "excludes": ["calibrated process simulation", "statistical process variation", "equipment recipes"]}}
+}

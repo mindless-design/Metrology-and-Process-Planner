@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing import Optional
 
+from metrology_process_planner.diagnostics.diagnostics_sinks import DiagnosticSink
+from metrology_process_planner.diagnostics.trace_context import TraceContext
 from metrology_process_planner.domains.geometry import Point
-from metrology_process_planner.domains.session import SessionRecord
-from metrology_process_planner.infrastructure.diagnostics_sinks import DiagnosticSink
-from metrology_process_planner.infrastructure.trace_context import TraceContext
+from metrology_process_planner.domains.session import ModeRegistry, SessionRecord
 from metrology_process_planner.workflows.canvas_interaction_commit import (
     commit_pending_box,
     invalid_release_result,
@@ -27,6 +27,7 @@ def release_box(
     end: Point,
     shift_pressed: bool,
     trace_context: Optional[TraceContext],
+    mode_registry: ModeRegistry | None = None,
 ) -> InteractionResult:
     """Commit a valid box preview into a pending capture."""
 
@@ -39,4 +40,4 @@ def release_box(
     warnings = preview.geometry.validate()
     if warnings:
         return invalid_release_result(sink, trace_context, updated, preview, warnings)
-    return commit_pending_box(sink, trace_context, updated, preview)
+    return commit_pending_box(sink, trace_context, updated, preview, mode_registry)

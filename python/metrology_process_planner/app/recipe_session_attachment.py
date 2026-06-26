@@ -21,4 +21,9 @@ def refresh_editor_session(controller: SessionEditorController, session: Session
     raw_payload = {}
     if controller.current_document is not None:
         raw_payload = dict(controller.current_document.raw_payload)
-    controller.open_document(SessionDocumentBuilder().build(session, raw_payload))
+    controller.open_document(
+        SessionDocumentBuilder(mode_registry=controller.mode_registry).build(
+            session,
+            raw_payload,
+        )
+    )

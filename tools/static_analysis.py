@@ -41,7 +41,7 @@ DEFAULT_COMMANDS: tuple[ToolCommand, ...] = (
         ("--max-absolute", "B", "--max-modules", "A", "--max-average", "A", "python", "tools"),
     ),
     ToolCommand("radon maintainability", "radon", ("mi", "-s", "python", "tools")),
-    ToolCommand("interrogate", "interrogate", ("python", "tools")),
+    ToolCommand("interrogate", sys.executable, ("-m", "tools.interrogate_check")),
     ToolCommand("import linter", "lint-imports", ("--config", "pyproject.toml")),
     ToolCommand("vulture", "vulture", ("python", "tools", "vulture_whitelist.py")),
 )

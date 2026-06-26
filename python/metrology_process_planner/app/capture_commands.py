@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import Optional, Protocol
 
-from metrology_process_planner.app.command_types import CommandId
+from metrology_process_planner.app.command_types import CommandBlockedError, CommandId
 from metrology_process_planner.app.commands import CommandRegistry
 from metrology_process_planner.app.recipe_session_attachment import (
     active_session_from_editor,
@@ -16,10 +16,14 @@ from metrology_process_planner.app.setup_guide import SetupGuideController
 from metrology_process_planner.domains.session import (
     CanvasObjectType,
     CanvasVisualFlag,
+    ModeRegistry,
     SessionRecord,
 )
 from metrology_process_planner.domains.session.workflow import WorkflowState
 from metrology_process_planner.workflows import CanvasInteractionEngine, InteractionContext
+from metrology_process_planner.workflows.capture_readiness import (
+    capture_blocked_by_setup_message,
+)
 
 
 class SessionProvider(Protocol):
@@ -44,10 +48,12 @@ class CaptureCommandService:
         canvas_engine: CanvasInteractionEngine,
         session_provider: SessionProvider,
         session_updater: SessionUpdater,
+        mode_registry: ModeRegistry | None = None,
     ) -> None:
         self._canvas_engine = canvas_engine
         self._session_provider = session_provider
         self._session_updater = session_updater
+        self._mode_registry = mode_registry
         self.context = InteractionContext()
 
     def start_capture(self) -> None:
@@ -59,6 +65,12 @@ class CaptureCommandService:
         """Arm generic Shift-drag site box capture."""
 
         session = self._session()
+        setup_block = capture_blocked_by_setup_message(session, self._mode_registry)
+        if setup_block:
+            raise CommandBlockedError(
+                setup_block,
+                "Complete required setup cards before starting site capture.",
+            )
         self.context = self._canvas_engine.arm_box_capture(self.context)
         self._set_session(_armed_session(session, "box_capture", CanvasObjectType.SITE_BOX))
 

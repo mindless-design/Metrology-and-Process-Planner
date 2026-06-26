@@ -1,0 +1,16 @@
+{
+  "id": "patterned_deposition_recipe",
+  "name": "Synthetic Patterned Deposition",
+  "materials": [
+    {"id": "si", "name": "Silicon", "color": "#777777", "visible": true},
+    {"id": "oxide", "name": "Oxide", "color": "#69aee8", "visible": true},
+    {"id": "nitride", "name": "Nitride", "color": "#ffaa00", "visible": true}
+  ],
+  "steps": [
+    {"id": "substrate", "kind": "substrate", "material_id": "si", "thickness": {"target": 800.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [], "parameters": {}, "notes": "Si substrate"},
+    {"id": "oxide-base", "kind": "blanket_deposition", "material_id": "oxide", "thickness": {"target": 60.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [], "parameters": {}, "notes": "Base oxide"},
+    {"id": "nitride-lines", "kind": "patterned_deposition", "material_id": "nitride", "thickness": {"target": 40.0, "unit": "um"}, "layer": {"source": "layout", "layer": 2, "datatype": 0, "name": "POLY"}, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [{"x_min": 1.0, "x_max": 2.0}, {"x_min": 3.0, "x_max": 3.5}, {"x_min": 5.0, "x_max": 7.0}], "parameters": {}, "notes": "Direct patterned deposition"}
+  ],
+  "process_windows": [],
+  "metadata": {"fixture_target": "inside-mask deposition and topography following", "accuracy_envelope": {"model": "sampled_2d_heuristic", "claim": "qualitative_cross_section", "covers": ["mask interval deposition", "material ordering", "simple topography following"], "excludes": ["lithography bias", "step coverage physics", "reflow"]}}
+}

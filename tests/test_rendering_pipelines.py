@@ -1,7 +1,7 @@
 import unittest
 
 from metrology_process_planner.domains.geometry import Box, Point
-from metrology_process_planner.domains.measurements import MeasurementRecord
+from metrology_process_planner.domains.measurement.records import MeasurementRecord
 from metrology_process_planner.domains.process import (
     CrossSectionProfile,
     Material,

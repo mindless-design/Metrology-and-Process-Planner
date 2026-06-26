@@ -77,6 +77,8 @@ class PreviewModel:
     status: str = "available"
     placeholder: str = ""
     warning_ids: tuple[str, ...] = ()
+    repair_action: str = ""
+    repair_suggestion: str = ""
 
 
 @dataclass(frozen=True)

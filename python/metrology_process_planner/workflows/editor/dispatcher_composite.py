@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Optional, Protocol
 
-from metrology_process_planner.domains.session import PendingCapture, SessionRecord
+from metrology_process_planner.domains.session import ModeRegistry, PendingCapture, SessionRecord
 from metrology_process_planner.workflows.compound_capture import save_composite_capture
 from metrology_process_planner.workflows.compound_capture_models import (
     DiscardCompositeCommand,
@@ -33,6 +33,8 @@ from metrology_process_planner.workflows.editor.view_models import EditorAction
 
 
 class _CompositeDispatcher(Protocol):
+    _mode_registry: ModeRegistry | None
+
     def _rebuild(self, session: SessionRecord, document: SessionDocument) -> SessionDocument:
         """Rebuild a document after a workflow mutation."""
 
@@ -44,7 +46,7 @@ def composite_save_action(
 ) -> EditorActionResult:
     """Save a pending composite capture from the editor."""
 
-    document = apply_metadata_edits(document)
+    document = apply_metadata_edits(document, dispatcher._mode_registry)
     pending_id = _record_id(document, action.item_id)
     pending = _pending_by_id(document.session, pending_id)
     metadata = _pending_metadata(pending)

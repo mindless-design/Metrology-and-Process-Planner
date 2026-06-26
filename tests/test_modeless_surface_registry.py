@@ -1,10 +1,12 @@
 import unittest
+from dataclasses import replace
 
 from metrology_process_planner.app.bootstrap import build_app_services
 from metrology_process_planner.app.recipe_editor import RecipeEditorController
 from metrology_process_planner.app.setup_guide import SetupGuideController
 from metrology_process_planner.app.window_registry import WindowRegistry
 from metrology_process_planner.domains.process import Material, ProcessRecipe
+from metrology_process_planner.domains.session import SessionMode
 from tests.editor_render_fixtures import session
 
 
@@ -61,7 +63,9 @@ class ModelessSurfaceRegistryTests(unittest.TestCase):
 
     def test_setup_guide_actions_route_through_command_router(self) -> None:
         services = build_app_services()
-        services.setup_guide_controller.set_active_session(session())
+        services.setup_guide_controller.set_active_session(
+            replace(session(), mode=SessionMode.PROFILOMETRY_PLANNER)
+        )
         opened = services.setup_guide_controller.open_current()
 
         validated = opened.window["on_action"]("ValidateRecipeContext")

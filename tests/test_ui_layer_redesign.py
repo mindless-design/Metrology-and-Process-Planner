@@ -2,32 +2,19 @@ import unittest
 
 from metrology_process_planner.app.bootstrap import build_app_services
 from metrology_process_planner.app.commands import MENU_COMMANDS, CommandId
-from metrology_process_planner.domains.geometry import Point
-from metrology_process_planner.domains.session import CanvasObjectType, SessionMode
-from metrology_process_planner.ui.capture import (
-    BoxCaptureTool,
-    CaptureGesture,
-    CaptureGesturePolicy,
-    CaptureToolPresenter,
-    LineCaptureTool,
-    PointCaptureTool,
-)
 from metrology_process_planner.ui.preview_widgets import PreviewPresenter
 from metrology_process_planner.ui.review import PendingCaptureReviewPresenter
 from metrology_process_planner.ui.setup_guide import SetupGuidePresenter
-from metrology_process_planner.workflows import InteractionContext
-from metrology_process_planner.workflows.compound_capture import (
-    arm_inner_feature_capture,
-    ellipsometry_request,
-)
 from metrology_process_planner.workflows.editor import SessionDocumentBuilder
 from metrology_process_planner.workflows.editor.references import ArtifactRef
-from tests.compound_capture_fixtures import pending_parent
 from tests.editor_render_fixtures import session
 
+if __name__ == "__main__":
+    unittest.main()
 
-class UiLayerRedesignTests(unittest.TestCase):
-    def test_menu_uses_five_primary_commands_and_router_results(self) -> None:
+
+class UiLayerRedesignTestsPart1(unittest.TestCase):
+    def test_menu_uses_primary_commands_and_router_results(self) -> None:
         services = build_app_services()
         titles = [spec.title for spec in MENU_COMMANDS]
 
@@ -38,9 +25,12 @@ class UiLayerRedesignTests(unittest.TestCase):
             [
                 "Start / Resume Measurement Setup",
                 "Session Editor",
+                "Open Session...",
+                "New Session...",
                 "Edit Recipe",
                 "End Active Session",
                 "Advanced Diagnostics",
+                "Reporting Workbench",
             ],
             titles,
         )
@@ -67,84 +57,41 @@ class UiLayerRedesignTests(unittest.TestCase):
                     artifact_id="artifact-001",
                     status="missing",
                     message="Missing crop",
+                    repair_action="regenerate_artifact",
+                    repair_suggestion="Regenerate the missing crop.",
                 ),
             )
         )
 
         self.assertIsNotNone(review)
         self.assertEqual("pending-001", review.pending_id)
+        self.assertEqual("Raw Site Image", previews[0].label)
         self.assertEqual("missing", previews[0].status)
-        self.assertEqual("Missing crop", previews[0].placeholder)
+        self.assertIn("Missing artifact: Missing crop", previews[0].placeholder)
+        self.assertIn("Belongs to artifact-001 (crop)", previews[0].placeholder)
+        self.assertIn("CSV export can continue", previews[0].placeholder)
+        self.assertIn("reports may use this placeholder", previews[0].placeholder)
+        self.assertIn("Repair: Regenerate the missing crop.", previews[0].placeholder)
+        self.assertEqual("regenerate_artifact", previews[0].repair_action)
+        self.assertEqual("Regenerate the missing crop.", previews[0].repair_suggestion)
 
-    def test_capture_tools_share_shift_gesture_policy_and_status_view_model(self) -> None:
-        policy = CaptureGesturePolicy()
-        context = InteractionContext()
-        box_tool = BoxCaptureTool(policy=policy)
-        armed = box_tool.arm(context)
-
-        ignored = box_tool.handle(session(), armed, CaptureGesture("drag_start", Point(0, 0)))
-        started = box_tool.handle(
-            session(),
-            armed,
-            CaptureGesture("drag_start", Point(0, 0), shift_pressed=True),
-        )
-        status = CaptureToolPresenter().build(LineCaptureTool().arm(context, "parent-001"))
-        point_status = CaptureToolPresenter().build(PointCaptureTool().arm(context))
-
-        self.assertFalse(ignored.handled)
-        self.assertTrue(started.handled)
-        self.assertEqual("Left Shift + drag line", status.gesture_hint)
-        self.assertEqual("Left Shift + click point", point_status.gesture_hint)
-        self.assertTrue(
-            policy.accepts(
-                CanvasObjectType.SITE_BOX,
-                CaptureGesture("drag_update", Point(1, 1), True),
+    def test_report_output_previews_use_artifact_type_labels(self) -> None:
+        previews = PreviewPresenter().from_artifacts(
+            (
+                ArtifactRef(
+                    "report_output",
+                    "reports/session-report.pptx",
+                    artifact_id="report-001-pptx",
+                    artifact_type="powerpoint_deck",
+                ),
+                ArtifactRef(
+                    "report_output",
+                    "reports/session-report.manifest.json",
+                    artifact_id="report-001-manifest",
+                    artifact_type="report_manifest",
+                ),
             )
         )
 
-    def test_point_capture_returns_explicit_unavailable_result(self) -> None:
-        tool = PointCaptureTool()
-        current_session = session()
-        context = tool.arm(InteractionContext(), "parent-001")
-
-        ignored = tool.handle(
-            current_session,
-            context,
-            CaptureGesture("click", Point(1, 1)),
-        )
-        unavailable = tool.handle(
-            current_session,
-            context,
-            CaptureGesture("click", Point(1, 1), shift_pressed=True),
-        )
-
-        self.assertFalse(ignored.handled)
-        self.assertTrue(unavailable.handled)
-        self.assertEqual(("Point capture is not implemented yet.",), unavailable.messages)
-        self.assertEqual(current_session, unavailable.session)
-
-    def test_point_capture_adds_ellipsometry_child_during_compound_workflow(self) -> None:
-        tool = PointCaptureTool()
-        current_session = arm_inner_feature_capture(
-            pending_parent(SessionMode.ELLIPSOMETRY_PLANNER),
-            "pending-001",
-            ellipsometry_request(),
-        )
-        context = tool.arm(InteractionContext(), "canvas-parent")
-
-        result = tool.handle(
-            current_session,
-            context,
-            CaptureGesture("click", Point(4, 4), shift_pressed=True),
-        )
-
-        self.assertTrue(result.handled)
-        self.assertEqual(2, len(result.session.canvas_objects))
-        self.assertEqual(
-            CanvasObjectType.ELLIPSOMETRY_POINT,
-            result.session.canvas_objects[1].object_type,
-        )
-
-
-if __name__ == "__main__":
-    unittest.main()
+        self.assertEqual("PowerPoint Deck", previews[0].label)
+        self.assertEqual("Report Manifest", previews[1].label)

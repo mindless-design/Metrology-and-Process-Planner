@@ -50,6 +50,7 @@ class SetupGuideController:
         self._command_router = command_router
         self.active_session: SessionRecord | None = None
         self.last_action_result: CommandRouteResult | None = None
+        self.current_window: Any | None = None
 
     def set_active_session(self, session: SessionRecord | None) -> None:
         """Set the session inspected by the guide."""
@@ -75,6 +76,7 @@ class SetupGuideController:
             return SetupGuideOpenResult("failed", view_model, registry_result.message)
         if registry_result.window is not None:
             self._attach_action_callback(registry_result.window)
+            self.current_window = registry_result.window
         status = _status(registry_result.status, self.active_session)
         return SetupGuideOpenResult(status, view_model, window=registry_result.window)
 
@@ -82,6 +84,7 @@ class SetupGuideController:
         """Close the modeless setup guide for the active session."""
 
         self._window_registry.close(_window_key(self.active_session))
+        self.current_window = None
 
     def _attach_action_callback(self, window: Any) -> None:
         if isinstance(window, dict):
@@ -100,7 +103,15 @@ class SetupGuideController:
         else:
             result = self._command_router.route(command_id)
         self.last_action_result = result
+        self._render_current()
         return result
+
+    def _render_current(self) -> None:
+        if self.current_window is None:
+            return
+        view_model = self._presenter.build(self.active_session)
+        self._shell.render(self.current_window, view_model)
+        self._attach_action_callback(self.current_window)
 
 
 def _window_key(session: SessionRecord | None) -> str:

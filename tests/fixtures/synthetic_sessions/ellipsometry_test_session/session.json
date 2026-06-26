@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "synthetic-ellipsometry",
+  "name": "Synthetic Ellipsometry",
+  "mode": "ellipsometry",
+  "created_at": "2026-06-24T00:00:00Z",
+  "updated_at": "2026-06-24T00:00:00Z",
+  "setup": {"coordinate_mode": "global", "origin": null, "alignments": [], "is_capture_ready": true},
+  "captures": [{"id": "cap-point-stack", "label": "Overlap Point", "capture_type": "point", "geometry": {"kind": "point", "bounds": null, "start": null, "end": null, "point": {"x": 50.0, "y": 64.0}}, "images": [], "measurements": [], "metadata": {"structure": "point_stack_ellipsometry"}, "notes": "Point stack target", "created_at": "2026-06-24T00:00:00Z"}],
+  "grid_datasets": [],
+  "exports": [],
+  "warnings": [],
+  "metadata": {"source_layout": "../gds/process_planner_testchip.gds", "recipe": "../recipes/simple_stack_recipe.json", "artifacts": {"stack_image": "missing:intentional"}}
+}

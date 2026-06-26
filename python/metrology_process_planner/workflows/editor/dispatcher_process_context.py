@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from metrology_process_planner.domains.session import SessionRecord
+from metrology_process_planner.domains.session import ModeRegistry, SessionRecord
 from metrology_process_planner.persistence.paths import SessionPaths
 from metrology_process_planner.persistence.process_output_store import ProcessOutputStore
 from metrology_process_planner.workflows.editor.adapter_process_outputs import (
@@ -41,6 +41,8 @@ from metrology_process_planner.workflows.process_context_support import (
 class _DocumentRebuilder(Protocol):
     """Editor dispatcher capability needed by process-context actions."""
 
+    _mode_registry: ModeRegistry | None
+
     def _rebuild(self, session: SessionRecord, document: SessionDocument) -> SessionDocument:
         """Rebuild a document after a workflow mutation."""
 
@@ -59,6 +61,9 @@ def attach_recipe_action(
 ) -> EditorActionResult:
     """Dispatch an attach-recipe action from an explicit payload path."""
 
+    unavailable = _non_process_unavailable(dispatcher, document)
+    if unavailable is not None:
+        return unavailable
     recipe_path = _payload_value(action, "recipe_path")
     if not recipe_path:
         return EditorActionResult("unavailable", document, "No recipe path was provided.")
@@ -75,6 +80,9 @@ def detach_recipe_action(
 ) -> EditorActionResult:
     """Dispatch detach recipe."""
 
+    unavailable = _non_process_unavailable(dispatcher, document)
+    if unavailable is not None:
+        return unavailable
     return process_result(
         dispatcher,
         document,
@@ -88,6 +96,9 @@ def refresh_recipe_fingerprint_action(
 ) -> EditorActionResult:
     """Dispatch recipe fingerprint refresh."""
 
+    unavailable = _non_process_unavailable(dispatcher, document)
+    if unavailable is not None:
+        return unavailable
     return process_result(
         dispatcher,
         document,
@@ -101,6 +112,9 @@ def validate_process_context_action(
 ) -> EditorActionResult:
     """Dispatch process-context validation."""
 
+    unavailable = _non_process_unavailable(dispatcher, document)
+    if unavailable is not None:
+        return unavailable
     return process_result(
         dispatcher,
         document,
@@ -115,6 +129,9 @@ def regenerate_process_output_action(
 ) -> EditorActionResult:
     """Dispatch process-output regeneration."""
 
+    unavailable = _non_process_unavailable(dispatcher, document)
+    if unavailable is not None:
+        return unavailable
     owner_id = _process_output_owner_id(document, action)
     result = regenerate_process_outputs(
         document.session,
@@ -174,4 +191,21 @@ def process_result(
         result.status,
         dispatcher._rebuild(result.session, document),
         result.message,
+    )
+
+
+def _non_process_unavailable(
+    dispatcher: _DocumentRebuilder,
+    document: SessionDocument,
+) -> EditorActionResult | None:
+    from metrology_process_planner.workflows.editor.builder_basics import (
+        mode_is_process_aware,
+    )
+
+    if mode_is_process_aware(document.session, getattr(dispatcher, "_mode_registry", None)):
+        return None
+    return EditorActionResult(
+        "unavailable",
+        document,
+        "Process context actions are not available for this recipe-free mode.",
     )

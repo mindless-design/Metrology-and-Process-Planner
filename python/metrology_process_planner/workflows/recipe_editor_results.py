@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from metrology_process_planner.app.command_types import CommandId
+from metrology_process_planner.domains.commands import CommandId
 from metrology_process_planner.domains.process import ProcessRecipe
 
 

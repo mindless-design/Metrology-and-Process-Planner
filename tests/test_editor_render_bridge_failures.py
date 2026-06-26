@@ -2,8 +2,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from metrology_process_planner.domains.session import ArtifactStatus, SessionRecord, WarningRecord
-from metrology_process_planner.infrastructure.diagnostics import InMemoryDiagnosticSink
+from metrology_process_planner.diagnostics import InMemoryDiagnosticSink
+from metrology_process_planner.domains.session import SessionRecord, WarningRecord
 from metrology_process_planner.persistence.paths import SessionPaths
 from metrology_process_planner.workflows.editor import (
     DefaultSessionModeAdapter,
@@ -96,42 +96,6 @@ class EditorRenderBridgeFailureTests(unittest.TestCase):
         self.assertIn("disk full", export_failed.warnings[0].message)
         self.assertEqual("warning", raster_failed.status)
         self.assertIn("PNG rasterization failed", raster_failed.warnings[0].message)
-
-    def test_repeated_measurement_annotation_failure_updates_repair_artifact(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            target = RenderRefreshRequest(
-                targets=(
-                    RenderTarget(
-                        DrawingOwnerRef("measurement", "meas-001"),
-                        "measurement_annotation",
-                    ),
-                )
-            )
-            bridge = SessionRenderBridge(
-                SessionPaths.for_folder(Path(temp_dir)),
-                drawing_store=FailingDrawingStore(),
-            )
-            first = bridge.refresh(session_without_pending(), target)
-            second = bridge.refresh(first.session, target)
-
-        artifact_id = "measurement-meas-001-measurement_annotation_svg"
-        artifact = second.session.artifacts[artifact_id]
-        document = SessionDocumentBuilder().build(second.session)
-        previews = DefaultSessionModeAdapter().preview_options(
-            document.session,
-            document.items_by_id["measurement:meas-001"],
-        )
-
-        self.assertEqual(1, len(second.session.warnings))
-        self.assertEqual(ArtifactStatus.FAILED, artifact.status)
-        self.assertEqual("regenerate_artifact", artifact.repair.repair_action)
-        self.assertIn("disk full", artifact.repair.last_error)
-        self.assertEqual(
-            ("render-measurement-meas-001-measurement_annotation-export",),
-            artifact.warning_ids,
-        )
-        self.assertEqual("error", previews[0].status)
-        self.assertEqual("regenerate_artifact", previews[0].repair_action)
 
     def test_warning_artifact_status_maps_to_preview_status(self) -> None:
         source = session_without_pending()

@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import cast
 
 from metrology_process_planner.app.diagnostics_action_dispatch import (
     DiagnosticsActionContext,
@@ -13,23 +13,29 @@ from metrology_process_planner.app.diagnostics_action_dispatch import (
 )
 from metrology_process_planner.app.diagnostics_action_results import DiagnosticsActionResult
 from metrology_process_planner.app.diagnostics_actions import diagnostics_actions
+from metrology_process_planner.app.diagnostics_dashboard_rows import (
+    with_dashboard_context_rows,
+)
 from metrology_process_planner.app.diagnostics_summary import (
     diagnostics_summary_rows,
     missing_artifact_count,
 )
-from metrology_process_planner.app.diagnostics_windows import open_windows_summary
-from metrology_process_planner.app.window_registry import (
-    WindowOpenStatus,
-    WindowRegistry,
+from metrology_process_planner.app.diagnostics_window_open import (
+    open_or_refresh_diagnostics_window,
+)
+from metrology_process_planner.app.window_registry import WindowRegistry
+from metrology_process_planner.diagnostics import (
+    DiagnosticEvent,
+    DiagnosticSink,
+    DiagnosticsService,
 )
 from metrology_process_planner.domains.session import (
     ModeRegistry,
     SessionRecord,
     built_in_mode_registry,
 )
-from metrology_process_planner.infrastructure.diagnostics import (
-    DiagnosticSink,
-    DiagnosticsService,
+from metrology_process_planner.domains.warnings.warning_visibility import (
+    warning_visible_for_session,
 )
 from metrology_process_planner.persistence.paths import SessionPaths
 from metrology_process_planner.ui.diagnostics import (
@@ -63,6 +69,7 @@ class AdvancedDiagnosticsController:
         service: DiagnosticsService,
         shell: DiagnosticsShell | None = None,
         mode_registry: ModeRegistry | None = None,
+        mode_load_warnings: tuple[str, ...] = (),
         window_registry: WindowRegistry[object] | None = None,
         editor_document_provider: Callable[[], SessionDocument | None] | None = None,
     ) -> None:
@@ -72,11 +79,12 @@ class AdvancedDiagnosticsController:
             InMemoryDiagnosticsWidgetFactory()
         )
         self._mode_registry = mode_registry or built_in_mode_registry()
+        self._mode_load_warnings = mode_load_warnings
         self._window_registry = (
             window_registry if window_registry is not None else WindowRegistry(diagnostic_sink=sink)
         )
-        self.active_session: Optional[SessionRecord] = None
-        self.active_paths: Optional[SessionPaths] = None
+        self.active_session: SessionRecord | None = None
+        self.active_paths: SessionPaths | None = None
         self._editor_document_provider = editor_document_provider
         self._action_dispatcher = DiagnosticsActionDispatcher(sink)
         self.last_action_result: DiagnosticsActionResult | None = None
@@ -84,7 +92,7 @@ class AdvancedDiagnosticsController:
     def set_active_session(
         self,
         session: SessionRecord,
-        paths: Optional[SessionPaths] = None,
+        paths: SessionPaths | None = None,
     ) -> None:
         """Set the session inspected by diagnostics."""
 
@@ -102,50 +110,44 @@ class AdvancedDiagnosticsController:
     def open_current(self) -> DiagnosticsOpenResult:
         """Return the current diagnostics summary for an advanced UI shell."""
 
-        if self.active_session is None:
+        session = self.active_session
+        if session is None:
             return DiagnosticsOpenResult("unavailable", "No active session is loaded.")
         recent_events = self._sink.recent(100)
+        result = self._build_open_result(session, recent_events)
+        opened = open_or_refresh_diagnostics_window(self, result, recent_events)
+        return cast(DiagnosticsOpenResult, opened)
+
+    def _build_open_result(
+        self,
+        session: SessionRecord,
+        recent_events: tuple[DiagnosticEvent, ...],
+    ) -> DiagnosticsOpenResult:
+        editor_document = self._current_editor_document()
         summary_rows = diagnostics_summary_rows(
-            self.active_session,
+            session,
             recent_events,
             self._mode_registry,
             self._window_registry,
-            self._current_editor_document(),
+            editor_document,
         )
-        result = DiagnosticsOpenResult(
+        summary_rows = with_dashboard_context_rows(
+            summary_rows,
+            session,
+            self.active_paths,
+            editor_document,
+            self._mode_registry,
+        )
+        if self._mode_load_warnings:
+            summary_rows += (("Mode Load Warnings", "; ".join(self._mode_load_warnings)),)
+        return DiagnosticsOpenResult(
             status="opened",
             message="Advanced diagnostics resolved.",
-            warning_count=len(self.active_session.warnings),
-            missing_artifact_count=missing_artifact_count(self.active_session),
+            warning_count=_visible_warning_count(session, self._mode_registry),
+            missing_artifact_count=missing_artifact_count(session, self._mode_registry),
             recent_event_count=len(recent_events),
             summary_rows=summary_rows,
             actions=diagnostics_actions(self.active_paths, recent_events),
-        )
-        registry_result = self._window_registry.get_or_create_diagnostics_panel(
-            self.active_session.id,
-            "Advanced Diagnostics",
-            lambda: self._shell.open(result, recent_events),
-            refresh_existing=lambda window: self._shell.render(
-                window,
-                result,
-                recent_events,
-            ),
-        )
-        if registry_result.status is WindowOpenStatus.FAILED:
-            return DiagnosticsOpenResult("failed", registry_result.message)
-        if registry_result.window is not None:
-            result = _with_open_window_rows(result, open_windows_summary(self._window_registry))
-            self._shell.render(registry_result.window, result, recent_events)
-            self._shell.set_action_callback(registry_result.window, self.route_action)
-        return DiagnosticsOpenResult(
-            "raised" if registry_result.status is WindowOpenStatus.RAISED else result.status,
-            result.message,
-            result.warning_count,
-            result.missing_artifact_count,
-            result.recent_event_count,
-            registry_result.window,
-            result.summary_rows,
-            result.actions,
         )
 
     def export_debug_bundle(self, output_path: Path) -> Path:
@@ -153,10 +155,13 @@ class AdvancedDiagnosticsController:
 
         if self.active_session is None:
             raise RuntimeError("No active session is loaded.")
-        return self._service.export_debug_bundle(
-            self.active_session,
-            output_path,
-            self.active_paths,
+        return cast(
+            Path,
+            self._service.export_debug_bundle(
+                self.active_session,
+                output_path,
+                self.active_paths,
+            ),
         )
 
     def route_action(self, action_id: str) -> DiagnosticsActionResult:
@@ -180,21 +185,13 @@ class AdvancedDiagnosticsController:
             return None
         return self._editor_document_provider()
 
-def _with_open_window_rows(
-    result: DiagnosticsOpenResult,
-    open_windows: str,
-) -> DiagnosticsOpenResult:
-    rows = tuple(
-        (key, open_windows) if key == "Open Windows" else (key, value)
-        for key, value in result.summary_rows
+
+def _visible_warning_count(
+    session: SessionRecord,
+    mode_registry: ModeRegistry | None = None,
+) -> int:
+    return sum(
+        1
+        for warning in session.warnings
+        if warning_visible_for_session(session, warning, mode_registry)
     )
-    return DiagnosticsOpenResult(
-        result.status,
-        result.message,
-        result.warning_count,
-            result.missing_artifact_count,
-            result.recent_event_count,
-            result.window,
-            rows,
-            result.actions,
-        )

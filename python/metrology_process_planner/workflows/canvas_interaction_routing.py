@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from typing import Optional
 
+from metrology_process_planner.diagnostics.diagnostics_sinks import DiagnosticSink
+from metrology_process_planner.diagnostics.trace_context import TraceContext
 from metrology_process_planner.domains.geometry import Point
 from metrology_process_planner.domains.session import (
     CanvasObjectType,
     SessionRecord,
     SourceViewBinding,
 )
-from metrology_process_planner.infrastructure.diagnostics_sinks import DiagnosticSink
-from metrology_process_planner.infrastructure.trace_context import TraceContext
 from metrology_process_planner.workflows.canvas_interaction_drag import (
     start_box_drag,
     start_line_drag,
@@ -21,6 +21,9 @@ from metrology_process_planner.workflows.canvas_interaction_drag import (
 from metrology_process_planner.workflows.canvas_interaction_models import (
     InteractionContext,
     InteractionResult,
+)
+from metrology_process_planner.workflows.setup_capture_commit import (
+    commit_setup_origin_point_if_active,
 )
 
 
@@ -45,6 +48,10 @@ def route_start_drag(
             source_view_binding,
             trace_context,
         )
+    if context.armed_object_type is CanvasObjectType.POINT:
+        setup_result = commit_setup_origin_point_if_active(session, context, start)
+        if setup_result is not None:
+            return setup_result
     return start_box_drag(
         sink,
         session,

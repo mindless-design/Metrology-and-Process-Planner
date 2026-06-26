@@ -1,0 +1,16 @@
+{
+  "id": "directional_etch_recipe",
+  "name": "Synthetic Directional Etch",
+  "materials": [
+    {"id": "si", "name": "Silicon", "color": "#777777", "visible": true},
+    {"id": "oxide", "name": "Oxide", "color": "#69aee8", "visible": true},
+    {"id": "mask", "name": "Etch Mask", "color": "#222222", "visible": true}
+  ],
+  "steps": [
+    {"id": "substrate", "kind": "substrate", "material_id": "si", "thickness": {"target": 1000.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [], "parameters": {}, "notes": "Si substrate"},
+    {"id": "blanket-oxide", "kind": "blanket_deposition", "material_id": "oxide", "thickness": {"target": 180.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [], "parameters": {}, "notes": "Etch target oxide"},
+    {"id": "oxide-etch", "kind": "directional_etch", "material_id": null, "thickness": {"target": 120.0, "unit": "um"}, "layer": {"source": "layout", "layer": 7, "datatype": 0, "name": "TRENCH"}, "mask_polarity": "direct", "target_material_ids": ["oxide"], "stop_material_ids": ["si"], "mask_intervals": [{"x_min": 4.0, "x_max": 6.0}], "parameters": {}, "notes": "Directional trench etch"}
+  ],
+  "process_windows": [],
+  "metadata": {"fixture_target": "top-down etch, blocker stop, depth diagnostics", "accuracy_envelope": {"model": "sampled_2d_heuristic", "claim": "qualitative_cross_section", "covers": ["vertical material removal", "stop-material preservation", "depth diagnostics"], "excludes": ["microloading", "etch lag", "sidewall roughness"]}}
+}

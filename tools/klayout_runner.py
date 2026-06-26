@@ -29,12 +29,13 @@ def discover_klayout_executable() -> Optional[Path]:
 
     configured = os.environ.get("KLAYOUT_EXE")
     if configured:
-        return _existing_path(configured)
+        return Path(configured).expanduser()
 
     candidates = [
         shutil_which("klayout"),
         shutil_which("klayout_app"),
         _roaming_klayout(),
+        _userprofile_klayout(),
     ]
     for candidate in candidates:
         if candidate is not None and candidate.exists():
@@ -109,6 +110,17 @@ def _roaming_klayout() -> Optional[Path]:
     if not appdata:
         return None
     return _existing_path(str(Path(appdata) / "KLayout" / "klayout_app.exe"))
+
+
+def _userprofile_klayout() -> Optional[Path]:
+    """Return the Windows user-profile KLayout executable path."""
+
+    userprofile = os.environ.get("USERPROFILE")
+    if not userprofile:
+        return None
+    return _existing_path(
+        str(Path(userprofile) / "AppData" / "Roaming" / "KLayout" / "klayout_app.exe")
+    )
 
 
 def klayout_environment() -> dict[str, str]:

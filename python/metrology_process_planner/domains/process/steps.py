@@ -7,9 +7,14 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Optional
 
-from metrology_process_planner.domains.process.geometry_models import MaskInterval
 from metrology_process_planner.domains.process.materials import LayerReference
-from metrology_process_planner.domains.process.solver_profiles import (
+from metrology_process_planner.domains.process.step_values import (
+    bounded_value_warnings,
+    optional_float,
+    optional_str,
+)
+from metrology_process_planner.solver.geometry_models import MaskInterval
+from metrology_process_planner.solver.solver_profiles import (
     ConformalProfile,
     EtchProfile,
     PlanarizationProfile,
@@ -39,6 +44,10 @@ class ProcessStepKind(str, Enum):
     ANNOTATION_ONLY = "annotation_only"
 
 
+class RenderProfileRef(str):
+    """Identifier for a render profile used by a process-aware output."""
+
+
 @dataclass(frozen=True)
 class ThicknessSpec:
     """Nominal and optional bounded thickness for a process step."""
@@ -54,7 +63,7 @@ class ThicknessSpec:
         warnings: list[str] = []
         if self.target < 0:
             warnings.append("Thickness target must be non-negative.")
-        warnings.extend(_bounded_value_warnings(self.lower, self.target, self.upper, "Thickness"))
+        warnings.extend(bounded_value_warnings(self.lower, self.target, self.upper, "Thickness"))
         return tuple(warnings)
 
     def to_dict(self) -> dict[str, Any]:
@@ -73,8 +82,8 @@ class ThicknessSpec:
 
         return cls(
             target=float(data["target"]),
-            lower=_optional_float(data.get("lower")),
-            upper=_optional_float(data.get("upper")),
+            lower=optional_float(data.get("lower")),
+            upper=optional_float(data.get("upper")),
             unit=str(data.get("unit", "um")),
         )
 
@@ -138,6 +147,8 @@ class ProcessStep:
     planarization_profile: Optional[PlanarizationProfile] = None
     parameters: Optional[Mapping[str, Any]] = None
     notes: str = ""
+    name: str = ""
+    enabled: bool = True
 
     def __post_init__(self) -> None:
         if self.parameters is None:
@@ -149,6 +160,8 @@ class ProcessStep:
         return {
             "id": self.id,
             "kind": self.kind.value,
+            "name": self.name,
+            "enabled": self.enabled,
             "material_id": self.material_id,
             "thickness": self.thickness.to_dict() if self.thickness is not None else None,
             "layer": self.layer.to_dict() if self.layer is not None else None,
@@ -168,10 +181,15 @@ class ProcessStep:
 
         layer_data = data.get("layer")
         polarity = data.get("mask_polarity", MaskPolarity.DIRECT.value)
+        parameters = dict(data.get("parameters", {}))
+        name = str(data.get("name", parameters.get("name", "")))
+        enabled = bool(data.get("enabled", parameters.get("enabled", True)))
         return cls(
             id=str(data["id"]),
             kind=ProcessStepKind(str(data["kind"])),
-            material_id=_optional_str(data.get("material_id")),
+            name=name,
+            enabled=enabled,
+            material_id=optional_str(data.get("material_id")),
             thickness=(
                 ThicknessSpec.from_dict(data["thickness"])
                 if data.get("thickness") is not None
@@ -185,34 +203,6 @@ class ProcessStep:
                 MaskInterval(float(item["x_min"]), float(item["x_max"]))
                 for item in data.get("mask_intervals", ())
             ),
-            parameters=dict(data.get("parameters", {})),
+            parameters=parameters,
             notes=str(data.get("notes", "")),
         )
-
-
-def _optional_float(value: Any) -> Optional[float]:
-    return None if value is None else float(value)
-
-
-def _optional_str(value: Any) -> Optional[str]:
-    return None if value is None else str(value)
-
-
-def _bounded_value_warnings(
-    lower: Optional[float],
-    target: float,
-    upper: Optional[float],
-    label: str,
-) -> tuple[str, ...]:
-    checks = (
-        (lower is not None and lower < 0, f"{label} lower bound must be non-negative."),
-        (upper is not None and upper < 0, f"{label} upper bound must be non-negative."),
-        (_limits_are_reversed(lower, upper), f"{label} lower bound is greater than upper bound."),
-        (lower is not None and target < lower, f"{label} target is below lower bound."),
-        (upper is not None and target > upper, f"{label} target is above upper bound."),
-    )
-    return tuple(message for failed, message in checks if failed)
-
-
-def _limits_are_reversed(lower: Optional[float], upper: Optional[float]) -> bool:
-    return lower is not None and upper is not None and lower > upper

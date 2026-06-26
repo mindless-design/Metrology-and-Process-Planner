@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
 from typing import Any, Protocol
 
 from metrology_process_planner.ui.session_editor.header import (
     header_entries,
     primary_actions,
     status_text,
+)
+from metrology_process_planner.ui.session_editor.in_memory_metadata import (
+    legacy_field_rows,
+    metadata_change_callback,
+    metadata_controls,
 )
 from metrology_process_planner.ui.session_editor.navigator import (
     NavigatorFilterCallback,
@@ -23,22 +27,15 @@ from metrology_process_planner.ui.session_editor.sections import (
     metadata_rows,
     preview_rows,
 )
+from metrology_process_planner.ui.session_editor.shell_models import SessionEditorCallbacks
 from metrology_process_planner.workflows.editor.adapters import SessionModeAdapter
 from metrology_process_planner.workflows.editor.document import SessionDocument
-from metrology_process_planner.workflows.editor.view_models import EditorAction
+from metrology_process_planner.workflows.editor.view_models import (
+    EditorAction,
+)
 
 SelectionCallback = Callable[[str], None]
 ActionCallback = Callable[[EditorAction], None]
-
-
-@dataclass(frozen=True)
-class SessionEditorCallbacks:
-    """Callbacks emitted by the editor shell for selection and actions."""
-
-    on_select_item: SelectionCallback
-    on_action: ActionCallback
-    on_filter_navigator: NavigatorFilterCallback | None = None
-    navigator_filter: NavigatorFilterState = NavigatorFilterState()
 
 
 class SessionEditorWidgetFactory(Protocol):
@@ -117,8 +114,12 @@ class SessionEditorShell:
         """Render a document into an existing editor shell window."""
 
         selected = document.items_by_id[document.selection.selected_item_id]
-        self._factory.set_header(window, header_entries(document))
-        self._factory.set_primary_actions(window, primary_actions(document), callbacks.on_action)
+        self._factory.set_header(window, header_entries(document, adapter))
+        self._factory.set_primary_actions(
+            window,
+            primary_actions(document, adapter),
+            callbacks.on_action,
+        )
         self._factory.set_navigator(
             window,
             navigator_groups(document, callbacks.navigator_filter),
@@ -192,7 +193,13 @@ class InMemorySessionEditorWidgetFactory:
     ) -> None:
         """Store rendered inspector fields, actions, and callback."""
 
-        window["fields"] = fields
+        window["metadata_fields"] = fields
+        window["fields"] = legacy_field_rows(fields)
+        window["metadata_controls"] = metadata_controls(fields)
+        window["on_metadata_change"] = metadata_change_callback(
+            window.get("selected_item_id", ""),
+            on_action,
+        )
         window["actions"] = actions
         window["on_action"] = on_action
 

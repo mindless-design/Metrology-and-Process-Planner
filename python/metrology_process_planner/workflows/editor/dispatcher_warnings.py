@@ -2,11 +2,17 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import replace
 from pathlib import Path
 from typing import Protocol
 
-from metrology_process_planner.domains.session import SessionRecord, utc_now_iso
+from metrology_process_planner.domains.session import (
+    ArtifactRecord,
+    ArtifactStatus,
+    SessionRecord,
+    utc_now_iso,
+)
 from metrology_process_planner.workflows.editor.dispatcher_results import EditorActionResult
 from metrology_process_planner.workflows.editor.document import SessionDocument
 from metrology_process_planner.workflows.editor.view_models import EditorAction, EditorActionType
@@ -39,7 +45,11 @@ def ignore_warning_action(
             warnings.append(warning)
     if not changed:
         return EditorActionResult("unavailable", document, "Warning no longer exists.")
-    session = replace(document.session, warnings=tuple(warnings))
+    session = replace(
+        document.session,
+        artifacts=_ignored_artifacts(document.session, warning_id),
+        warnings=tuple(warnings),
+    )
     return EditorActionResult(
         "success",
         dispatcher._rebuild(session, document),
@@ -89,3 +99,19 @@ def _warning_id(document: SessionDocument, action: EditorAction) -> str:
     if item.record_ref is not None and item.record_ref.record_type == "warning":
         return item.record_ref.record_id
     return item.warning_ids[0] if item.warning_ids else ""
+
+
+def _ignored_artifacts(
+    session: SessionRecord,
+    warning_id: str,
+) -> Mapping[str, ArtifactRecord] | None:
+    warning = next((item for item in session.warnings if item.id == warning_id), None)
+    if warning is None or warning.source != "artifact":
+        return session.artifacts
+    artifact_ids = set(warning.related_artifact_refs)
+    return {
+        artifact_id: replace(artifact, status=ArtifactStatus.INTENTIONALLY_IGNORED)
+        if artifact_id in artifact_ids
+        else artifact
+        for artifact_id, artifact in (session.artifacts or {}).items()
+    }

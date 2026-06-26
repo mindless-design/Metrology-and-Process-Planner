@@ -11,10 +11,10 @@ from metrology_process_planner.app.window_registry_types import (
     WindowOpenStatus,
     WindowRecord,
 )
-from metrology_process_planner.infrastructure.diagnostics_exceptions import emit_exception_event
-from metrology_process_planner.infrastructure.diagnostics_models import DiagnosticEvent
-from metrology_process_planner.infrastructure.diagnostics_sinks import DiagnosticSink
-from metrology_process_planner.infrastructure.trace_context import TraceContext
+from metrology_process_planner.diagnostics.diagnostics_exceptions import emit_exception_event
+from metrology_process_planner.diagnostics.diagnostics_models import DiagnosticEvent
+from metrology_process_planner.diagnostics.diagnostics_sinks import DiagnosticSink
+from metrology_process_planner.diagnostics.trace_context import TraceContext
 
 WindowT = TypeVar("WindowT")
 

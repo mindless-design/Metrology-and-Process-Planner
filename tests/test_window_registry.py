@@ -6,7 +6,7 @@ from metrology_process_planner.app.window_registry import (
     WindowRegistry,
     surface_key,
 )
-from metrology_process_planner.infrastructure.diagnostics import InMemoryDiagnosticSink
+from metrology_process_planner.diagnostics import InMemoryDiagnosticSink
 
 
 class WindowRegistryTests(unittest.TestCase):

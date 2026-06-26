@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "synthetic-process-flow",
+  "name": "Synthetic Process Flow",
+  "mode": "process_flow_summary",
+  "created_at": "2026-06-24T00:00:00Z",
+  "updated_at": "2026-06-24T00:00:00Z",
+  "setup": {"coordinate_mode": "global", "origin": null, "alignments": [], "is_capture_ready": true},
+  "captures": [],
+  "grid_datasets": [],
+  "exports": [],
+  "warnings": [],
+  "metadata": {"source_layout": "../gds/process_planner_testchip.gds", "recipe": "../recipes/process_flow_recipe.json", "artifacts": {"process_flow_frames": "missing:intentional"}}
+}

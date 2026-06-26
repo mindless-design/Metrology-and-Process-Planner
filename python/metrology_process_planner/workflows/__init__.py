@@ -1,5 +1,7 @@
 """Workflow state machines and user intent contracts."""
 
+from importlib import import_module
+
 from metrology_process_planner.workflows.canvas_interaction import CanvasInteractionEngine
 from metrology_process_planner.workflows.canvas_interaction_models import (
     InteractionContext,
@@ -48,13 +50,6 @@ from metrology_process_planner.workflows.overlays import (
     OverlayCommandKind,
 )
 from metrology_process_planner.workflows.pending_capture_review import PendingCaptureReviewService
-from metrology_process_planner.workflows.process_context import (
-    attach_recipe,
-    detach_recipe,
-    refresh_recipe_fingerprint,
-    regenerate_process_outputs,
-    validate_process_context,
-)
 from metrology_process_planner.workflows.process_context_models import (
     AttachRecipeCommand,
     DetachRecipeCommand,
@@ -139,3 +134,22 @@ __all__ = [
     "save_composite_capture",
     "validate_process_context",
 ]
+
+_LAZY_EXPORTS = {
+    "attach_recipe": "metrology_process_planner.workflows.process_context",
+    "detach_recipe": "metrology_process_planner.workflows.process_context",
+    "refresh_recipe_fingerprint": "metrology_process_planner.workflows.process_context",
+    "regenerate_process_outputs": "metrology_process_planner.workflows.process_context",
+    "validate_process_context": "metrology_process_planner.workflows.process_context",
+}
+
+
+def __getattr__(name: str) -> object:
+    """Load process-aware workflow exports only when explicitly requested."""
+
+    module_name = _LAZY_EXPORTS.get(name)
+    if module_name is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    value = getattr(import_module(module_name), name)
+    globals()[name] = value
+    return value

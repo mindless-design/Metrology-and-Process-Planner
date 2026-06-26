@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from metrology_process_planner.domains.session import ProcessOutputRecord, SessionRecord
+from metrology_process_planner.rendering.cross_section.profile_defaults import (
+    default_render_profile_id,
+)
 from metrology_process_planner.workflows.editor.document import SessionItem
 from metrology_process_planner.workflows.editor.view_models import (
     EditorAction,
@@ -14,6 +17,7 @@ from metrology_process_planner.workflows.editor.view_models import (
 def process_output_fields(
     session: SessionRecord,
     item: SessionItem,
+    _mode_registry: object = None,
 ) -> tuple[MetadataField, ...]:
     """Return engineer-readable fields for a generated process output."""
 
@@ -25,6 +29,12 @@ def process_output_fields(
         MetadataField("label", "Label", output.label, read_only=True),
         MetadataField("output_type", "Output Type", output.output_type, read_only=True),
         MetadataField("status", "Status", output.status, read_only=True),
+        MetadataField(
+            "render_profile_id",
+            "Render Profile",
+            str(metadata.get("render_profile_id") or default_render_profile_id(output.output_type)),
+            read_only=True,
+        ),
         MetadataField("capture_id", "Capture", str(metadata.get("capture_id", "")), read_only=True),
     ]
     fields.extend(_solver_fields(metadata))
@@ -37,6 +47,7 @@ def process_output_fields(
 def process_output_actions(
     session: SessionRecord,
     item: SessionItem,
+    _mode_registry: object = None,
 ) -> tuple[EditorAction, ...]:
     """Return actions for a process-output editor item."""
 

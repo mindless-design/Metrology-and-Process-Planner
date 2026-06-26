@@ -1,9 +1,96 @@
 # Process Planner Implementation Status
 
-Last updated: 2026-06-24
+Last updated: 2026-06-25
+
+## Current Roadmap Pass
+
+- Current packet: Completion audit passed for the current stabilization roadmap scope.
+- Completed packets: Packet 1, Wire Session Document Lifecycle UI Adapters; Packet 2, Bind Current Layout And Restore Overlays; Packet 3, Stabilize Production Session Editor Shell; Packet 4, Artifact Repair And Generator Handoffs; Packet 5, Reporting Workbench Export Integration; Packet 6, Mode Catalog Alignment; Packet 7, Installed External Mode Discovery; Packet 8, Report Artifact Repair Handoff; Packet 9, Live Layout Crop Repair; Packet 10, Visual Cross-Section/Profile Repair Breadth; Packet 11, Setup Guide Qt Polish; Packet 12, Diagnostics Dashboard Polish; Packet 13, Process Flow Summary Mode Clarification; Packet 14, Dense Real-Layout Overview Visual Regression; Packet 15, Legacy CDSEM Alias Deprecation; Packet 16, Recipe Picker/Open-File Shell; Packet 17, Standalone Point Capture Product Workflow; Packet 18, Standalone Line Capture Product Workflow; Packet 19, Broader Live KLayout GUI Gesture Automation; Packet 20, Process Solver Physics Expansion.
+- Packet 7 result: app-level external mode folder discovery, diagnostics visibility, canonical open custom mode IDs, and registry-driven editor policy for loaded external modes are implemented.
+- Packet 8 result: generated report outputs now register repair metadata and dependency signatures, saved PowerPoint deck/report-manifest artifacts route to `REBUILD_REPORT`, and the built-in repair service can regenerate missing or stale report deck artifacts from `SessionDocument` without live UI state.
+- Packet 9 result: live layout crop repair is wired through `layout_crop_repair_service`, injected into KLayout plugin registration via `KLayoutLayoutCropExporter`, and remains unavailable in the default headless repair path until a live exporter is supplied.
+- Packet 10 result: profile, cross-section, full-stack, point-stack, and process-flow visual process artifacts now repair through role-specific solver/render SVG generation, while generic process-output JSON repair remains available as a fallback.
+- Packet 11 result: setup-guide stage cards now have display-ready status, requirement, artifact, warning, and action badge models, and KLayout registration injects a Qt-backed setup-guide surface factory.
+- Packet 12 result: diagnostics shell now renders a structured dashboard model with grouped session, workflow, artifact, process/report, activity, and action state, including session path, dirty state, solver/render backend, and report readiness rows.
+- Packet 13 result: `process_flow_summary` is documented and tested as a hidden report-only/load-compatible mode, with process solver forbidden and process-flow reporting template selection preserved.
+- Packet 14 result: dense real-layout overview label routing is covered by the label-stress GDS-derived golden fixture and split into a dedicated quality-compliant regression test.
+- Packet 15 result: legacy `cdsem_capture` remains load-compatible but hidden from operator mode pickers, while `cdsem_measurement` is the visible CDSEM mode.
+- Packet 16 result: recipe open, save-as, and setup attach commands now use host recipe path adapters; KLayout registration injects the recipe JSON picker adapter without letting UI write recipe/session state directly.
+- Packet 17 result: generic Shift-click point capture now creates a standalone pending point capture with canonical point geometry, KLayout point gestures update session/overlay state, and pending review can save the point as a first-class capture record.
+- Packet 18 result: parentless Shift-drag line capture now creates a standalone pending line capture with canonical line geometry, KLayout line gestures update session/overlay state, and pending review can save the line as a first-class capture record without changing parented measurement/profile line behavior.
+- Packet 19 result: opt-in KLayout automation now covers menu registration, main-window snapshot, modeless command surfaces, GUI capture-surface contracts, and batch `pya` capture-adapter probes for measurement line, profilometry line, ellipsometry point, standalone line, and standalone point routing without source-layout mutation.
+- Packet 20 result: executable synthetic solver fixtures now declare accuracy envelopes that distinguish contract, qualitative, visual, and workflow claims from excluded calibrated physics; etch operations now emit explicit target-exhaustion and non-target-blocker diagnostics; `docs/SOLVER_ACCURACY_ENVELOPE.md` documents the boundary.
+- Tests added: lifecycle command adapter tests, layout binding command tests, KLayout current-layout adapter boundary test, KLayout session editor shell region-render test, KLayout session path adapter tests, KLayout capture adapter boundary split tests, artifact generator handler tests, external-mode editor policy tests, report artifact repair tests, layout crop repair service tests, KLayout layout crop exporter tests, visual process artifact generator tests, setup-guide card model tests, KLayout setup-guide shell tests, diagnostics dashboard tests, process-flow mode policy tests, dense overview golden tests, recipe path adapter command tests, setup-guide recipe picker tests, KLayout recipe path adapter tests, standalone point capture tests, standalone line capture tests, standalone KLayout capture batch probes, live KLayout GUI capture-surface tests, solver accuracy envelope fixture tests, and etch depth/blocker diagnostic tests.
+- Tests passing: `python -m unittest discover -s tests -t .` passed with 703 tests and 19 skipped tests. `python -m tools.release_check --include-klayout` also passed, including quality gates, ruff, mypy, static analysis, project health, unittest discovery, KLayout integration/process/UI lanes, compileall, and package build.
+- Tests failing: none in the targeted stabilization lane.
+- Known blockers: no unresolved P0/P1 stabilization blockers in the current contract. Remaining items are release polish, broader visual galleries, and future product-scope features.
+- Next packet: no higher-priority stabilization packet remains; choose release polish or a new product feature packet intentionally.
+- Architecture risks: artifact generators must register derived outputs through central `ArtifactRecord` updates and must not store loose filenames on capture or report records.
 
 ## What Works
 
+- Process Planner sessions are now explicit editable `session.json` documents. `SessionDocument`
+  tracks the loaded path, schema version, dirty state, revision, captures, artifacts, warnings, and
+  workflow state while preserving unknown top-level fields where practical.
+- `SessionDocumentLoader`, `SessionDocumentWriter`, `SessionMigrationService`,
+  `SessionValidationService`, `SessionStore`, `ActiveSessionContext`, and
+  `RecentSessionRegistry` provide the document lifecycle backbone for new/open/save/save-as/recent
+  flows.
+- New session creation immediately writes a valid minimal `session.json` and creates standard
+  `artifacts`, `exports`, `images`, `drawings`, `reports`, and `process_outputs` folders.
+- Opening a saved `session.json` now sets one clear active session context, records the recent
+  session path, validates artifacts, adds non-blocking source-layout warnings, and opens the
+  unified editor from the loaded document.
+- Saving editor edits applies dirty metadata, updates the modified timestamp, validates the
+  document, writes through temp/backup/atomic replace, clears dirty state, and keeps the loaded
+  document path.
+- The session editor now shows a no-active-session start screen with New Session, Open Existing
+  Session JSON, and Open Recent actions instead of failing silently when no document is loaded.
+- Top-level `New Session`, `Open Session`, `Open Recent Session`, and `Save Session As` commands
+  now route through a fakeable `SessionPathAdapter`. KLayout registration supplies the Qt/KLayout
+  path adapter, and cancel cases return structured non-mutating command results.
+- `Bind Current Layout to Session` now routes through a fakeable `SessionLayoutAdapter`, updates and
+  saves `SourceLayoutContext`, adds structured mismatch warnings, and replays durable
+  `CanvasObject` overlays when an overlay manager is supplied. KLayout registration supplies the
+  current-layout adapter and overlay backend.
+- KLayout plugin registration now supplies a KLayout-backed session editor shell factory. The
+  factory consumes the same header, navigator, preview, inspector, action, and status view-model
+  regions as the in-memory shell, preserving callbacks through the command/dispatcher route.
+- Built-in artifact repair now has concrete headless generator handlers for capture CSV export,
+  SVG placeholder images, measurement annotation refresh, overview SVG regeneration, and
+  process-output JSON regeneration/export, plus PowerPoint report-output repair and live layout
+  crop repair when a KLayout exporter is injected. Generators that update owner refs or sibling
+  artifacts return an explicit `ArtifactGenerationResult`, allowing the repair service to preserve
+  canonical `SessionRecord` updates instead of replacing one artifact in isolation.
+- Visual process artifacts now repair through role-specific generator selection. Profile,
+  cross-section, full-stack compressed, point-stack, and process-flow records invoke the
+  solver/render contract and write SVG image artifacts; generic process-output JSON export remains
+  available for non-visual process-output artifacts.
+- Artifact repair requests now verify that a selected generator has a concrete handler. Generator
+  declarations without handlers produce a stable `GENERATOR_HANDLER_UNAVAILABLE` unavailable
+  request and warning instead of surfacing a dead repair action.
+- Generator-declared context requirements now participate in repair requests. Live-layout
+  registrations such as `layout_crop` report `SOURCE_LAYOUT_REQUIRED_FOR_REPAIR` before falling
+  through to `GENERATOR_HANDLER_UNAVAILABLE`, so repair queues show the first operator action
+  required.
+- Reporting Workbench output-folder selection now uses a `ReportOutputAdapter`. The in-memory
+  workbench can choose a destination, persist it on `ReportRequest`, export to that folder, and
+  KLayout registration supplies a Qt folder picker adapter without importing Qt in reporting code.
+- Reporting Workbench stale-output readiness now has an explicit `regenerate_stale` action and
+  primary button routing. Missing and stale report artifact repairs no longer share the same
+  action label or service call.
+- Mode registry now exposes explicit visible-catalog helpers. Legacy `cdsem_capture`, internal
+  `process_aware_metrology`, and report-only `process_flow_summary` remain registered for saved
+  sessions but are hidden from normal new-session pickers. KLayout mode selection uses the visible
+  registry instead of raw enum values.
+- App bootstrap now loads external JSON mode folders from `MPP_MODE_DEFINITION_DIRS` through the
+  existing data-only mode loader. Diagnostics shows loaded external mode IDs and mode-load warnings.
+  KLayout picker selection now accepts visible external registry IDs, and registered custom mode IDs
+  round-trip through `SessionDocument` as durable `SessionModeId` strings. Editor builders and the
+  default adapter consume the same injected registry, so external setup, measurement, dashboard, and
+  metadata policy shapes generic view models without hard-coded built-in IDs. Unknown unregistered
+  saved mode IDs still fall back to `simple_capture` with `unsupported_mode` warnings.
+- Dirty close now blocks until save, discard, or cancel is chosen by the UI/controller caller.
 - Canonical session records exist with schema `5.0.0`, central artifact registry records, captures, nested measurements, canvas objects, warnings, workflow state, setup, reports, process outputs, and raw-field preservation paths.
 - Session JSON persistence loads older integer-schema payloads through migration, writes UTF-8 indented JSON, and has tests for round trip, unknown field preservation, missing artifacts, and canonical artifact refs.
 - Persistent canvas objects support saved and pending site boxes, selection flags, active-parent flags, restore commands, stale/invalid styling, and fakeable overlay backends.
@@ -42,6 +129,11 @@ Last updated: 2026-06-24
 - Generic capture start/cancel commands now route through a shared app-level capture command service. `StartCapture`, `StartBoxCapture`, `StartLineCapture`, `StartPointCapture`, and `CancelCapture` update durable workflow arming state, reuse `CanvasInteractionEngine`, refresh the active editor document, and mirror active setup-guide session state when both surfaces inspect the same session.
 - `EndActiveSession` now routes through a modeless session lifecycle service. It closes and clears safe editor/setup/diagnostics session surfaces and capture arming, while dirty editor edits or pending capture review items return structured blocked command results instead of silently closing or doing nothing.
 - The modeless setup guide now attaches action callbacks to its shell window and routes setup-stage commands through the shared `CommandRouter`. Setup capture commands arm shared canvas primitives and durable workflow state, setup-state commands update canonical setup fields, optional explicit setup stages can be skipped without prompts, recipe-context validation persists structured warnings, implemented modeless actions such as close update the shared `WindowRegistry`, and still-deferred setup actions return structured unavailable results.
+- Setup-guide cards now have host-ready `SetupStageCardModel` rows with status tone, requirement
+  badge, artifact badge, warning badge, action label, disabled reason, and active-state metadata.
+  KLayout plugin registration injects a `KLayoutSetupGuideSurfaceFactory` through
+  `ModelessSurfaceShell`, so the production setup guide consumes view models without workflow/Qt
+  coupling.
 - Setup guide cards now preserve command labels, enabled state, and disabled reasons through
   `SetupActionViewModel` rows for primary, secondary, and footer actions, so widgets can render
   card buttons directly from the presenter without inferring labels or prompt logic.
@@ -53,7 +145,12 @@ Last updated: 2026-06-24
 - Canvas pending-crop artifacts are now created, promoted, or removed explicitly by workflow commands rather than synthesized during `SessionRecord` construction.
 - Repeated measurement annotation refresh failures upsert one failed SVG artifact record with stable warning IDs and repair metadata, and preview options surface the `regenerate_artifact` repair action.
 - Diagnostics and traceability services expose command, workflow, seam, artifact, warning, and snapshot views through pure Python services.
-- Advanced Diagnostics now opens a fakeable shell summary with active session, loaded/built-in modes, mode-validation fallback state, durable workflow state, armed capture primitive, selected editor item, selected canvas object, recipe-context state, artifact-repair state, artifact status counts, warning codes, missing artifact count, recent command names, recent failure summaries, and recent diagnostic events.
+- Advanced Diagnostics now opens a fakeable shell summary plus a structured dashboard with active
+  session, session path, dirty state, loaded/built-in modes, mode-validation fallback state,
+  durable workflow state, armed capture primitive, selected editor item, selected canvas object,
+  recipe-context state, solver/render backend state, report readiness, artifact-repair state,
+  artifact status counts, warning codes, missing artifact count, recent command names, recent
+  failure summaries, open windows, actions, and recent diagnostic events.
 - Advanced Diagnostics actions now render as typed `EditorActionViewModel` rows for exporting a
   diagnostics bundle, copying command trace, opening the session folder, scanning artifacts,
   validating the session, and validating modes. Actions carry disabled reasons when no trace or
@@ -94,7 +191,17 @@ Last updated: 2026-06-24
 - Legacy `capture_type` is translated at integer-schema migration only; v5 capture records and generated capture CSV artifacts use canonical `type`.
 - Saved profilometry and ellipsometry captures expose mode-appropriate action labels through a shared saved-capture action policy: replace site box, replace line/point, regenerate line/point annotation, process-context actions, and regenerate process output/point stack.
 - The editor dashboard now summarizes process outputs from canonical `ProcessOutputRecord.status` counts.
-- Built-in quality gates, ruff, mypy, and unit discovery are currently passing.
+- Built-in quality gates, ruff, mypy, static analysis, unit discovery, live KLayout batch/process/UI
+  lanes, and release packaging are currently passing through
+  `python -m tools.release_check --include-klayout`.
+- Integration audit documents now cover seam ownership, object contracts, dependency direction,
+  end-to-end workflow evidence, no-bypass findings, known limitations, and risk-ranked next
+  priorities.
+- Command identifiers are now owned by a pure domain command contract and re-exported by the app
+  layer, removing the workflow-to-app dependency that import-linter flagged during the integration
+  audit.
+- Dependency direction now has both import-linter coverage and an AST-based integration test under
+  `tests/integration/dependency`.
 - Saved capture to child measurement line now has a pure workflow slice:
   - `ADD_MEASUREMENT` marks the selected capture's canvas object as active parent.
   - Shift-drag line capture creates a pending nested `MeasurementRecord`.
@@ -107,10 +214,31 @@ Last updated: 2026-06-24
   - The save result now carries the one allowed post-measurement prompt with `Take Another
     Measurement`, `Return to Editor`, and `Done` choices; a pure workflow applies those choices.
 
-## Partially Implemented
+## Scope-Limited / Polish
 
-- KLayout integration remains intentionally thin; normalized line measurement gestures, profilometry child-line gestures, and ellipsometry child-point gestures route through shared capture tools, plus opt-in live KLayout batch smokes that verify a real `pya.Layout` is not mutated.
+- Menu commands for `New Session...`, `Open Session...`, `Open Recent`, `Save Session As`, and
+  `Bind Current Layout to Session` route through fakeable adapters, with KLayout-backed adapters
+  supplied at plugin registration. `Repair Session` and `Import Legacy Session Folder` remain
+  separate future workflows when scoped.
+- Canvas overlay restore is document-backed through durable canvas objects and editor indexes.
+  Live KLayout view rebinding is command-backed; manual dialog smoke remains a release checklist
+  item.
+- KLayout integration remains intentionally thin; normalized line measurement gestures, profilometry child-line gestures, ellipsometry child-point gestures, standalone point gestures, and standalone line gestures route through shared capture tools, plus opt-in live KLayout batch smokes that verify a real `pya.Layout` is not mutated.
 - Measurement annotation artifact generation now produces editable spec/SVG/PNG outputs when a render bridge and rasterizer are available; export/rasterizer failures become structured warning or error results with retry-safe repair metadata.
+- Artifact generator repair is executable for the P1 stabilization paths. CSV, placeholder SVG,
+  measurement annotation, overview SVG, process-output JSON, PowerPoint report-output,
+  KLayout-injected live layout-crop, and visual process SVG handlers are registered where their
+  required adapters are available.
+  Live layout-dependent declarations now expose source-layout requirements before exporter/handler
+  gaps.
+- Reporting export is headless, destination-selectable, centrally registered, and repairable for
+  generated PowerPoint report outputs. Remaining report UX polish is mostly production shell
+  presentation and broader output-format repair coverage.
+- `fib_cut_planner` is intentionally not added in this stabilization pass. It remains descoped from
+  the visible catalog until it can be implemented as a complete declarative mode with tests.
+- External mode discovery is diagnostics-visible, loaded custom external mode IDs are selectable for
+  new sessions through the KLayout picker, and generic editor behavior is shaped by the declarative
+  policy blocks supplied by the loaded `ModeDefinition`.
 - Editor shell is minimal and generic; it renders view models but is not a polished production editor.
 - Armed capture status now has a shared presenter from durable workflow state to a
   `CaptureToolStatusViewModel`; the session editor status strip and setup guide view model
@@ -118,10 +246,12 @@ Last updated: 2026-06-24
 - Editor actions now carry disabled reasons. Deferred report-building actions are rendered as
   disabled with clear reasons, and dispatching them returns structured unavailable results.
 - Mode definitions and validation exist in tests and UI shell contracts; unknown saved mode IDs now load through a safe fallback with warning/audit records and original mode preservation in extensions. External custom-mode JSON loading exists, while app/release configuration for discovering installed mode folders remains future work.
-- Diagnostics identify seams, warning states, selected editor/canvas state, mode fallback state, and recent failures, but they are not yet a polished end-user troubleshooting dashboard.
-- KLayout integration includes a pure capture gesture adapter that routes normalized Shift-drag line events and Shift-click ellipsometry point events into shared workflow services and restores marker overlays without importing `pya` or mutating source layout data; the live KLayout batch lane passes with `KLAYOUT_EXE=C:\Users\edmun\AppData\Roaming\KLayout\klayout_app.exe`.
-- Point capture is not implemented as a workflow yet, but it is now an explicit unavailable path: armed Shift-click returns a handled result with a message and does not mutate session or overlay state.
-- Ellipsometry point capture is wired for the process-aware site-then-point child step in pure tooling, KLayout-boundary tests, and the opt-in live KLayout batch probe; general point-capture workflows remain deferred.
+- Diagnostics identify seams, warning states, selected editor/canvas state, mode fallback state,
+  recent failures, and grouped dashboard sections; live visual dashboard polish remains useful.
+- KLayout integration includes a pure capture gesture adapter that routes normalized Shift-drag measurement/profile/standalone line events, standalone Shift-click point events, and Shift-click ellipsometry point events into shared workflow services and restores marker overlays without importing `pya` or mutating source layout data; the live KLayout batch lane passes with `KLAYOUT_EXE=C:\Users\edmun\AppData\Roaming\KLayout\klayout_app.exe`.
+- Standalone point capture is implemented as a pending-capture workflow: armed Shift-click creates canonical point geometry, KLayout boundary routing updates overlays, and pending review promotes the point into a saved capture record.
+- Standalone line capture is implemented as a pending-capture workflow: parentless Shift-drag creates canonical line geometry, KLayout boundary routing updates overlays, and pending review promotes the line into a saved capture record.
+- Ellipsometry point capture remains wired for the process-aware site-then-point child step in pure tooling, KLayout-boundary tests, and the opt-in live KLayout batch probe.
 - Process output regeneration is solver-backed for attached recipes, exporter-backed for JSON summary artifacts when paths are configured, and warning-only for missing recipe, unavailable solver, parse failure, solver failure, or artifact export failure paths.
 - Recipe editor card/header actions now route through a pure dispatcher. It supports safe
   in-memory card selection, validation, and add-step templates, while save/open/attach remain
@@ -163,6 +293,10 @@ Last updated: 2026-06-24
 
 ## Tests In Place
 
+- Session document lifecycle tests cover new session JSON creation, open existing JSON, loaded-path
+  tracking, recent-session tracking, atomic save/backup, unknown-field preservation, save-as,
+  dirty-close blocking, missing source-layout warnings, invalid JSON errors, and no-session editor
+  start-screen behavior.
 - Session JSON, canonical registry, migration, unknown field preservation, missing artifact repair, and CSV/session round trip.
 - Registry-first tests now assert explicit canonical owner refs and artifact records rather than hydrated capture image/drawing compatibility fields.
 - Canvas session models, canvas interaction, overlay restore/selection, and pending capture lifecycle.
@@ -188,7 +322,7 @@ Last updated: 2026-06-24
 - New child-measurement workflow tests covering active-parent line capture, pending measurement
   review actions, retake/discard transitions, full measurement metadata edits, annotation artifact
   generation/regeneration, save/reload restoration, and render failure paths.
-- Point capture tests covering normal-navigation preservation and explicit unavailable results through the direct tool and KLayout gesture adapter.
+- Point and line capture tests covering normal-navigation preservation, standalone pending point/line capture, KLayout standalone point/line routing, saved point/line promotion, parented measurement lines, and ellipsometry child-point capture.
 - Mode validation tests covering unknown v5 and legacy mode IDs loading through graceful fallback instead of crashing.
 - Mode registry tests covering built-in registration, capability definitions, duplicate detection, and invalid custom definitions as warnings.
 - Mode registry tests assert process-aware setup, editor preview/action, and reporting policy declarations.
@@ -211,6 +345,8 @@ Last updated: 2026-06-24
 - Process-output regeneration tests covering solver-backed profilometry regeneration, editor dispatch, canonical output metadata, JSON artifact export, artifact status transitions, export failure warnings, and explicit solver-unavailable warnings.
 - Process-output editor item tests covering solver summary fields, process-output-only previews, and output-item regeneration routing.
 - Diagnostics summary tests covering active session, mode list, mode validation, editor/canvas selection, artifact status counts, warning codes, recent failures, and recent command/event visibility.
+- Diagnostics dashboard tests covering grouped required rows, session path, dirty state,
+  solver/render backend rows, report readiness, recent commands, and shell action models.
 - UI state-machine tests covering pending review, armed capture, live preview, child pending capture review, pending measurement review, recipe warnings, artifact repair tasks, and active workflow resume state.
 - Capture status presenter tests covering session-derived box/line/point guidance, setup-guide
   propagation, editor status-strip precedence, unknown primitive handling, and mode-specific
@@ -240,6 +376,8 @@ Last updated: 2026-06-24
   selection, missing-step errors, and backend-unavailable warning results.
 - Modeless setup-guide controller tests covering shared-window reuse, command-router action
   callbacks, structured unavailable setup actions, and close behavior through the window registry.
+- Setup-guide card and KLayout shell tests covering required/optional/blocked/skipped status badge
+  models plus Qt-backed stage-card region rendering.
 - Generic capture command tests covering default box arming, explicit box/line/point arming,
   selected-canvas parent propagation, setup-guide session mirroring, cancel/disarm, and structured
   no-active-session errors through `CommandRouter`.
@@ -255,13 +393,36 @@ Last updated: 2026-06-24
 - Disabled action tests covering header actions, adapter actions, pending-review button models,
   and dispatcher results for unavailable report generation.
 - Measurement annotation repair tests covering repeated export failures, failed artifact status, repair metadata, stable warning IDs, and preview repair actions.
-- Opt-in KLayout batch smoke coverage for `KLayoutCaptureGestureAdapter` inside a real `pya` runtime, including saved measurement line, profilometry compound child-line capture, and ellipsometry compound child-point capture, gated by `MPP_RUN_KLAYOUT_TESTS=1`; current evidence is 8 passing live KLayout integration tests.
-- Opt-in KLayout GUI automation covers real menu registration and main-window snapshot probes through `MPP_RUN_KLAYOUT_UI_TESTS=1`, `klayout_app.exe`, and GUI `-e -rm` execution; current evidence is 2 passing live KLayout UI automation tests.
+- Built-in artifact generator handler tests cover stale CSV rebuild, placeholder SVG write,
+  measurement annotation regeneration, missing overview SVG repair, process-output JSON repair,
+  missing-recipe unavailable repair, and no-handler unavailable repair through
+  `ArtifactRepairService`.
+- Layout generator requirement tests cover live-layout registration metadata and the transition
+  from `SOURCE_LAYOUT_REQUIRED_FOR_REPAIR` to `GENERATOR_HANDLER_UNAVAILABLE` once a source layout
+  is bound.
+- Reporting Workbench output adapter tests cover choosing an output folder, cancel behavior, export
+  into the selected destination, and KLayout folder-picker adapter wiring.
+- Reporting Workbench repair tests cover missing and stale artifact regeneration routing plus stale
+  readiness primary-action presentation.
+- Layout crop repair tests cover adapter-backed crop export, capture-bounds metadata, selected
+  artifact repair routing, and KLayout active-view export boundaries.
+- Visual process artifact generator tests cover profile and cross-section SVG repair, role-specific
+  generator selection, render metadata, and ready process-output synchronization.
+- Mode catalog tests cover visible-mode IDs, hidden legacy/internal modes, and KLayout picker
+  rejection of hidden legacy mode choices.
+- Mode registry configuration tests cover environment-configured folders, accumulated load
+  warnings, diagnostics visibility, registered custom mode ID round trips, and safe fallback for
+  unregistered mode IDs.
+- Opt-in KLayout batch smoke coverage for `KLayoutCaptureGestureAdapter` inside a real `pya` runtime, including saved measurement line, profilometry compound child-line capture, ellipsometry compound child-point capture, standalone point capture, and standalone line capture, gated by `MPP_RUN_KLAYOUT_TESTS=1`; current opt-in inventory is 10 live KLayout integration tests.
+- Opt-in KLayout GUI automation covers real menu registration, main-window snapshot probes, modeless command-surface routing, and capture-surface contract probes through `MPP_RUN_KLAYOUT_UI_TESTS=1`, `klayout_app.exe`, and GUI `-e -rm` execution; current evidence is 4 passing live KLayout UI automation tests.
 
 ## Tests Still Needed
 
+- UI adapter tests for actual file-picker driven New/Open/Save As commands.
+- Live KLayout UI tests for `Bind Current Layout to Session` and delayed overlay restoration after
+  binding a compatible layout/view.
+- Legacy folder import recovery tests once the scanner is implemented beyond the command stub.
 - Broaden opt-in live KLayout smoke coverage beyond batch probes if a stable GUI automation lane becomes available.
-- App-level discovery/configuration tests for installed external JSON mode folders.
 - Recipe file open workflow tests once file-picking paths are wired behind commands.
 
 ## Safe Reuse Points
@@ -269,6 +430,20 @@ Last updated: 2026-06-24
 - Keep using `SessionDocumentBuilder`, `EditorActionDispatcher`, `CanvasInteractionEngine`, and `CanvasOverlayManager` as the main editor/canvas seams.
 - Keep artifact status and repair visibility in `ArtifactRecord` and `WarningRecord`.
 - Keep KLayout/Qt code behind infrastructure and UI adapters.
+- Package organization migration has progressed past temporary file-level shims: diagnostics now
+  lives under `metrology_process_planner.diagnostics`, solver internals now live under
+  `metrology_process_planner.solver`, and deleted old import paths are forbidden by
+  `tools.audit_imports`.
+- Architecture docs now live in `docs/FILE_ORGANIZATION_AUDIT.md` and
+  `docs/PACKAGE_ARCHITECTURE.md`; import boundary smoke tests live under
+  `tests/unit/architecture/`.
+- Corrective domain migration moved the real artifact, capture, measurement, mode, and warning
+  implementation modules into `domains/artifacts`, `domains/capture`, `domains/measurement`,
+  `domains/modes`, and `domains/warnings`; the old session/flat shim files have been removed.
+- `docs/COMPATIBILITY_SHIM_AUDIT.md` inventories removed shims, and `docs/CANONICAL_IMPORTS.md`
+  documents canonical import locations for future work.
+- `tools/audit_imports.py` now reports deprecated imports with canonical replacements, `pya`
+  outside KLayout infrastructure, solver runtime imports, and domain runtime imports.
 
 ## Do Not Touch Yet
 
@@ -276,3 +451,14 @@ Last updated: 2026-06-24
 - Do not add KLayout shape mutation for overlays.
 - Do not replace canonical session JSON or move canonical state into UI widgets.
 - Do not integrate the process solver into alpha capture workflows until capture/editor persistence is steadier.
+
+## Visual Review Status
+
+- Added `tools/generate_visual_quality_gallery.py` for the reviewed gallery at
+  `tests/output/visual_review_gallery/`.
+- Added machine-readable `manifest.json` and `visual_issues.json` outputs.
+- Added structural visual QA checks in
+  `metrology_process_planner.testing.visual_quality`.
+- Fixed cross-section SVG output so label extents stay in bounds and legends,
+  scale bars, compression notes, and thin-layer notes are rendered.
+- Added regression coverage in `tests/test_visual_quality_gallery.py`.

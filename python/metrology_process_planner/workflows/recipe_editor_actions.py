@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import replace
+from typing import Optional
 
-from metrology_process_planner.app.command_types import CommandId
-from metrology_process_planner.app.commands import command_id_from_view_action
+from metrology_process_planner.domains.commands import CommandId, command_id_from_view_action
 from metrology_process_planner.domains.process import (
     ProcessRecipe,
     ProcessStep,
@@ -29,6 +30,8 @@ from metrology_process_planner.workflows.recipe_editor_steps import (
     set_step_enabled,
 )
 
+ActionHandler = Callable[[Optional[ProcessRecipe], str, CommandId], RecipeEditorActionResult]
+
 
 class RecipeEditorActionDispatcher:
     """Apply safe recipe editor actions without direct file persistence."""
@@ -51,29 +54,9 @@ class RecipeEditorActionDispatcher:
                 recipe=recipe,
                 next_ui_hint="Open diagnostics and review the recipe editor action.",
             )
-        if command_id is CommandId.ADD_PROCESS_STEP:
-            return _add_step_template(recipe, action_id, command_id)
-        material_result = _dispatch_material_action(recipe, action_id, command_id)
-        if material_result is not None:
-            return material_result
-        if command_id is CommandId.DUPLICATE_PROCESS_STEP:
-            return duplicate_step(recipe, action_id, command_id)
-        if command_id is CommandId.DELETE_PROCESS_STEP:
-            return delete_step(recipe, action_id, command_id)
-        if command_id is CommandId.MOVE_PROCESS_STEP_UP:
-            return move_step(recipe, action_id, command_id, -1)
-        if command_id is CommandId.MOVE_PROCESS_STEP_DOWN:
-            return move_step(recipe, action_id, command_id, 1)
-        if command_id is CommandId.ENABLE_PROCESS_STEP:
-            return set_step_enabled(recipe, action_id, command_id, True)
-        if command_id is CommandId.DISABLE_PROCESS_STEP:
-            return set_step_enabled(recipe, action_id, command_id, False)
-        if command_id is CommandId.EDIT_PROCESS_STEP:
-            return edit_step(recipe, action_id, command_id)
-        if command_id in {CommandId.PREVIEW_RECIPE, CommandId.PREVIEW_RECIPE_THROUGH_STEP}:
-            return preview_recipe(recipe, action_id, command_id)
-        if command_id is CommandId.VALIDATE_RECIPE:
-            return _validate(recipe, command_id)
+        handler = _ACTION_HANDLERS.get(command_id)
+        if handler is not None:
+            return handler(recipe, action_id, command_id)
         return RecipeEditorActionResult(
             "unavailable",
             command_id,
@@ -81,26 +64,6 @@ class RecipeEditorActionDispatcher:
             recipe,
             next_ui_hint="The action is known and should stay modeless until wired.",
         )
-
-
-def _dispatch_material_action(
-    recipe: ProcessRecipe | None,
-    action_id: str,
-    command_id: CommandId,
-) -> RecipeEditorActionResult | None:
-    if command_id is CommandId.ADD_MATERIAL:
-        return add_material(recipe, command_id)
-    if command_id is CommandId.DELETE_MATERIAL:
-        return delete_material(recipe, action_id, command_id)
-    if command_id is CommandId.DUPLICATE_MATERIAL:
-        return duplicate_material(recipe, action_id, command_id)
-    if command_id is CommandId.TOGGLE_MATERIAL_VISIBILITY:
-        return toggle_material_visibility(recipe, action_id, command_id)
-    if command_id is CommandId.FIND_MATERIAL_USAGE:
-        return find_material_usage(recipe, action_id, command_id)
-    if command_id is CommandId.EDIT_MATERIAL:
-        return edit_material(recipe, action_id, command_id)
-    return None
 
 
 def _select_card(
@@ -207,3 +170,36 @@ def _with_metadata(recipe: ProcessRecipe, **updates: object) -> ProcessRecipe:
     metadata = dict(recipe.metadata or {})
     metadata.update(updates)
     return replace(recipe, metadata=metadata)
+
+
+_ACTION_HANDLERS: dict[CommandId, ActionHandler] = {
+    CommandId.ADD_PROCESS_STEP: _add_step_template,
+    CommandId.ADD_MATERIAL: lambda recipe, _action_id, command_id: add_material(
+        recipe, command_id
+    ),
+    CommandId.DELETE_MATERIAL: delete_material,
+    CommandId.DUPLICATE_MATERIAL: duplicate_material,
+    CommandId.TOGGLE_MATERIAL_VISIBILITY: toggle_material_visibility,
+    CommandId.FIND_MATERIAL_USAGE: find_material_usage,
+    CommandId.EDIT_MATERIAL: edit_material,
+    CommandId.DUPLICATE_PROCESS_STEP: duplicate_step,
+    CommandId.DELETE_PROCESS_STEP: delete_step,
+    CommandId.MOVE_PROCESS_STEP_UP: lambda recipe, action_id, command_id: move_step(
+        recipe, action_id, command_id, -1
+    ),
+    CommandId.MOVE_PROCESS_STEP_DOWN: lambda recipe, action_id, command_id: move_step(
+        recipe, action_id, command_id, 1
+    ),
+    CommandId.ENABLE_PROCESS_STEP: lambda recipe, action_id, command_id: set_step_enabled(
+        recipe, action_id, command_id, True
+    ),
+    CommandId.DISABLE_PROCESS_STEP: lambda recipe, action_id, command_id: set_step_enabled(
+        recipe, action_id, command_id, False
+    ),
+    CommandId.EDIT_PROCESS_STEP: edit_step,
+    CommandId.PREVIEW_RECIPE: preview_recipe,
+    CommandId.PREVIEW_RECIPE_THROUGH_STEP: preview_recipe,
+    CommandId.VALIDATE_RECIPE: lambda recipe, _action_id, command_id: _validate(
+        recipe, command_id
+    ),
+}

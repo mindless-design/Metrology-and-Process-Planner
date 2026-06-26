@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "fixture-optical-metrology",
+  "name": "Optical Metrology Fixture",
+  "mode": "optical_metrology",
+  "created_at": "2026-06-24T00:00:00Z",
+  "updated_at": "2026-06-24T00:00:00Z",
+  "setup": {"coordinate_mode": "global", "origin": null, "alignments": [], "is_capture_ready": true},
+  "captures": [],
+  "grid_datasets": [],
+  "exports": [],
+  "warnings": [],
+  "metadata": {"fixture": "optical_metrology"}
+}

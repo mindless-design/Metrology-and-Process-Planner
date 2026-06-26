@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import Optional
 
+from metrology_process_planner.diagnostics.diagnostics_sinks import DiagnosticSink
+from metrology_process_planner.diagnostics.trace_context import TraceContext
 from metrology_process_planner.domains.geometry import Box, Point
 from metrology_process_planner.domains.session import (
     CanvasObject,
@@ -14,8 +16,6 @@ from metrology_process_planner.domains.session import (
     SessionRecord,
     SourceViewBinding,
 )
-from metrology_process_planner.infrastructure.diagnostics_sinks import DiagnosticSink
-from metrology_process_planner.infrastructure.trace_context import TraceContext
 from metrology_process_planner.workflows.canvas_interaction_helpers import (
     box_capture_is_active,
     line_capture_is_active,

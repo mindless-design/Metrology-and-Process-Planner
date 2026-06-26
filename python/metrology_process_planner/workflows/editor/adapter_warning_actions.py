@@ -2,7 +2,14 @@
 
 from __future__ import annotations
 
-from metrology_process_planner.domains.session import SessionRecord, WarningRecord
+from metrology_process_planner.domains.artifacts.artifact_visibility import (
+    artifact_visible_for_session,
+)
+from metrology_process_planner.domains.session import ModeRegistry, SessionRecord, WarningRecord
+from metrology_process_planner.workflows.editor.adapter_artifact_actions import (
+    artifact_warning_action,
+)
+from metrology_process_planner.workflows.editor.builder_basics import mode_is_process_aware
 from metrology_process_planner.workflows.editor.document import SessionItem
 from metrology_process_planner.workflows.editor.view_models import EditorAction, EditorActionType
 
@@ -24,7 +31,11 @@ _PROCESS_CODES = _RECIPE_CODES | frozenset(
 )
 
 
-def warning_actions(session: SessionRecord, item: SessionItem) -> tuple[EditorAction, ...]:
+def warning_actions(
+    session: SessionRecord,
+    item: SessionItem,
+    mode_registry: ModeRegistry | None = None,
+) -> tuple[EditorAction, ...]:
     """Return editor repair actions for a warning item."""
 
     warning = _warning_for_item(session, item)
@@ -35,9 +46,53 @@ def warning_actions(session: SessionRecord, item: SessionItem) -> tuple[EditorAc
         actions.append(
             EditorAction(EditorActionType.IGNORE_WARNING, "Ignore Warning", item.item_id)
         )
-    if warning.code in _PROCESS_CODES or warning.source == "process_context":
+    actions.extend(_artifact_warning_actions(session, item, warning, mode_registry))
+    if (
+        mode_is_process_aware(session, mode_registry)
+        and (warning.code in _PROCESS_CODES or warning.source == "process_context")
+    ):
         actions.extend(_process_warning_actions(session, warning))
     return _dedupe(actions)
+
+
+def _artifact_warning_actions(
+    session: SessionRecord,
+    item: SessionItem,
+    warning: WarningRecord,
+    mode_registry: ModeRegistry | None,
+) -> tuple[EditorAction, ...]:
+    artifact_ids = _warning_artifact_ids(warning)
+    if not artifact_ids:
+        return ()
+    actions: list[EditorAction] = []
+    artifacts = session.artifacts or {}
+    for artifact_id in artifact_ids:
+        artifact = artifacts.get(artifact_id)
+        if artifact is None:
+            continue
+        if not artifact_visible_for_session(session, artifact, mode_registry):
+            continue
+        if artifact.repair.regenerable:
+            actions.append(
+                artifact_warning_action(
+                    EditorActionType.REGENERATE_ARTIFACT,
+                    "Regenerate Artifact",
+                    item.item_id,
+                    artifact_id,
+                    warning.id,
+                )
+            )
+        if warning.code in {"ARTIFACT_MISSING", "ARTIFACT_RELINK_REQUIRED"}:
+            actions.append(
+                artifact_warning_action(
+                    EditorActionType.RELINK_ARTIFACT,
+                    "Relink Artifact",
+                    item.item_id,
+                    artifact_id,
+                    warning.id,
+                )
+            )
+    return tuple(actions)
 
 
 def _process_warning_actions(
@@ -80,6 +135,12 @@ def _warning_for_item(session: SessionRecord, item: SessionItem) -> WarningRecor
     return None
 
 
+def _warning_artifact_ids(warning: WarningRecord) -> tuple[str, ...]:
+    if warning.source == "artifact" or warning.related_artifact_refs:
+        return warning.related_artifact_refs
+    return ()
+
+
 def _capture_item_ref(warning: WarningRecord) -> str:
     for ref in warning.related_item_refs:
         if ref.startswith("capture:"):
@@ -98,10 +159,10 @@ def _output_codes() -> frozenset[str]:
 
 
 def _dedupe(actions: list[EditorAction]) -> tuple[EditorAction, ...]:
-    seen: set[tuple[EditorActionType, str]] = set()
+    seen: set[tuple[EditorActionType, str, tuple[tuple[str, str], ...]]] = set()
     unique: list[EditorAction] = []
     for action in actions:
-        key = (action.action_type, action.item_id)
+        key = (action.action_type, action.item_id, action.payload)
         if key not in seen:
             seen.add(key)
             unique.append(action)

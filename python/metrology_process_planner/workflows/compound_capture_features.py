@@ -72,10 +72,12 @@ def add_point_feature(
 
 
 def _line_geometry(start: Point, end: Point) -> dict[str, object]:
+    midpoint = Point((start.x + end.x) / 2.0, (start.y + end.y) / 2.0)
     return {
         "shape": "line",
         "start": start.to_dict(),
         "end": end.to_dict(),
+        "midpoint": midpoint.to_dict(),
         "length": start.distance_to(end),
         "units": "layout",
     }

@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from metrology_process_planner.infrastructure.diagnostics import (
+from metrology_process_planner.diagnostics import (
     DiagnosticEvent,
     ListDiagnosticSink,
     build_diagnostics_snapshot,

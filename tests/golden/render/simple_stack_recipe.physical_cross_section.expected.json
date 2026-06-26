@@ -1,0 +1,16 @@
+{
+  "compressed_materials": [],
+  "compression_enabled": false,
+  "label_count": 3,
+  "materials": {
+    "metal": 7,
+    "oxide": 31,
+    "si": 31
+  },
+  "profile_id": "physical_cross_section",
+  "recipe_id": "simple_stack_recipe",
+  "render_mode_id": "proportional_physical",
+  "shape_count": 69,
+  "thin_layer_shape_count": 0,
+  "warnings": []
+}

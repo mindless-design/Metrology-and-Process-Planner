@@ -72,7 +72,10 @@ class CanvasSessionModelTests(unittest.TestCase):
         self.assertEqual(session.canvas_objects, loaded.canvas_objects)
         self.assertEqual(session.pending_captures, loaded.pending_captures)
         self.assertIn("pending_capture-pending-001-pending_crop", loaded.artifacts)
-        self.assertTrue(any(warning.code == "artifact_missing" for warning in loaded.warnings))
+        self.assertEqual(
+            "pending",
+            loaded.artifacts["pending_capture-pending-001-pending_crop"].status.value,
+        )
 
 
 def _canvas_object() -> CanvasObject:

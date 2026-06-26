@@ -1,0 +1,23 @@
+{
+  "compressed_materials": [],
+  "compression_enabled": true,
+  "label_count": 4,
+  "materials": {
+    "al2o3": 22,
+    "metal": 7,
+    "oxide": 31,
+    "si": 31
+  },
+  "profile_id": "process_flow_frame",
+  "recipe_id": "process_flow_recipe",
+  "render_mode_id": "process_flow_frame",
+  "shape_count": 91,
+  "thin_layer_shape_count": 29,
+  "warnings": [
+    "RENDER_COMPRESSION_APPLIED",
+    "RENDER_CONFORMAL_THIN_LAYER_HINT_PRESENT",
+    "RENDER_PINCH_OFF_MARKER_PRESENT",
+    "RENDER_SIMPLIFICATION_APPLIED",
+    "RENDER_THIN_LAYER_EXAGGERATED"
+  ]
+}

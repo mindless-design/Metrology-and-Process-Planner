@@ -1,0 +1,17 @@
+{
+  "id": "cmp_planarization_recipe",
+  "name": "Synthetic CMP Planarization",
+  "materials": [
+    {"id": "si", "name": "Silicon", "color": "#777777", "visible": true},
+    {"id": "dielectric", "name": "Dielectric", "color": "#98d8c8", "visible": true},
+    {"id": "metal", "name": "Metal", "color": "#b8bcc4", "visible": true}
+  ],
+  "steps": [
+    {"id": "substrate", "kind": "substrate", "material_id": "si", "thickness": {"target": 1000.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [], "parameters": {}, "notes": "Si substrate"},
+    {"id": "patterned-metal", "kind": "patterned_deposition", "material_id": "metal", "thickness": {"target": 180.0, "unit": "um"}, "layer": {"source": "layout", "layer": 9, "datatype": 0, "name": "CMP_DENSITY"}, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [{"x_min": 2.0, "x_max": 3.0}, {"x_min": 5.0, "x_max": 9.0}], "parameters": {}, "notes": "Metal density features"},
+    {"id": "overburden", "kind": "blanket_deposition", "material_id": "dielectric", "thickness": {"target": 160.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [], "parameters": {}, "notes": "Blanket overburden"},
+    {"id": "cmp", "kind": "cmp_planarization", "material_id": null, "thickness": {"target": 1180.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": ["metal"], "mask_intervals": [], "parameters": {"density_window": 4.0, "dishing_coefficient": 0.05}, "notes": "CMP to target plane"}
+  ],
+  "process_windows": [],
+  "metadata": {"fixture_target": "ideal planarization, stop layers, density heuristic diagnostics", "accuracy_envelope": {"model": "sampled_2d_heuristic", "claim": "qualitative_cross_section", "covers": ["target-plane planarization", "stop-layer preservation", "density-driven dishing diagnostic"], "excludes": ["CMP rate calibration", "pattern-density convolution", "erosion metrology"]}}
+}

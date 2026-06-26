@@ -102,6 +102,9 @@ def _present_artifact(
         repair=ArtifactRepairMetadata(
             "regenerate_process_output",
             "Regenerate process output.",
+            regenerable=True,
+            requires_recipe=True,
+            requires_solver=True,
         ),
         warning_ids=(),
     )

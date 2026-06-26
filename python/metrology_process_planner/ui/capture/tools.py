@@ -12,6 +12,7 @@ from metrology_process_planner.workflows.canvas_interaction_models import (
     InteractionContext,
     InteractionResult,
 )
+from metrology_process_planner.workflows.canvas_interaction_point import commit_pending_point
 from metrology_process_planner.workflows.compound_capture import (
     add_point_feature,
 )
@@ -157,12 +158,7 @@ class PointCaptureTool:
             except ValueError as exc:
                 return InteractionResult(session, context, handled=True, messages=(str(exc),))
             return InteractionResult(updated, context, handled=True)
-        return InteractionResult(
-            session,
-            context,
-            handled=True,
-            messages=("Point capture is not implemented yet.",),
-        )
+        return commit_pending_point(session, context, gesture.point)
 
 
 class CapturePreviewOverlay:

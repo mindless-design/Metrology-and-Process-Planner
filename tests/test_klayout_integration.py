@@ -1,4 +1,3 @@
-import os
 import unittest
 
 from tools.klayout_point_probe_scripts import ellipsometry_point_capture_adapter_script
@@ -7,12 +6,15 @@ from tools.klayout_probe_scripts import (
     profilometry_line_capture_adapter_script,
 )
 from tools.klayout_runner import integration_tests_enabled, run_klayout_python_probe
-
-
-@unittest.skipUnless(
-    integration_tests_enabled(),
-    "Set MPP_RUN_KLAYOUT_TESTS=1 to run real KLayout integration tests.",
+from tools.klayout_standalone_capture_probe_scripts import (
+    standalone_line_capture_adapter_script,
+    standalone_point_capture_adapter_script,
 )
+
+_KLAYOUT_SKIP_REASON = "Set MPP_RUN_KLAYOUT_TESTS=1 to run real KLayout integration tests."
+
+
+@unittest.skipUnless(integration_tests_enabled(), _KLAYOUT_SKIP_REASON)
 class KLayoutIntegrationTests(unittest.TestCase):
     def test_klayout_imports_plugin_package(self) -> None:
         result = run_klayout_python_probe(
@@ -80,8 +82,9 @@ class KLayoutIntegrationTests(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn("MENU=metrology_process_planner", result.stdout)
         self.assertIn("MENU_PATH=tools_menu.metrology_process_planner", result.stdout)
-        self.assertIn("COUNT=5", result.stdout)
-        self.assertIn("ITEMS=5", result.stdout)
+        lines = dict(line.split("=", 1) for line in result.stdout.splitlines() if "=" in line)
+        self.assertEqual(lines["COUNT"], lines["ITEMS"])
+        self.assertGreater(int(lines["COUNT"]), 0)
 
     def test_klayout_qt_svg_rasterizer_writes_png(self) -> None:
         result = run_klayout_python_probe(
@@ -147,7 +150,28 @@ class KLayoutIntegrationTests(unittest.TestCase):
         self.assertIn("LAYOUT_UNCHANGED=True", result.stdout)
         self.assertIn("OVERLAY_CHILD=True", result.stdout)
 
+@unittest.skipUnless(integration_tests_enabled(), _KLAYOUT_SKIP_REASON)
+class KLayoutStandaloneIntegrationTests(unittest.TestCase):
+    def test_klayout_standalone_point_capture_adapter_does_not_mutate_layout(self) -> None:
+        result = run_klayout_python_probe(standalone_point_capture_adapter_script())
 
-if __name__ == "__main__":
-    os.environ.setdefault("MPP_RUN_KLAYOUT_TESTS", "1")
-    unittest.main()
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("POINT_IGNORED=False", result.stdout)
+        self.assertIn("POINT_CLICKED=True", result.stdout)
+        self.assertIn("PENDING_KIND=point", result.stdout)
+        self.assertIn("POINT_X=2", result.stdout)
+        self.assertIn("POINT_Y=2", result.stdout)
+        self.assertIn("LAYOUT_UNCHANGED=True", result.stdout)
+        self.assertIn("OVERLAY_POINT=True", result.stdout)
+
+    def test_klayout_standalone_line_capture_adapter_does_not_mutate_layout(self) -> None:
+        result = run_klayout_python_probe(standalone_line_capture_adapter_script())
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("LINE_IGNORED=False", result.stdout)
+        self.assertIn("LINE_RELEASED=True", result.stdout)
+        self.assertIn("PENDING_KIND=line", result.stdout)
+        self.assertIn("LINE_START_X=1", result.stdout)
+        self.assertIn("LINE_END_X=4", result.stdout)
+        self.assertIn("LAYOUT_UNCHANGED=True", result.stdout)
+        self.assertIn("OVERLAY_LINE=True", result.stdout)

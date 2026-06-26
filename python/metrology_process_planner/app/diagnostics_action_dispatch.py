@@ -3,17 +3,28 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 
-from metrology_process_planner.app import diagnostics_summary as diag_summary
+from metrology_process_planner.app.diagnostics_action_core import (
+    copy_command_trace,
+    export_bundle,
+    open_session_folder,
+    validate_modes,
+    validate_session,
+)
 from metrology_process_planner.app.diagnostics_action_results import DiagnosticsActionResult
-from metrology_process_planner.domains.session import ModeRegistry, SessionRecord
-from metrology_process_planner.infrastructure.diagnostics import (
+from metrology_process_planner.app.diagnostics_artifacts import (
+    copy_repair_queue,
+    export_artifact_health_report,
+    scan_artifacts,
+    validate_artifact_registry,
+)
+from metrology_process_planner.diagnostics import (
     DiagnosticEvent,
     DiagnosticSink,
     DiagnosticsService,
 )
-from metrology_process_planner.infrastructure.diagnostics_exceptions import emit_exception_event
+from metrology_process_planner.diagnostics.diagnostics_exceptions import emit_exception_event
+from metrology_process_planner.domains.session import ModeRegistry, SessionRecord
 from metrology_process_planner.persistence.paths import SessionPaths
 
 
@@ -69,17 +80,23 @@ class DiagnosticsActionDispatcher:
         context: DiagnosticsActionContext,
     ) -> DiagnosticsActionResult:
         if action_id == "CopyCommandTrace":
-            return _copy_command_trace(action_id, context.events)
+            return copy_command_trace(action_id, context.events)
         if action_id == "OpenSessionFolder":
-            return _open_session_folder(action_id, context.paths)
+            return open_session_folder(action_id, context.paths)
         if action_id == "ScanArtifacts":
-            return _scan_artifacts(action_id, context)
+            return scan_artifacts(action_id, context)
+        if action_id == "CopyRepairQueue":
+            return copy_repair_queue(action_id, context)
+        if action_id == "ValidateArtifactRegistry":
+            return validate_artifact_registry(action_id, context)
+        if action_id.startswith("ExportArtifactHealthReport"):
+            return export_artifact_health_report(action_id, context)
         if action_id == "ValidateSession":
-            return _validate_session(action_id, context)
+            return validate_session(action_id, context)
         if action_id == "ValidateModes":
-            return _validate_modes(action_id, context)
+            return validate_modes(action_id, context)
         if action_id.startswith("ExportDiagnosticsBundle"):
-            return _export_bundle(action_id, context)
+            return export_bundle(action_id, context)
         return DiagnosticsActionResult(action_id, "unavailable", "Unknown diagnostics action.")
 
     def _emit_action_event(self, session_id: str, result: DiagnosticsActionResult) -> None:
@@ -96,124 +113,3 @@ class DiagnosticsActionDispatcher:
             )
         )
 
-
-def _copy_command_trace(
-    action_id: str,
-    events: tuple[DiagnosticEvent, ...],
-) -> DiagnosticsActionResult:
-    if not events:
-        return DiagnosticsActionResult(
-            action_id,
-            "unavailable",
-            "No command or diagnostic events are available yet.",
-        )
-    lines = tuple(_event_trace_line(event) for event in events[-50:])
-    return DiagnosticsActionResult(
-        action_id,
-        "success",
-        f"Prepared {len(lines)} diagnostic trace lines.",
-        output_text="\n".join(lines),
-    )
-
-
-def _open_session_folder(action_id: str, paths: SessionPaths | None) -> DiagnosticsActionResult:
-    if paths is None:
-        return DiagnosticsActionResult(
-            action_id,
-            "unavailable",
-            "No session folder is associated with diagnostics.",
-        )
-    return DiagnosticsActionResult(
-        action_id,
-        "success",
-        "Session folder path resolved.",
-        output_path=str(paths.folder),
-    )
-
-
-def _scan_artifacts(
-    action_id: str,
-    context: DiagnosticsActionContext,
-) -> DiagnosticsActionResult:
-    if context.paths is None:
-        return DiagnosticsActionResult(
-            action_id,
-            "unavailable",
-            "No session folder is available for artifact scanning.",
-        )
-    total = len(context.session.artifacts or {})
-    missing = diag_summary.missing_artifact_count(context.session)
-    text = f"session_folder={context.paths.folder}\nartifacts={total}\nmissing={missing}"
-    message = f"Scanned {total} artifact records; {missing} missing."
-    return DiagnosticsActionResult(action_id, "success", message, text)
-
-
-def _validate_session(
-    action_id: str,
-    context: DiagnosticsActionContext,
-) -> DiagnosticsActionResult:
-    warnings = context.session.validation_warnings()
-    status = "warning" if warnings or context.session.warnings else "success"
-    message = _validation_message(warnings, len(context.session.warnings))
-    return DiagnosticsActionResult(action_id, status, message, output_text="\n".join(warnings))
-
-
-def _validate_modes(
-    action_id: str,
-    context: DiagnosticsActionContext,
-) -> DiagnosticsActionResult:
-    warnings = context.mode_registry.validation_warnings()
-    summary = diag_summary.mode_validation_summary(context.session)
-    status = "warning" if warnings or summary != "ok" else "success"
-    text = "\n".join((f"session_mode={summary}", *warnings))
-    return DiagnosticsActionResult(action_id, status, f"Mode validation: {summary}.", text)
-
-
-def _export_bundle(
-    action_id: str,
-    context: DiagnosticsActionContext,
-) -> DiagnosticsActionResult:
-    destination = _export_destination(action_id, context.paths)
-    if destination is None:
-        return DiagnosticsActionResult(
-            action_id,
-            "unavailable",
-            "Diagnostics bundle export needs a destination path.",
-        )
-    bundle = context.service.export_debug_bundle(context.session, destination, context.paths)
-    return DiagnosticsActionResult(
-        "ExportDiagnosticsBundle",
-        "success",
-        "Diagnostics bundle exported.",
-        output_path=str(bundle),
-    )
-
-
-def _event_trace_line(event: DiagnosticEvent) -> str:
-    return " | ".join(
-        item
-        for item in (
-            event.timestamp,
-            event.severity,
-            event.category,
-            event.operation or event.event_name,
-            event.message,
-        )
-        if item
-    )
-
-
-def _validation_message(warnings: tuple[str, ...], warning_records: int) -> str:
-    if warnings:
-        return f"Session validation found {len(warnings)} structural warning(s)."
-    if warning_records:
-        return f"Session has {warning_records} persisted warning record(s)."
-    return "Session validation passed."
-
-
-def _export_destination(action_id: str, paths: SessionPaths | None) -> Path | None:
-    if ":" in action_id:
-        return Path(action_id.split(":", 1)[1]).expanduser().resolve()
-    if paths is None:
-        return None
-    return paths.folder / "diagnostics_bundle"

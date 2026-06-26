@@ -24,6 +24,7 @@ def run_release_check(*, include_klayout: bool = False) -> int:
     failures = 0
     failures += _check_metadata()
     failures += _run([sys.executable, "-m", "tools.static_analysis", "--fail-on-missing"])
+    failures += _run([sys.executable, "-m", "tools.project_health"])
     failures += _run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-t", "."])
     failures += _run(
         [sys.executable, "-m", "compileall", "-q", "python", "tests", "tools", "pymacros"]
@@ -73,6 +74,7 @@ def _run(command: Sequence[str], *, env: Mapping[str, str] | None = None) -> int
 def _run_klayout_lanes() -> int:
     commands = (
         [sys.executable, "-m", "unittest", "tests.test_klayout_integration"],
+        [sys.executable, "-m", "unittest", "tests.test_klayout_process_regression"],
         [sys.executable, "-m", "unittest", "tests.test_klayout_ui_automation"],
     )
     env = {

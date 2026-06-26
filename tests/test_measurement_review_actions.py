@@ -33,7 +33,7 @@ class MeasurementReviewActionTests(unittest.TestCase):
                 "Discard Measurement",
                 "Return to Parent Capture",
                 "Export CSV",
-                "Build PowerPoint",
+                "Build Report",
             ],
             [action.label for action in actions],
         )

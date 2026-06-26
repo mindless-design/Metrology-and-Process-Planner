@@ -14,6 +14,8 @@ def material_labels(recipe: ProcessRecipe) -> dict[str, str]:
 def step_name(step: ProcessStep) -> str:
     """Return a display name for one process step."""
 
+    if step.name:
+        return step.name
     name = step.parameters.get("name") if step.parameters is not None else None
     return str(name) if name else operation_label(step.kind)
 
@@ -40,7 +42,7 @@ def operation_label(kind: ProcessStepKind) -> str:
 def step_enabled(step: ProcessStep) -> bool:
     """Return whether a process step is enabled."""
 
-    return bool((step.parameters or {}).get("enabled", True))
+    return bool((step.parameters or {}).get("enabled", step.enabled))
 
 
 def material_label(step: ProcessStep, labels: dict[str, str]) -> str:

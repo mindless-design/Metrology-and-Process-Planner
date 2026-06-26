@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "synthetic-grid",
+  "name": "Synthetic Grid Capture",
+  "mode": "grid_capture",
+  "created_at": "2026-06-24T00:00:00Z",
+  "updated_at": "2026-06-24T00:00:00Z",
+  "setup": {"coordinate_mode": "global", "origin": null, "alignments": [{"id": "anchor-a", "x": 1.0, "y": 91.0}, {"id": "anchor-b", "x": 31.0, "y": 91.0}], "is_capture_ready": true},
+  "captures": [],
+  "grid_datasets": [{"id": "grid-synthetic", "name": "Synthetic grid", "anchor_ids": ["anchor-a", "anchor-b"], "rows": 3, "columns": 4, "pitch_x": 8.0, "pitch_y": 8.0, "origin": {"x": 5.0, "y": 96.0}, "metadata": {"structure": "grid_capture_test"}}],
+  "exports": [],
+  "warnings": [],
+  "metadata": {"source_layout": "../gds/process_planner_testchip.gds", "recipe": "../recipes/simple_stack_recipe.json", "artifacts": {"grid_overview": "present"}}
+}

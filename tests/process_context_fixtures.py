@@ -91,7 +91,7 @@ def session() -> SessionRecord:
     return SessionRecord(
         id="session-001",
         name="Demo",
-        mode=SessionMode.SIMPLE_CAPTURE,
+        mode=SessionMode.PROCESS_AWARE_METROLOGY,
         created_at="2026-06-24T00:00:00Z",
         updated_at="2026-06-24T00:00:00Z",
     )

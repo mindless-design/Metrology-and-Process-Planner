@@ -1,0 +1,18 @@
+{
+  "compressed_materials": [],
+  "compression_enabled": false,
+  "label_count": 3,
+  "materials": {
+    "buried": 7,
+    "dielectric": 13,
+    "si": 11
+  },
+  "profile_id": "profilometry_surface_profile",
+  "recipe_id": "profilometry_surface_recipe",
+  "render_mode_id": "profilometry_surface",
+  "shape_count": 31,
+  "thin_layer_shape_count": 0,
+  "warnings": [
+    "RENDER_SIMPLIFICATION_APPLIED"
+  ]
+}

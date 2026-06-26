@@ -1,10 +1,10 @@
+from metrology_process_planner.domains.artifacts.artifact_ids import artifact_id
 from metrology_process_planner.domains.session import (
     ArtifactFileMetadata,
     ArtifactOwnerRef,
     ArtifactRecord,
     ArtifactStatus,
 )
-from metrology_process_planner.domains.session.artifact_ids import artifact_id
 
 
 def capture_crop_artifact(

@@ -29,6 +29,7 @@ from tests.editor_render_fixtures import FakeRasterizer
 def measurement_metadata_edits(document):
     edits = (
         ("label", "Gate CD"),
+        ("measurement_type", "cd"),
         ("target", "3.0"),
         ("lower_spec_limit", "2.5"),
         ("upper_spec_limit", "3.5"),

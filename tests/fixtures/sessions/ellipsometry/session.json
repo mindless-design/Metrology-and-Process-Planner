@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "fixture-ellipsometry",
+  "name": "Ellipsometry Fixture",
+  "mode": "ellipsometry_planner",
+  "created_at": "2026-06-24T00:00:00Z",
+  "updated_at": "2026-06-24T00:00:00Z",
+  "setup": {"coordinate_mode": "global", "origin": null, "alignments": [], "is_capture_ready": true},
+  "captures": [],
+  "grid_datasets": [],
+  "exports": [],
+  "warnings": [],
+  "metadata": {"fixture": "ellipsometry"}
+}

@@ -1,7 +1,9 @@
 import unittest
+from dataclasses import replace
 
 from metrology_process_planner.app.bootstrap import build_app_services
 from metrology_process_planner.app.commands import CommandId
+from metrology_process_planner.domains.session import WarningRecord
 from metrology_process_planner.workflows.editor import SessionDocumentBuilder, mark_metadata_edit
 from tests.editor_render_fixtures import session, session_without_pending
 
@@ -65,6 +67,27 @@ class SessionLifecycleCommandTests(unittest.TestCase):
         self.assertEqual("warning", event.severity)
         self.assertEqual("CommandRouted", event.event_name)
         self.assertEqual("end_active_session", event.operation)
+
+    def test_validate_session_hides_process_warnings_for_recipe_free_modes(self) -> None:
+        services = build_app_services()
+        source = replace(
+            session_without_pending(),
+            warnings=(
+                WarningRecord(
+                    id="process-warning",
+                    message="Recipe missing",
+                    source="process_context",
+                    code="PROCESS_RECIPE_MISSING",
+                ),
+            ),
+        )
+        services.session_editor_controller.open_document(SessionDocumentBuilder().build(source))
+
+        result = services.command_router.route(CommandId.VALIDATE_SESSION)
+
+        self.assertEqual("success", result.status)
+        self.assertEqual("Session document is valid.", result.message)
+        self.assertEqual((), result.warning_ids)
 
 
 if __name__ == "__main__":

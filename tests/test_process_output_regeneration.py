@@ -123,6 +123,10 @@ class ProcessOutputRegenerationTests(unittest.TestCase):
         self.assertEqual("warning", result.status)
         self.assertEqual("SOLVER_BACKEND_UNAVAILABLE", result.warnings[0].code)
         self.assertEqual("pending_solver", result.session.process_outputs[0].status)
+        self.assertEqual(
+            ArtifactStatus.PLACEHOLDER,
+            result.session.artifacts["capture-cap-001-profile_image"].status,
+        )
 
     def test_custom_process_extension_is_a_regeneration_target(self) -> None:
         result = regenerate_process_outputs(

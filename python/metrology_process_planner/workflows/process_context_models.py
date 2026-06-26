@@ -42,6 +42,7 @@ class RegenerateProcessOutputsCommand:
 
     owner_id: str = ""
     solver_available: bool = True
+    explicit: bool = True
 
 
 @dataclass(frozen=True)
@@ -52,3 +53,8 @@ class ProcessContextResult:
     warnings: tuple[WarningRecord, ...] = ()
     status: str = "success"
     message: str = ""
+    updated_capture_id: str = ""
+    updated_artifact_ids: tuple[str, ...] = ()
+    warning_ids: tuple[str, ...] = ()
+    diagnostic_ids: tuple[str, ...] = ()
+    next_ui_hint: str = ""

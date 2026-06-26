@@ -4,9 +4,11 @@ from pathlib import Path
 
 from metrology_process_planner.domains.session import CanvasVisualFlag
 from metrology_process_planner.persistence.paths import SessionPaths
+from metrology_process_planner.ui.session_editor.header import primary_actions, status_text
 from metrology_process_planner.workflows import (
     MeasurementCompletionChoice,
     apply_measurement_completion_choice,
+    measurement_completion_prompt,
 )
 from metrology_process_planner.workflows.editor import (
     EditorAction,
@@ -19,6 +21,7 @@ from tests.measurement_child_fixtures import (
     document_with_pending_measurement,
     measurement_metadata_edits,
     saved_capture_session,
+    saved_measurement_document,
 )
 
 
@@ -85,6 +88,36 @@ class MeasurementCompletionPromptTests(unittest.TestCase):
         )
         self.assertFalse(done.session.workflow.active)
         self.assertEqual("measurement:meas-001", done.selected_item_id)
+        self.assertIsNone(measurement_completion_prompt(done.session))
+
+    def test_completion_prompt_replaces_header_actions(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = SessionPaths.for_folder(Path(temp_dir))
+            paths.ensure_created()
+            document = saved_measurement_document(paths)
+
+        actions = primary_actions(document)
+
+        self.assertEqual(
+            [
+                "Take Another Measurement",
+                "Return to Editor",
+                "Done",
+            ],
+            [action.label for action in actions],
+        )
+        self.assertEqual(
+            [
+                EditorActionType.TAKE_ANOTHER_MEASUREMENT,
+                EditorActionType.RETURN_TO_EDITOR,
+                EditorActionType.DONE,
+            ],
+            [action.action_type for action in actions],
+        )
+        self.assertEqual(
+            "Measurement saved: Do you want to take another measurement?",
+            status_text(document),
+        )
 
 
 def _saved_measurement_session():

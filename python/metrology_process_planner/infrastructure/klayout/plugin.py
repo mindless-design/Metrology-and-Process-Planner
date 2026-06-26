@@ -7,6 +7,37 @@ from typing import Any, Optional
 
 from metrology_process_planner.app.bootstrap import AppServices, build_app_services
 from metrology_process_planner.app.commands import MENU_COMMANDS
+from metrology_process_planner.app.layout_crop_repair import layout_crop_repair_service
+from metrology_process_planner.app.mode_registry_config import load_configured_mode_registry
+from metrology_process_planner.infrastructure.klayout.diagnostics_shell import (
+    KLayoutDiagnosticsWidgetFactory,
+)
+from metrology_process_planner.infrastructure.klayout.layout_crop_exporter import (
+    KLayoutLayoutCropExporter,
+)
+from metrology_process_planner.infrastructure.klayout.overlays import KLayoutOverlayBackend
+from metrology_process_planner.infrastructure.klayout.recipe_path_adapter import (
+    KLayoutRecipePathAdapter,
+)
+from metrology_process_planner.infrastructure.klayout.report_output_adapter import (
+    KLayoutReportOutputAdapter,
+)
+from metrology_process_planner.infrastructure.klayout.session_editor_shell import (
+    KLayoutSessionEditorWidgetFactory,
+)
+from metrology_process_planner.infrastructure.klayout.session_layout_adapter import (
+    KLayoutSessionLayoutAdapter,
+)
+from metrology_process_planner.infrastructure.klayout.session_path_adapter import (
+    KLayoutSessionPathAdapter,
+)
+from metrology_process_planner.infrastructure.klayout.setup_guide_shell import (
+    KLayoutSetupGuideSurfaceFactory,
+)
+from metrology_process_planner.ui.diagnostics import DiagnosticsShell
+from metrology_process_planner.ui.modeless import ModelessSurfaceShell
+from metrology_process_planner.ui.session_editor import SessionEditorShell
+from metrology_process_planner.workflows.overlays import CanvasOverlayManager
 
 
 class KLayoutRuntimeUnavailableError(RuntimeError):
@@ -46,7 +77,7 @@ def register_plugin(
     """
 
     pya = pya_module if pya_module is not None else import_pya()
-    app_services = services if services is not None else build_app_services()
+    app_services = services if services is not None else _build_klayout_services(pya)
 
     application = pya.Application.instance()
     main_window = application.main_window()
@@ -71,6 +102,23 @@ def register_plugin(
         menu_name=menu_name,
         menu_path=menu_path,
         command_count=len(MENU_COMMANDS),
+    )
+
+
+def _build_klayout_services(pya: Any) -> AppServices:
+    loaded_modes = load_configured_mode_registry()
+    return build_app_services(
+        path_adapter=KLayoutSessionPathAdapter(pya, loaded_modes.registry),
+        recipe_path_adapter=KLayoutRecipePathAdapter(pya),
+        layout_adapter=KLayoutSessionLayoutAdapter(pya),
+        overlay_manager=CanvasOverlayManager(KLayoutOverlayBackend()),
+        session_editor_shell=SessionEditorShell(KLayoutSessionEditorWidgetFactory(pya)),
+        setup_guide_shell=ModelessSurfaceShell(KLayoutSetupGuideSurfaceFactory(pya)),
+        diagnostics_shell=DiagnosticsShell(KLayoutDiagnosticsWidgetFactory(pya)),
+        report_output_adapter=KLayoutReportOutputAdapter(pya),
+        mode_registry=loaded_modes.registry,
+        mode_load_warnings=loaded_modes.warnings,
+        artifact_repair_service=layout_crop_repair_service(KLayoutLayoutCropExporter(pya)),
     )
 
 

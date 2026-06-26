@@ -34,6 +34,24 @@ class SessionPaths:
         return self.folder / CAPTURE_CSV_NAME
 
     @property
+    def exports_dir(self) -> Path:
+        """Return the managed tabular export directory."""
+
+        return self.folder / "exports"
+
+    @property
+    def session_summary_csv(self) -> Path:
+        """Return the canonical document-owned summary CSV path."""
+
+        return self.exports_dir / "session_summary.csv"
+
+    @property
+    def artifacts_dir(self) -> Path:
+        """Return the managed document artifact registry directory."""
+
+        return self.folder / "artifacts"
+
+    @property
     def images_dir(self) -> Path:
         """Return the managed image artifact directory."""
 
@@ -61,6 +79,8 @@ class SessionPaths:
         """Create the session folder and standard artifact directories."""
 
         self.folder.mkdir(parents=True, exist_ok=True)
+        self.artifacts_dir.mkdir(parents=True, exist_ok=True)
+        self.exports_dir.mkdir(parents=True, exist_ok=True)
         self.images_dir.mkdir(parents=True, exist_ok=True)
         self.drawings_dir.mkdir(parents=True, exist_ok=True)
         self.reports_dir.mkdir(parents=True, exist_ok=True)

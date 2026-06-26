@@ -42,7 +42,7 @@ class ReleasePipelineTests(unittest.TestCase):
             result = _run_klayout_lanes()
 
         self.assertEqual(0, result)
-        self.assertEqual(2, run.call_count)
+        self.assertEqual(3, run.call_count)
         for call in run.call_args_list:
             self.assertEqual(
                 {

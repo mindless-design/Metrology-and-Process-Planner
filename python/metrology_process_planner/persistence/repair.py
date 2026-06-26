@@ -16,6 +16,15 @@ from metrology_process_planner.persistence.paths import SessionPaths, artifact_p
 def validate_artifact_files(session: SessionRecord, paths: SessionPaths) -> SessionRecord:
     """Return a session whose artifact statuses reflect files on disk."""
 
+    from metrology_process_planner.workflows.artifacts.scanner import ArtifactScanner
+
+    scanned, _result = ArtifactScanner().scan_session(session, paths)
+    return scanned
+
+
+def validate_artifact_files_legacy(session: SessionRecord, paths: SessionPaths) -> SessionRecord:
+    """Return a session with the original missing-artifact validator behavior."""
+
     artifacts: dict[str, ArtifactRecord] = {}
     warnings = {warning.id: warning for warning in session.warnings}
     for artifact_id, artifact in (session.artifacts or {}).items():

@@ -5,15 +5,17 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import TYPE_CHECKING
 
-from metrology_process_planner.domains.measurements import MeasurementRecord
-from metrology_process_planner.domains.session import CaptureRecord, SessionRecord
-from metrology_process_planner.domains.session.artifact_query import (
+from metrology_process_planner.domains.artifacts.artifact_query import (
     artifact_refs_for_owner,
-    first_display_artifact,
 )
+from metrology_process_planner.domains.measurement.records import MeasurementRecord
+from metrology_process_planner.domains.session import CaptureRecord, SessionRecord
 from metrology_process_planner.persistence.drawing_store import StoredDrawingExport
 from metrology_process_planner.rendering import build_measurement_annotation_scene
 from metrology_process_planner.rendering.scene import DrawingScene
+from metrology_process_planner.workflows.editor.render_bridge_artifacts import (
+    first_visible_display_artifact,
+)
 from metrology_process_planner.workflows.editor.render_bridge_models import (
     RenderRefreshResult,
     RenderTarget,
@@ -80,7 +82,12 @@ def _build_measurement_scene(
     return build_measurement_annotation_scene(
         capture,
         measurement,
-        first_display_artifact(session.artifacts or {}, "capture", capture.id),
+        first_visible_display_artifact(
+            session,
+            "capture",
+            capture.id,
+            bridge._mode_registry,
+        ),
     )
 
 
@@ -129,7 +136,7 @@ def _with_measurement_artifacts(session: SessionRecord, measurement_id: str) -> 
     refs = artifact_refs_for_owner(session.artifacts or {}, "measurement", measurement_id)
     svg_ref = refs.get("measurement_annotation_svg")
     if svg_ref:
-        refs = {**refs, "annotation": svg_ref}
+        refs = {**refs, "annotation": svg_ref, "measurement_detail": svg_ref}
     captures = tuple(
         _with_measurement_refs(capture, measurement_id, refs) for capture in session.captures
     )

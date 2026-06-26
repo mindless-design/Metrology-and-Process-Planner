@@ -17,6 +17,7 @@ from metrology_process_planner.domains.session import (
     PendingCapture,
     SessionRecord,
 )
+from metrology_process_planner.workflows.compound_capture_extensions import process_extension
 from metrology_process_planner.workflows.compound_capture_models import (
     CompoundCaptureRequest,
     InnerFeatureDefinition,
@@ -40,7 +41,7 @@ def capture_from_composite(
     feature = composite.feature
     assert feature is not None
     artifact_refs = {artifact.owner.role: artifact.id for artifact in artifacts}
-    extension = _process_extension(request, feature, artifact_refs, warning_ids)
+    extension = process_extension(request, feature, artifact_refs, warning_ids)
     return CaptureRecord(
         capture_id,
         command.label or default_label(request, capture_id),
@@ -128,31 +129,6 @@ def feature_geometry(feature: InnerFeatureDefinition) -> CaptureGeometry:
             Point.from_dict(geometry["end"]),
         )
     return CaptureGeometry.point_capture(Point.from_dict(geometry["point"]))
-
-
-def _process_extension(
-    request: CompoundCaptureRequest,
-    feature: InnerFeatureDefinition,
-    artifact_refs: Mapping[str, str],
-    warning_ids: tuple[str, ...],
-) -> dict[str, Any]:
-    payload: dict[str, Any] = {
-        request.feature_id_field: feature.id,
-        "process_context_ref": "process_context.active",
-        "solver_request": {
-            "operation": request.solver_operation,
-            "process_window_variant": "target",
-            "render_profile": request.render_profile,
-        },
-        "solver_result_id": None,
-        "artifact_refs": dict(artifact_refs),
-        "warning_ids": list(warning_ids),
-    }
-    if request.process_output_key == "outputs":
-        payload["outputs"] = {"stack_change_windows": [], "step_heights": []}
-    else:
-        payload[request.process_output_key] = []
-    return payload
 
 
 def _string_tuple(value: object) -> tuple[str, ...]:

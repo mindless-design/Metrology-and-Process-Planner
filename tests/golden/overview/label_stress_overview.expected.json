@@ -1,0 +1,58 @@
+{
+  "first_label": {
+    "bounds": {
+      "bottom": 35,
+      "left": -40.0,
+      "right": 72.0,
+      "top": 75
+    },
+    "target_id": "target-capture-label-stress-01",
+    "text_lines": [
+      "Site 01",
+      "Narrow Feature 0"
+    ]
+  },
+  "label_count": 15,
+  "last_label": {
+    "bounds": {
+      "bottom": -637,
+      "left": 100.25,
+      "right": 239.25,
+      "top": -597
+    },
+    "target_id": "target-capture-label-stress-15",
+    "text_lines": [
+      "Site 15",
+      "Narrow Feature 14"
+    ]
+  },
+  "layout_bounds": {
+    "bottom": 60,
+    "left": 80.0,
+    "right": 92.25,
+    "top": 75
+  },
+  "leader_count": 15,
+  "placement_metadata": {
+    "collisions_resolved": 3,
+    "fallback_steps_used": [
+      "omit_low_priority_labels"
+    ],
+    "labels_omitted": 3,
+    "labels_placed": 15,
+    "labels_requested": 18,
+    "strategy_used": "outside_edge_callouts",
+    "unresolved_collisions": 0
+  },
+  "scene_id": "scene-session-label-stress-session_overview",
+  "svg": {
+    "contains_svg": true,
+    "label_box_count": 15,
+    "leader_count": 15,
+    "target_rect_count": 18
+  },
+  "target_count": 18,
+  "warnings": [
+    "LABELS_OMITTED_DUE_TO_SPACE"
+  ]
+}

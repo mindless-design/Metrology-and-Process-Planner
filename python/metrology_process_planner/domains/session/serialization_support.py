@@ -5,8 +5,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from metrology_process_planner.domains.session.artifact_registry import ArtifactRecord
-from metrology_process_planner.domains.session.canvas import CanvasObject, PendingCapture
+from metrology_process_planner.domains.artifacts.artifact_registry import ArtifactRecord
+from metrology_process_planner.domains.capture.canvas import CanvasObject, PendingCapture
 
 
 def artifact_records(data: object) -> dict[str, ArtifactRecord]:

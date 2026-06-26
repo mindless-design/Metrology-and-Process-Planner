@@ -1,0 +1,20 @@
+{
+  "id": "fib_full_stack_recipe",
+  "name": "Synthetic FIB Full Stack",
+  "materials": [
+    {"id": "si", "name": "Silicon", "color": "#777777", "visible": true},
+    {"id": "oxide", "name": "Thick Oxide", "color": "#69aee8", "visible": true},
+    {"id": "al2o3", "name": "Thin Liner", "color": "#f2c94c", "visible": true},
+    {"id": "metal", "name": "Metal", "color": "#b8bcc4", "visible": true},
+    {"id": "dielectric", "name": "Top Dielectric", "color": "#98d8c8", "visible": true}
+  ],
+  "steps": [
+    {"id": "substrate", "kind": "substrate", "material_id": "si", "thickness": {"target": 500000.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [], "parameters": {}, "notes": "Thick substrate"},
+    {"id": "thick-oxide", "kind": "blanket_deposition", "material_id": "oxide", "thickness": {"target": 1000.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [], "parameters": {}, "notes": "Thick oxide"},
+    {"id": "thin-liner", "kind": "blanket_deposition", "material_id": "al2o3", "thickness": {"target": 5.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [], "parameters": {}, "notes": "Thin liner"},
+    {"id": "metal", "kind": "patterned_deposition", "material_id": "metal", "thickness": {"target": 80.0, "unit": "um"}, "layer": {"source": "layout", "layer": 12, "datatype": 0, "name": "FIB_CUT_TEST"}, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [{"x_min": 3.0, "x_max": 7.0}], "parameters": {}, "notes": "Local metal"},
+    {"id": "top-dielectric", "kind": "blanket_deposition", "material_id": "dielectric", "thickness": {"target": 150.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [], "parameters": {}, "notes": "Top dielectric"}
+  ],
+  "process_windows": [],
+  "metadata": {"fixture_target": "full-stack inclusion, compression, thin top layers", "accuracy_envelope": {"model": "sampled_2d_heuristic", "claim": "visual_stack_fixture", "covers": ["full-stack material ordering", "thin-layer visibility", "render compression metadata"], "excludes": ["FIB milling physics", "curtain artifacts", "damage layer modeling"]}}
+}

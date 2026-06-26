@@ -4,8 +4,14 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-from metrology_process_planner.domains.measurements import MeasurementRecord
-from metrology_process_planner.domains.session import CaptureRecord, PendingCapture, SessionRecord
+from metrology_process_planner.domains.measurement.records import MeasurementRecord
+from metrology_process_planner.domains.session import (
+    CaptureRecord,
+    GridDatasetRecord,
+    PendingCapture,
+    ReportRecord,
+    SessionRecord,
+)
 
 
 def capture_by_id(session: SessionRecord, capture_id: str) -> CaptureRecord | None:
@@ -33,6 +39,24 @@ def measurement_by_id(session: SessionRecord, measurement_id: str) -> Measuremen
         for measurement in capture.measurements:
             if measurement.id == measurement_id:
                 return measurement
+    return None
+
+
+def grid_dataset_by_id(session: SessionRecord, dataset_id: str) -> GridDatasetRecord | None:
+    """Return the grid dataset with the requested ID."""
+
+    for dataset in session.grid_datasets:
+        if dataset.id == dataset_id:
+            return dataset
+    return None
+
+
+def report_by_id(session: SessionRecord, report_id: str) -> ReportRecord | None:
+    """Return the report record with the requested ID."""
+
+    for report in session.reports:
+        if report.id == report_id:
+            return report
     return None
 
 

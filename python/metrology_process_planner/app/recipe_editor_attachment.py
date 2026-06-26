@@ -7,7 +7,8 @@ from typing import Protocol
 
 from metrology_process_planner.app.command_types import CommandId
 from metrology_process_planner.domains.process import ProcessRecipe
-from metrology_process_planner.domains.session import SessionRecord
+from metrology_process_planner.domains.session import ModeRegistry, SessionRecord
+from metrology_process_planner.workflows.editor.builder_basics import mode_is_process_aware
 from metrology_process_planner.workflows.process_context import attach_recipe
 from metrology_process_planner.workflows.process_context_models import AttachRecipeCommand
 from metrology_process_planner.workflows.recipe_editor_results import RecipeEditorActionResult
@@ -31,22 +32,22 @@ def attach_recipe_to_session(
     recipe: ProcessRecipe | None,
     session_provider: SessionProvider | None,
     session_updater: SessionUpdater | None,
+    mode_registry: ModeRegistry | None = None,
 ) -> RecipeEditorActionResult:
     """Attach the current saved recipe to the active session."""
 
-    if recipe is None:
-        return _result("unavailable", "No recipe is loaded.", recipe, "Open a recipe first.")
-    if dict(recipe.metadata or {}).get("dirty", False):
-        return _result("blocked", "Recipe has unsaved edits.", recipe, "Save the recipe first.")
-    path_text = str(dict(recipe.metadata or {}).get("recipe_path", ""))
-    if not path_text:
-        return _result("unavailable", "Recipe has not been saved.", recipe, "Use Save As first.")
-    if session_provider is None or session_updater is None:
-        return _result("unavailable", "No active session binding is available.", recipe)
+    precondition = _attach_precondition(recipe, session_provider, session_updater, mode_registry)
+    if precondition is not None:
+        return precondition
+    assert recipe is not None
+    assert session_provider is not None
+    assert session_updater is not None
     session = session_provider()
-    if session is None:
-        return _result("unavailable", "No active session is loaded.", recipe)
-    process_result = attach_recipe(session, AttachRecipeCommand(str(Path(path_text))))
+    assert session is not None
+    process_result = attach_recipe(
+        session,
+        AttachRecipeCommand(str(Path(_recipe_path(recipe)))),
+    )
     if process_result.status == "success":
         session_updater(process_result.session)
     return RecipeEditorActionResult(
@@ -57,6 +58,41 @@ def attach_recipe_to_session(
         warning_ids=tuple(warning.id for warning in process_result.warnings),
         next_ui_hint=_hint(process_result.status),
     )
+
+
+def _attach_precondition(
+    recipe: ProcessRecipe | None,
+    session_provider: SessionProvider | None,
+    session_updater: SessionUpdater | None,
+    mode_registry: ModeRegistry | None,
+) -> RecipeEditorActionResult | None:
+    if recipe is None:
+        return _result("unavailable", "No recipe is loaded.", recipe, "Open a recipe first.")
+    if _recipe_is_dirty(recipe):
+        return _result("blocked", "Recipe has unsaved edits.", recipe, "Save the recipe first.")
+    if not _recipe_path(recipe):
+        return _result("unavailable", "Recipe has not been saved.", recipe, "Use Save As first.")
+    if session_provider is None or session_updater is None:
+        return _result("unavailable", "No active session binding is available.", recipe)
+    session = session_provider()
+    if session is None:
+        return _result("unavailable", "No active session is loaded.", recipe)
+    if not mode_is_process_aware(session, mode_registry):
+        return _result(
+            "unavailable",
+            "Recipes cannot be attached to this recipe-free mode.",
+            recipe,
+            "Use a process-aware session before attaching a recipe.",
+        )
+    return None
+
+
+def _recipe_is_dirty(recipe: ProcessRecipe) -> bool:
+    return bool(dict(recipe.metadata or {}).get("dirty", False))
+
+
+def _recipe_path(recipe: ProcessRecipe) -> str:
+    return str(dict(recipe.metadata or {}).get("recipe_path", ""))
 
 
 def _result(

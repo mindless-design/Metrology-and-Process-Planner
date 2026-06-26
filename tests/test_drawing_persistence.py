@@ -38,7 +38,7 @@ class DrawingPersistenceTests(unittest.TestCase):
 
         self.assertEqual("5.0.0", loaded.schema_version)
         self.assertIn("capture-cap-001-layout_annotation_svg", loaded.artifacts)
-        self.assertTrue(any(warning.code == "artifact_missing" for warning in loaded.warnings))
+        self.assertTrue(any(warning.code == "ARTIFACT_MISSING" for warning in loaded.warnings))
 
     def test_session_drawing_store_writes_spec_svg_and_png(self) -> None:
         scene = DrawingScene(

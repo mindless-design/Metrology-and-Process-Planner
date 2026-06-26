@@ -4,6 +4,7 @@ from pathlib import Path
 
 from metrology_process_planner.app.command_types import CommandId
 from metrology_process_planner.app.recipe_editor import RecipeEditorController
+from metrology_process_planner.app.recipe_path_adapter import RecipePathSelection
 from metrology_process_planner.app.window_registry import WindowRegistry
 from metrology_process_planner.domains.process import (
     Material,
@@ -12,6 +13,7 @@ from metrology_process_planner.domains.process import (
     ProcessStepKind,
 )
 from metrology_process_planner.persistence.recipe_store import ProcessRecipeJsonStore
+from tests.recipe_path_fixtures import FakeRecipePathAdapter
 
 
 class RecipeEditorOpeningTests(unittest.TestCase):
@@ -53,6 +55,36 @@ class RecipeEditorOpeningTests(unittest.TestCase):
             self.assertEqual("opened", controller.current_recipe.id)
             self.assertEqual(str(path), controller.current_recipe.metadata["recipe_path"])
             self.assertFalse(registry.is_open("recipe-editor:old"))
+
+    def test_bare_open_recipe_action_uses_injected_path_picker(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "recipe.json"
+            ProcessRecipeJsonStore().save(_recipe("opened"), path)
+            controller = RecipeEditorController(
+                recipe_path_adapter=FakeRecipePathAdapter(
+                    open_recipe=RecipePathSelection.selected(path)
+                )
+            )
+
+            result = controller.dispatch_action("OpenRecipe")
+
+            self.assertEqual("success", result.status)
+            self.assertEqual("opened", controller.current_recipe.id)
+
+    def test_bare_save_recipe_as_action_uses_injected_path_picker(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "saved.json"
+            controller = RecipeEditorController(
+                recipe_path_adapter=FakeRecipePathAdapter(
+                    save_as=RecipePathSelection.selected(path)
+                )
+            )
+            controller.set_recipe(_recipe("dirty", metadata={"dirty": True}))
+
+            result = controller.dispatch_action("SaveRecipeAs")
+
+            self.assertEqual("success", result.status)
+            self.assertEqual(str(path), controller.current_recipe.metadata["recipe_path"])
 
     def test_dirty_open_recipe_is_blocked_until_discard_confirmed(self) -> None:
         with tempfile.TemporaryDirectory() as folder:

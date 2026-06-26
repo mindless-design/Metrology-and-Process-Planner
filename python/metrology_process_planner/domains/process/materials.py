@@ -15,6 +15,10 @@ class Material:
     name: str
     color: str
     visible: bool = True
+    category: str = ""
+    hatch_style: str = ""
+    physical_role: str = ""
+    notes: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize the material to JSON-compatible data."""
@@ -24,6 +28,10 @@ class Material:
             "name": self.name,
             "color": self.color,
             "visible": self.visible,
+            "category": self.category,
+            "hatch_style": self.hatch_style,
+            "physical_role": self.physical_role,
+            "notes": self.notes,
         }
 
     @classmethod
@@ -35,6 +43,10 @@ class Material:
             name=str(data.get("name", data["id"])),
             color=str(data.get("color", "#888888")),
             visible=bool(data.get("visible", True)),
+            category=str(data.get("category", "")),
+            hatch_style=str(data.get("hatch_style", data.get("style", ""))),
+            physical_role=str(data.get("physical_role", "")),
+            notes=str(data.get("notes", "")),
         )
 
 
@@ -67,4 +79,3 @@ class LayerReference:
             datatype=int(data.get("datatype", 0)),
             name=str(data.get("name", "")),
         )
-

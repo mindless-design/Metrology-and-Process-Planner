@@ -5,9 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional, Protocol
 
+from metrology_process_planner.diagnostics.diagnostics_sinks import DiagnosticSink
+from metrology_process_planner.diagnostics.trace_context import TraceContext
 from metrology_process_planner.domains.session import SessionRecord
-from metrology_process_planner.infrastructure.diagnostics_sinks import DiagnosticSink
-from metrology_process_planner.infrastructure.trace_context import TraceContext
 from metrology_process_planner.workflows.canvas_interaction import CanvasInteractionEngine
 from metrology_process_planner.workflows.canvas_state import find_canvas_object
 from metrology_process_planner.workflows.overlays import CanvasOverlayManager

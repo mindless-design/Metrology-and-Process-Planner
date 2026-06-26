@@ -3,16 +3,21 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from typing import Optional
 
-from metrology_process_planner.domains.session import CaptureRecord, PendingCapture, SessionRecord
+from metrology_process_planner.domains.artifacts.artifact_invalidation import (
+    invalidate_capture_edit,
+    invalidate_measurement_edit,
+)
+from metrology_process_planner.domains.session import ModeRegistry, SessionRecord
 from metrology_process_planner.workflows.editor.document import (
     DirtyState,
     EditorSelectionState,
     SessionDocument,
 )
-from metrology_process_planner.workflows.editor.measurement_editing import (
-    replace_measurement_field,
+from metrology_process_planner.workflows.editor.editing_apply import (
+    apply_capture_edit,
+    apply_measurement_edit,
+    apply_pending_edit,
 )
 
 
@@ -45,6 +50,7 @@ def mark_metadata_edit(
     item_id: str,
     field_key: str,
     value: str,
+    mode_registry: ModeRegistry | None = None,
 ) -> SessionDocument:
     """Return a document with one unsaved metadata edit tracked."""
 
@@ -60,7 +66,8 @@ def mark_metadata_edit(
         dirty_item_ids=dirty_items,
         unsaved_metadata_edits=edits + ((item_id, field_key, value),),
     )
-    return replace(document, dirty_state=dirty)
+    session = _session_with_edit_invalidation(document, item_id, field_key, mode_registry)
+    return replace(document, session=session, dirty_state=dirty)
 
 
 def mark_pending_dirty(document: SessionDocument) -> SessionDocument:
@@ -76,7 +83,10 @@ def mark_clean(document: SessionDocument, revision: int) -> SessionDocument:
     return replace(document, dirty_state=DirtyState(last_saved_revision=revision))
 
 
-def apply_metadata_edits(document: SessionDocument) -> SessionDocument:
+def apply_metadata_edits(
+    document: SessionDocument,
+    mode_registry: ModeRegistry | None = None,
+) -> SessionDocument:
     """Return a document whose canonical session includes tracked metadata edits."""
 
     session = document.session
@@ -86,16 +96,23 @@ def apply_metadata_edits(document: SessionDocument) -> SessionDocument:
             session = replace(session, name=value)
         elif item is not None and item.record_ref is not None:
             if item.record_ref.record_type == "capture":
-                session = _apply_capture_edit(session, item.record_ref.record_id, field_key, value)
+                session = apply_capture_edit(
+                    session,
+                    item.record_ref.record_id,
+                    field_key,
+                    value,
+                    mode_registry,
+                )
             elif item.record_ref.record_type == "pending_capture":
-                session = _apply_pending_edit(session, item.record_ref.record_id, field_key, value)
+                session = apply_pending_edit(session, item.record_ref.record_id, field_key, value)
             elif item.record_ref.record_type == "measurement":
-                session = _apply_measurement_edit(
+                session = apply_measurement_edit(
                     session,
                     item.record_ref.parent_id,
                     item.record_ref.record_id,
                     field_key,
                     value,
+                    mode_registry,
                 )
     return replace(document, session=session)
 
@@ -106,93 +123,27 @@ def _append_unique(values: tuple[str, ...], value: str) -> tuple[str, ...]:
     return values + (value,)
 
 
-def _apply_capture_edit(
-    session: SessionRecord,
-    capture_id: str,
+def _session_with_edit_invalidation(
+    document: SessionDocument,
+    item_id: str,
     field_key: str,
-    value: str,
+    mode_registry: ModeRegistry | None,
 ) -> SessionRecord:
-    captures = tuple(
-        _replace_capture_field(capture, field_key, value)
-        if capture.id == capture_id
-        else capture
-        for capture in session.captures
-    )
-    return replace(session, captures=captures)
-
-
-def _replace_capture_field(capture: CaptureRecord, field_key: str, value: str) -> CaptureRecord:
-    if field_key == "label":
-        return replace(capture, label=value)
-    if field_key == "notes":
-        return replace(capture, notes=value)
-    if field_key == "type":
-        return replace(capture, type=value)
-    metadata = dict(capture.metadata or {})
-    metadata[field_key] = value
-    return replace(capture, metadata=metadata)
-
-
-def _apply_pending_edit(
-    session: SessionRecord,
-    pending_id: str,
-    field_key: str,
-    value: str,
-) -> SessionRecord:
-    pending_captures = tuple(
-        _replace_pending_field(pending, field_key, value)
-        if pending.id == pending_id
-        else pending
-        for pending in session.pending_captures
-    )
-    return replace(session, pending_captures=pending_captures)
-
-
-def _replace_pending_field(
-    pending: PendingCapture,
-    field_key: str,
-    value: str,
-) -> PendingCapture:
-    metadata = dict(pending.metadata or {})
-    metadata[field_key] = value
-    return replace(pending, metadata=metadata)
-
-
-def _apply_measurement_edit(
-    session: SessionRecord,
-    capture_item_id: Optional[str],
-    measurement_id: str,
-    field_key: str,
-    value: str,
-) -> SessionRecord:
-    capture_id = _record_id_from_item_id(capture_item_id)
-    captures = tuple(
-        _replace_measurement_on_capture(capture, measurement_id, field_key, value)
-        if capture_id is None or capture.id == capture_id
-        else capture
-        for capture in session.captures
-    )
-    return replace(session, captures=captures)
-
-
-def _replace_measurement_on_capture(
-    capture: CaptureRecord,
-    measurement_id: str,
-    field_key: str,
-    value: str,
-) -> CaptureRecord:
-    measurements = tuple(
-        replace_measurement_field(measurement, field_key, value)
-        if measurement.id == measurement_id
-        else measurement
-        for measurement in capture.measurements
-    )
-    return replace(capture, measurements=measurements)
-
-
-def _record_id_from_item_id(item_id: Optional[str]) -> Optional[str]:
-    if item_id is None:
-        return None
-    if ":" not in item_id:
-        return item_id
-    return item_id.split(":", 1)[1]
+    item = document.items_by_id.get(item_id)
+    if item is None or item.record_ref is None:
+        return document.session
+    if item.record_ref.record_type == "capture":
+        return invalidate_capture_edit(
+            document.session,
+            item.record_ref.record_id,
+            field_key,
+            mode_registry,
+        )
+    if item.record_ref.record_type == "measurement":
+        return invalidate_measurement_edit(
+            document.session,
+            item.record_ref.record_id,
+            field_key,
+            mode_registry,
+        )
+    return document.session

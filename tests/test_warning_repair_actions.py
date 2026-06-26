@@ -3,7 +3,12 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
-from metrology_process_planner.domains.session import WarningRecord
+from metrology_process_planner.domains.session import (
+    ModeDefinition,
+    ModeRegistry,
+    SessionMode,
+    WarningRecord,
+)
 from metrology_process_planner.workflows.editor import (
     DefaultSessionModeAdapter,
     EditorAction,
@@ -14,7 +19,27 @@ from metrology_process_planner.workflows.editor import (
 from tests.process_context_fixtures import capture_session, recipe_path
 
 
-class WarningRepairActionTests(unittest.TestCase):
+def _session_with_warning(code: str = "PROCESS_RECIPE_MISSING"):
+    session = capture_session()
+    warning = WarningRecord(
+        id=f"warn-cap-001-{code.lower()}",
+        message="Process output needs attention.",
+        source="process_context",
+        code=code,
+        related_item_refs=("capture:cap-001",),
+        repair_suggestion="Attach a recipe and regenerate process outputs.",
+    )
+    capture = replace(session.captures[0], warning_ids=(warning.id,))
+    return replace(session, captures=(capture,), warnings=(warning,))
+
+def _recipe_free_registry_for(mode_id: str) -> ModeRegistry:
+    return ModeRegistry((ModeDefinition(mode_id, "Recipe Free Override"),))
+
+if __name__ == "__main__":
+    unittest.main()
+
+
+class WarningRepairActionTestsPart1(unittest.TestCase):
     def test_process_warning_exposes_capture_repair_actions(self) -> None:
         document = SessionDocumentBuilder().build(_session_with_warning())
         warning_item = document.items_by_id["warning:warn-cap-001-process_recipe_missing"]
@@ -46,6 +71,13 @@ class WarningRepairActionTests(unittest.TestCase):
             action for action in actions if action.action_type is EditorActionType.OPEN_RECIPE_FILE
         )
         self.assertEqual((("recipe_path", "recipes/missing.json"),), open_recipe.payload)
+
+    def test_process_warning_is_hidden_in_non_process_mode(self) -> None:
+        source = replace(_session_with_warning(), mode=SessionMode.SIMPLE_CAPTURE)
+        document = SessionDocumentBuilder().build(source)
+
+        self.assertNotIn("warning:warn-cap-001-process_recipe_missing", document.items_by_id)
+        self.assertEqual((), document.warning_view_models)
 
     def test_ignore_warning_marks_status_without_deleting_warning(self) -> None:
         document = SessionDocumentBuilder().build(_session_with_warning())
@@ -88,21 +120,3 @@ class WarningRepairActionTests(unittest.TestCase):
 
         self.assertEqual("success", result.status)
         self.assertEqual(path, result.output_path)
-
-
-def _session_with_warning(code: str = "PROCESS_RECIPE_MISSING"):
-    session = capture_session()
-    warning = WarningRecord(
-        id=f"warn-cap-001-{code.lower()}",
-        message="Process output needs attention.",
-        source="process_context",
-        code=code,
-        related_item_refs=("capture:cap-001",),
-        repair_suggestion="Attach a recipe and regenerate process outputs.",
-    )
-    capture = replace(session.captures[0], warning_ids=(warning.id,))
-    return replace(session, captures=(capture,), warnings=(warning,))
-
-
-if __name__ == "__main__":
-    unittest.main()

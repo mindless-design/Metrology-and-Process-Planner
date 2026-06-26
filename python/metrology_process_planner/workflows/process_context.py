@@ -12,6 +12,7 @@ from metrology_process_planner.domains.session import (
     SessionRecord,
     WarningRecord,
 )
+from metrology_process_planner.workflows.process_capture_extensions import is_process_aware_capture
 from metrology_process_planner.workflows.process_context_models import (
     AttachRecipeCommand,
     DetachRecipeCommand,
@@ -19,6 +20,10 @@ from metrology_process_planner.workflows.process_context_models import (
     RefreshRecipeFingerprintCommand,
     RegenerateProcessOutputsCommand,
     ValidateProcessContextCommand,
+)
+from metrology_process_planner.workflows.process_context_result_metadata import (
+    updated_process_artifact_ids,
+    updated_process_diagnostic_ids,
 )
 from metrology_process_planner.workflows.process_context_support import (
     process_warning,
@@ -28,6 +33,7 @@ from metrology_process_planner.workflows.process_context_support import (
 from metrology_process_planner.workflows.process_context_validation import (
     process_context_warnings,
 )
+from metrology_process_planner.workflows.process_output_service import ProcessOutputService
 from metrology_process_planner.workflows.process_regeneration import regenerate_capture_outputs
 
 
@@ -156,9 +162,26 @@ def regenerate_process_outputs(
                 item_id=command.owner_id,
             ),
         )
+        targets = tuple(
+            capture
+            for capture in session.captures
+            if is_process_aware_capture(capture)
+            and (not command.owner_id or capture.id == command.owner_id)
+        )
+        session = ProcessOutputService().ensure_placeholder_outputs(session, targets, warnings)
         return with_warnings(session, warnings, "warning", "Regeneration checked.")
     session, warnings, status, message = regenerate_capture_outputs(session, command)
-    return ProcessContextResult(session, warnings, status, message)
+    return ProcessContextResult(
+        session,
+        warnings,
+        status,
+        message,
+        updated_capture_id=command.owner_id,
+        updated_artifact_ids=updated_process_artifact_ids(session, command.owner_id),
+        warning_ids=tuple(warning.id for warning in warnings),
+        diagnostic_ids=updated_process_diagnostic_ids(session, command.owner_id),
+        next_ui_hint="review_warnings" if warnings else "show_process_output",
+    )
 
 
 def _recipe_file_warning(

@@ -4,21 +4,16 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+from metrology_process_planner.diagnostics.diagnostics_sinks import DiagnosticSink
+from metrology_process_planner.diagnostics.trace_context import TraceContext
 from metrology_process_planner.domains.session import (
     CanvasObjectType,
-    CanvasWorkflowState,
-    CaptureRecord,
-    PendingCapture,
+    ModeRegistry,
     SessionRecord,
 )
-from metrology_process_planner.domains.session.constants import utc_now_iso
-from metrology_process_planner.infrastructure.diagnostics_sinks import DiagnosticSink
-from metrology_process_planner.infrastructure.trace_context import TraceContext
 from metrology_process_planner.workflows.canvas_interaction_helpers import (
-    next_id,
     pending_artifact_paths,
     pending_by_id,
-    pending_capture_artifact,
     without_pending,
     without_pending_artifacts,
 )
@@ -27,17 +22,22 @@ from metrology_process_planner.workflows.canvas_interaction_models import (
     InteractionResult,
 )
 from metrology_process_planner.workflows.canvas_state import (
-    find_canvas_object,
     remove_canvas_object,
-    replace_canvas_object,
 )
+from metrology_process_planner.workflows.pending_capture_canvas import promote_canvas_object
+from metrology_process_planner.workflows.pending_capture_save import save_pending_capture
 
 
 class PendingCaptureReviewService:
     """Convert, retake, or discard pending capture records."""
 
-    def __init__(self, diagnostic_sink: DiagnosticSink | None = None) -> None:
+    def __init__(
+        self,
+        diagnostic_sink: DiagnosticSink | None = None,
+        mode_registry: ModeRegistry | None = None,
+    ) -> None:
         self._diagnostics = diagnostic_sink
+        self._mode_registry = mode_registry
 
     def save_pending_box(
         self,
@@ -55,33 +55,14 @@ class PendingCaptureReviewService:
         if pending is None:
             self._emit(trace_context, "PendingSaveMissing", pending_id, "Pending capture missing.")
             return InteractionResult(session=session, context=context, handled=False)
-        capture_id = next_id("cap", (item.id for item in session.captures))
-        capture = _capture_from_pending(pending, capture_id, label, notes)
-        artifact = pending_capture_artifact(pending, capture_id)
-        artifacts = without_pending_artifacts(dict(session.artifacts or {}), pending_id)
-        if artifact is not None:
-            artifacts[artifact.id] = artifact
-            capture = replace(
-                capture,
-                artifact_refs={**dict(capture.artifact_refs or {}), "crop": artifact.id},
-            )
-        session = replace(
+        session, capture_id = save_pending_capture(
             session,
-            captures=session.captures + (capture,),
-            pending_captures=without_pending(session, pending_id),
-            artifacts=artifacts,
-            updated_at=utc_now_iso(),
+            pending,
+            label,
+            notes,
+            self._mode_registry,
         )
-        canvas_object = find_canvas_object(session, pending.canvas_object_id)
-        if canvas_object is not None:
-            session = replace_canvas_object(
-                session,
-                replace(
-                    canvas_object,
-                    record_id=capture_id,
-                    workflow_state=CanvasWorkflowState.SAVED,
-                ),
-            )
+        session = promote_canvas_object(session, pending, capture_id)
         self._emit(
             trace_context,
             "CaptureRecordCreated",
@@ -161,22 +142,5 @@ class PendingCaptureReviewService:
                 "source_component": "PendingCaptureReviewService",
                 "related_record_ids": (record_id,),
             },
-        )
-
-
-def _capture_from_pending(
-    pending: PendingCapture,
-    capture_id: str,
-    label: str,
-    notes: str,
-) -> CaptureRecord:
-    trace_ids = dict(pending.trace_ids or {})
-    trace_ids["capture_trace_id"] = capture_id
-    return CaptureRecord(
-        id=capture_id,
-        label=label,
-        geometry=pending.geometry,
-        created_at=pending.created_at or utc_now_iso(),
-        notes=notes,
-        trace_ids=trace_ids,
     )
+

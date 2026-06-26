@@ -32,7 +32,7 @@ def menu_registration_script() -> str:
     return textwrap.dedent(
         """
         import pya
-        from metrology_process_planner.app.commands import DEFAULT_COMMANDS
+        from metrology_process_planner.app.commands import MENU_COMMANDS
         from metrology_process_planner.infrastructure.klayout.plugin import register_plugin
 
         app = pya.Application.instance()
@@ -41,7 +41,7 @@ def menu_registration_script() -> str:
         menu = main_window.menu()
         menu_paths = {
             spec.command_id.value: registration.menu_path + "." + spec.menu_item_name
-            for spec in DEFAULT_COMMANDS
+            for spec in MENU_COMMANDS
         }
         report.update(
             {
@@ -56,8 +56,44 @@ def menu_registration_script() -> str:
                     key: bool(menu.is_valid(path)) for key, path in menu_paths.items()
                 },
                 "coverage_lanes": {
-                    spec.command_id.value: spec.coverage_lane.value for spec in DEFAULT_COMMANDS
+                    spec.command_id.value: spec.coverage_lane.value for spec in MENU_COMMANDS
                 },
+            }
+        )
+        """
+    )
+
+
+def modeless_command_surface_script() -> str:
+    """Return a probe script that opens dialog-free KLayout-backed surfaces."""
+
+    return textwrap.dedent(
+        """
+        import pya
+        from metrology_process_planner.app.commands import CommandId
+        from metrology_process_planner.infrastructure.klayout.plugin import _build_klayout_services
+
+        services = _build_klayout_services(pya)
+        command_ids = (
+            CommandId.OPEN_SESSION_EDITOR,
+            CommandId.OPEN_SETUP_GUIDE,
+            CommandId.OPEN_RECIPE_EDITOR,
+            CommandId.OPEN_DIAGNOSTICS,
+            CommandId.OPEN_REPORTING_WORKBENCH,
+        )
+        routed = {}
+        for command_id in command_ids:
+            result = services.command_router.route(command_id)
+            routed[command_id.value] = {
+                "status": result.status,
+                "message": result.message,
+                "next_ui_hint": result.next_ui_hint,
+            }
+        report.update(
+            {
+                "routed": routed,
+                "window_keys": list(services.window_registry.keys()),
+                "diagnostic_events": len(services.diagnostics_sink.recent(20)),
             }
         )
         """

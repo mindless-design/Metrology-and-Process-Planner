@@ -51,6 +51,18 @@ class CanvasInteractionEngineTests(unittest.TestCase):
         self.assertIn(CanvasVisualFlag.ACTIVE_PARENT, canvas_object.visual_state)
         self.assertEqual("canvas-001", context.active_parent_id)
 
+    def test_shift_drag_after_saved_capture_uses_next_pending_image_path(self) -> None:
+        capture = CaptureRecord(
+            "cap-001", "Capture 001", _box_geometry(), "2026-06-23T20:00:00Z", sequence=1
+        )
+
+        result, _context = _pending_box(session=_session().add_capture(capture))
+
+        pending = result.pending_captures[0]
+        self.assertEqual("pending-002", pending.id)
+        self.assertEqual("images/pending-002.png", pending.image_artifact_path)
+        self.assertIn("pending_capture-pending-002-pending_crop", result.artifacts)
+
     def test_save_pending_box_creates_capture_and_preserves_canvas_object(self) -> None:
         session, context = _pending_box()
 
@@ -69,7 +81,15 @@ class CanvasInteractionEngineTests(unittest.TestCase):
         self.assertEqual("images/pending-001.png", artifact.relative_path)
         self.assertEqual(
             {"crop": "capture-cap-001-crop"},
-            result.session.captures[0].artifact_refs,
+            {"crop": result.session.captures[0].artifact_refs["crop"]},
+        )
+        self.assertEqual(
+            "capture-cap-001-site_image",
+            result.session.captures[0].artifact_refs["site_image"],
+        )
+        self.assertEqual(
+            "site_image",
+            result.session.artifacts["capture-cap-001-site_image"].owner.role,
         )
         self.assertEqual("cap-001", canvas_object.record_id)
         self.assertEqual(CanvasWorkflowState.SAVED, canvas_object.workflow_state)

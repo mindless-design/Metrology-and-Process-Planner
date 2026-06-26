@@ -5,12 +5,13 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Optional
 
+from metrology_process_planner.diagnostics.diagnostics_sinks import DiagnosticSink
+from metrology_process_planner.diagnostics.trace_context import TraceContext
 from metrology_process_planner.domains.geometry import Point
 from metrology_process_planner.domains.session import CanvasObject, SessionRecord
-from metrology_process_planner.infrastructure.diagnostics_sinks import DiagnosticSink
-from metrology_process_planner.infrastructure.trace_context import TraceContext
 from metrology_process_planner.workflows.canvas_interaction_commit import invalid_release_result
 from metrology_process_planner.workflows.canvas_interaction_drag import update_line_drag
+from metrology_process_planner.workflows.canvas_interaction_line import commit_pending_line
 from metrology_process_planner.workflows.canvas_interaction_models import (
     InteractionContext,
     InteractionResult,
@@ -60,18 +61,14 @@ def _commit_ready_line(
     assert points is not None
     try:
         committed = remove_canvas_object(updated.session, preview.id)
-        committed = _commit_line_feature(
+        return _commit_line_feature(
             committed,
-            str(context.active_parent_id or ""),
+            replace(updated.context, live_preview_id=None),
             points[0],
             points[1],
         )
     except ValueError as exc:
         return invalid_release_result(sink, trace_context, updated, preview, (str(exc),))
-    return InteractionResult(
-        session=committed,
-        context=replace(updated.context, live_preview_id=None),
-    )
 
 
 @dataclass(frozen=True)
@@ -114,17 +111,25 @@ def _line_preview_points(preview: CanvasObject) -> tuple[Point, Point] | None:
 
 def _commit_line_feature(
     session: SessionRecord,
-    active_parent_id: str,
+    context: InteractionContext,
     start: Point,
     end: Point,
-) -> SessionRecord:
+) -> InteractionResult:
     request = active_compound_request(session, "line")
     if request is not None and session.workflow.pending_item_ref:
-        return add_line_feature(
-            session,
-            session.workflow.pending_item_ref,
-            start,
-            end,
-            request,
+        return InteractionResult(
+            add_line_feature(
+                session,
+                session.workflow.pending_item_ref,
+                start,
+                end,
+                request,
+            ),
+            context,
         )
-    return add_pending_measurement_line(session, active_parent_id, start, end)
+    if context.active_parent_id:
+        return InteractionResult(
+            add_pending_measurement_line(session, context.active_parent_id, start, end),
+            context,
+        )
+    return commit_pending_line(session, context, start, end)

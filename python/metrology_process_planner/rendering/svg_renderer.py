@@ -18,6 +18,7 @@ from metrology_process_planner.rendering.primitives import (
 )
 from metrology_process_planner.rendering.scene import DrawingScene, ImageLayer
 from metrology_process_planner.rendering.styles import DrawingStyle
+from metrology_process_planner.rendering.svg_text import hidden_text_element, text_image_element
 
 
 def render_scene_to_svg(scene: DrawingScene) -> str:
@@ -39,7 +40,8 @@ def _svg_open(scene: DrawingScene) -> str:
     width = scene.canvas.width_px
     height = scene.canvas.height_px
     return (
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+        f'<svg xmlns="http://www.w3.org/2000/svg" '
+        f'xmlns:xlink="http://www.w3.org/1999/xlink" width="{width}" height="{height}" '
         f'viewBox="0 0 {width} {height}" role="img">'
     )
 
@@ -65,8 +67,9 @@ def _background(scene: DrawingScene) -> str:
 
 
 def _image_element(layer: ImageLayer) -> str:
+    href = escape(layer.path)
     return (
-        f'<image href="{escape(layer.path)}" x="0" y="0" '
+        f'<image href="{href}" xlink:href="{href}" x="0" y="0" '
         f'width="{layer.width_px}" height="{layer.height_px}" '
         f'opacity="{_num(layer.opacity)}" preserveAspectRatio="none" />'
     )
@@ -118,11 +121,34 @@ def _points_element(kind: str, points: tuple[CanvasPoint, ...], style: DrawingSt
 
 def _text_element(mark: TextMark) -> str:
     fill = mark.style.fill or mark.style.stroke
-    return (
-        f'<text x="{_num(mark.position.x)}" y="{_num(mark.position.y)}" '
-        f'font-size="{mark.style.font_size_px}" text-anchor="{escape(mark.anchor)}" '
-        f'fill="{escape(fill)}" opacity="{_num(mark.style.opacity)}">'
-        f"{escape(mark.text)}</text>"
+    if mark.style.opacity <= 0:
+        return hidden_text_element(
+            mark.text,
+            mark.position.x,
+            mark.position.y,
+            mark.style.font_size_px,
+            fill,
+            mark.anchor,
+        )
+    return "\n".join(
+        (
+            text_image_element(
+                mark.text,
+                mark.position.x,
+                mark.position.y,
+                mark.style.font_size_px,
+                fill,
+                mark.anchor,
+            ),
+            hidden_text_element(
+                mark.text,
+                mark.position.x,
+                mark.position.y,
+                mark.style.font_size_px,
+                fill,
+                mark.anchor,
+            ),
+        )
     )
 
 

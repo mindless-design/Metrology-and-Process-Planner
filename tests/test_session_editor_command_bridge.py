@@ -1,26 +1,38 @@
 import json
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from metrology_process_planner.app.bootstrap import build_app_services
 from metrology_process_planner.app.commands import CommandId
+from metrology_process_planner.domains.session import SessionMode
 from metrology_process_planner.persistence.paths import SessionPaths
 from metrology_process_planner.workflows.editor import (
     EditorAction,
     EditorActionType,
     SessionDocumentBuilder,
     mark_metadata_edit,
-    select_item,
 )
 from tests.editor_render_fixtures import empty_session, session, session_without_pending
-from tests.measurement_child_fixtures import saved_capture_session
 
 
-class SessionEditorCommandBridgeTests(unittest.TestCase):
+def _primary_action(window, action_type: EditorActionType) -> EditorAction:
+    return next(action for action in window["primary_actions"] if action.action_type is action_type)
+
+def _inspector_action(window, action_type: EditorActionType) -> EditorAction:
+    return next(action for action in window["actions"] if action.action_type is action_type)
+
+if __name__ == "__main__":
+    unittest.main()
+
+
+class SessionEditorCommandBridgeTestsPart1(unittest.TestCase):
     def test_reopen_setup_primary_action_routes_through_command_router(self) -> None:
         services = build_app_services()
-        document = SessionDocumentBuilder().build(session_without_pending())
+        document = SessionDocumentBuilder().build(
+            replace(session_without_pending(), mode=SessionMode.OPTICAL_METROLOGY)
+        )
         result = services.session_editor_controller.open_document(document)
 
         action = _primary_action(result.window, EditorActionType.REOPEN_SETUP)
@@ -103,44 +115,3 @@ class SessionEditorCommandBridgeTests(unittest.TestCase):
         self.assertEqual("success", routed.status)
         self.assertIsNotNone(current)
         self.assertEqual((), current.session.pending_captures)
-
-    def test_add_measurement_command_uses_selected_capture_item(self) -> None:
-        services = build_app_services()
-        document = SessionDocumentBuilder().build(saved_capture_session())
-        document = select_item(document, "capture:cap-001")
-        services.session_editor_controller.open_document(document)
-
-        routed = services.command_router.route(CommandId.ADD_MEASUREMENT)
-
-        current = services.session_editor_controller.current_document
-        self.assertEqual("success", routed.status)
-        self.assertEqual("session-001", routed.updated_document_id)
-        self.assertIsNotNone(current)
-        self.assertEqual("measurement_line", current.session.workflow.stage)
-        self.assertEqual("measurement", current.session.workflow.active_primitive)
-
-    def test_discard_unsaved_edits_command_clears_dirty_state(self) -> None:
-        services = build_app_services()
-        document = SessionDocumentBuilder().build(empty_session())
-        document = mark_metadata_edit(document, "dashboard", "name", "Unsaved")
-        services.session_editor_controller.open_document(document)
-
-        routed = services.command_router.route(CommandId.DISCARD_UNSAVED_EDITS)
-
-        current = services.session_editor_controller.current_document
-        self.assertEqual("success", routed.status)
-        self.assertIsNotNone(current)
-        self.assertFalse(current.dirty_state.is_dirty)
-        self.assertEqual("Demo", current.session.name)
-
-
-def _primary_action(window, action_type: EditorActionType) -> EditorAction:
-    return next(action for action in window["primary_actions"] if action.action_type is action_type)
-
-
-def _inspector_action(window, action_type: EditorActionType) -> EditorAction:
-    return next(action for action in window["actions"] if action.action_type is action_type)
-
-
-if __name__ == "__main__":
-    unittest.main()

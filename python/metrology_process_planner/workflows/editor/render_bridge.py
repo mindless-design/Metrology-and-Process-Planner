@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from metrology_process_planner.domains.session import SessionRecord, utc_now_iso
-from metrology_process_planner.infrastructure.diagnostics_sinks import DiagnosticSink
-from metrology_process_planner.infrastructure.trace_context import TraceContext
+from metrology_process_planner.diagnostics.diagnostics_sinks import DiagnosticSink
+from metrology_process_planner.diagnostics.trace_context import TraceContext
+from metrology_process_planner.domains.session import ModeRegistry, SessionRecord, utc_now_iso
 from metrology_process_planner.persistence.drawing_store import (
     SessionDrawingStore,
     StoredDrawingExport,
@@ -31,12 +31,13 @@ class SessionRenderBridge:
         drawing_store: SessionDrawingStore | None = None,
         rasterizer: SvgRasterizer | None = None,
         diagnostic_sink: DiagnosticSink | None = None,
+        mode_registry: ModeRegistry | None = None,
     ) -> None:
         self._paths = paths
         self._store = drawing_store if drawing_store is not None else SessionDrawingStore()
         self._rasterizer = rasterizer
         self._diagnostics = diagnostic_sink
-
+        self._mode_registry = mode_registry
     def export_capture_scene(
         self,
         capture_id: str,
@@ -50,7 +51,6 @@ class SessionRenderBridge:
             scene,
             self._rasterizer,
         )
-
     def export_owner_scene(
         self,
         owner_type: str,
@@ -95,7 +95,7 @@ class SessionRenderBridge:
 
         if self._diagnostics is None:
             return
-        from metrology_process_planner.infrastructure.diagnostics_exceptions import (
+        from metrology_process_planner.diagnostics.diagnostics_exceptions import (
             exception_payload,
         )
 

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from metrology_process_planner.domains.measurements import MeasurementRecord
-from metrology_process_planner.domains.session import SessionRecord
+from metrology_process_planner.domains.measurement.records import MeasurementRecord
+from metrology_process_planner.domains.session import ModeRegistry, SessionRecord
 from metrology_process_planner.workflows.editor.builder_artifact_refs import (
     _artifact_refs_for_owner,
 )
@@ -15,6 +15,7 @@ def measurement_item_for(
     session: SessionRecord,
     capture_id: str,
     measurement: MeasurementRecord,
+    mode_registry: ModeRegistry | None = None,
 ) -> SessionItem:
     """Return an editor item for a nested measurement record."""
 
@@ -31,5 +32,10 @@ def measurement_item_for(
         parent_id=f"capture:{capture_id}",
         record_ref=RecordRef("measurement", measurement.id, capture_id),
         canvas_object_ids=canvas_ids,
-        artifact_refs=_artifact_refs_for_owner(session, "measurement", measurement.id),
+        artifact_refs=_artifact_refs_for_owner(
+            session,
+            "measurement",
+            measurement.id,
+            mode_registry,
+        ),
     )

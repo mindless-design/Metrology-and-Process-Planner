@@ -16,7 +16,29 @@ from metrology_process_planner.persistence.recipe_store import JsonPath, Process
 from tests.process_context_fixtures import session
 
 
-class RecipeEditorSaveTests(unittest.TestCase):
+class _FailingRecipeStore(ProcessRecipeJsonStore):
+    def save(self, recipe: ProcessRecipe, path: JsonPath) -> Path:
+        raise OSError("disk full")
+
+def _recipe(path: Path | None, name: str = "Demo", dirty: bool = False) -> ProcessRecipe:
+    metadata: dict[str, object] = {}
+    if path is not None:
+        metadata["recipe_path"] = str(path)
+    if dirty:
+        metadata["dirty"] = True
+    return ProcessRecipe(
+        "recipe-001",
+        name,
+        (Material("si", "Silicon", "#aaa"),),
+        (ProcessStep("substrate", ProcessStepKind.SUBSTRATE, "si"),),
+        metadata=metadata,
+    )
+
+if __name__ == "__main__":
+    unittest.main()
+
+
+class RecipeEditorSaveTestsPart1(unittest.TestCase):
     def test_recipe_store_writes_human_readable_json_and_backup(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "recipe.json"
@@ -106,47 +128,3 @@ class RecipeEditorSaveTests(unittest.TestCase):
             self.assertEqual(CommandId.ATTACH_RECIPE_TO_ACTIVE_SESSION, result.command_id)
             self.assertEqual("recipe-001", active["session"].process_context.recipe_id)
             self.assertEqual(str(path), active["session"].process_context.recipe_path)
-
-    def test_attach_recipe_blocks_dirty_or_missing_session_modelessly(self) -> None:
-        controller = RecipeEditorController()
-        controller.set_recipe(_recipe(Path("recipe.json"), dirty=True))
-
-        dirty = controller.dispatch_action("AttachRecipeToActiveSession")
-
-        self.assertEqual("blocked", dirty.status)
-        self.assertEqual(CommandId.ATTACH_RECIPE_TO_ACTIVE_SESSION, dirty.command_id)
-
-        clean = RecipeEditorController(
-            active_session_provider=lambda: None,
-            active_session_updater=lambda updated: None,
-        )
-        clean.set_recipe(_recipe(Path("recipe.json")))
-
-        missing = clean.dispatch_action("AttachRecipeToActiveSession")
-
-        self.assertEqual("unavailable", missing.status)
-        self.assertEqual("No active session is loaded.", missing.message)
-
-
-class _FailingRecipeStore(ProcessRecipeJsonStore):
-    def save(self, recipe: ProcessRecipe, path: JsonPath) -> Path:
-        raise OSError("disk full")
-
-
-def _recipe(path: Path | None, name: str = "Demo", dirty: bool = False) -> ProcessRecipe:
-    metadata: dict[str, object] = {}
-    if path is not None:
-        metadata["recipe_path"] = str(path)
-    if dirty:
-        metadata["dirty"] = True
-    return ProcessRecipe(
-        "recipe-001",
-        name,
-        (Material("si", "Silicon", "#aaa"),),
-        (ProcessStep("substrate", ProcessStepKind.SUBSTRATE, "si"),),
-        metadata=metadata,
-    )
-
-
-if __name__ == "__main__":
-    unittest.main()

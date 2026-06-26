@@ -76,8 +76,11 @@ class SessionIdentity:
 class SessionPathsRecord:
     """Portable paths associated with a session document."""
 
+    path_mode: str = "relative_to_session_json"
     session_json: str = "session.json"
     artifact_root: str = "."
+    artifacts_dir: str = "artifacts"
+    csv_path: str = "exports/session_summary.csv"
     images: str = "images"
     drawings: str = "drawings"
     reports: str = "reports"
@@ -87,8 +90,11 @@ class SessionPathsRecord:
         """Serialize paths."""
 
         return {
+            "path_mode": self.path_mode,
             "session_json": self.session_json,
             "artifact_root": self.artifact_root,
+            "artifacts_dir": self.artifacts_dir,
+            "csv_path": self.csv_path,
             "images": self.images,
             "drawings": self.drawings,
             "reports": self.reports,
@@ -100,8 +106,11 @@ class SessionPathsRecord:
         """Build paths from saved data."""
 
         return cls(
+            path_mode=str(data.get("path_mode", "relative_to_session_json")),
             session_json=str(data.get("session_json", "session.json")),
             artifact_root=str(data.get("artifact_root", ".")),
+            artifacts_dir=str(data.get("artifacts_dir", "artifacts")),
+            csv_path=str(data.get("csv_path", "exports/session_summary.csv")),
             images=str(data.get("images", "images")),
             drawings=str(data.get("drawings", "drawings")),
             reports=str(data.get("reports", "reports")),
@@ -171,48 +180,6 @@ class CoordinateContext:
             y_axis=str(data.get("y_axis", "up")),
             origin=str(data.get("origin", "layout")),
             scale=float(data.get("scale", 1.0)),
-        )
-
-
-@dataclass(frozen=True)
-class GeometryFeature:
-    """Named geometry feature used by composite and mode-specific captures."""
-
-    id: str
-    label: str
-    geometry: Mapping[str, Any]
-    parent_id: Optional[str] = None
-    role: str = ""
-    extensions: Optional[Mapping[str, Any]] = None
-
-    def __post_init__(self) -> None:
-        if self.extensions is None:
-            object.__setattr__(self, "extensions", {})
-
-    def to_dict(self) -> dict[str, Any]:
-        """Serialize geometry feature metadata."""
-
-        return {
-            "id": self.id,
-            "label": self.label,
-            "role": self.role,
-            "parent_id": self.parent_id,
-            "geometry": dict(self.geometry),
-            "extensions": dict(self.extensions or {}),
-        }
-
-    @classmethod
-    def from_dict(cls, data: Mapping[str, Any]) -> GeometryFeature:
-        """Build geometry feature metadata from saved data."""
-
-        geometry = data.get("geometry", {})
-        return cls(
-            id=str(data["id"]),
-            label=str(data.get("label", "")),
-            role=str(data.get("role", "")),
-            parent_id=_optional_str(data.get("parent_id")),
-            geometry=dict(geometry) if isinstance(geometry, Mapping) else {},
-            extensions=dict(data.get("extensions", {})),
         )
 
 

@@ -1,0 +1,23 @@
+{
+  "compressed_materials": [],
+  "compression_enabled": true,
+  "label_count": 4,
+  "materials": {
+    "al2o3": 32,
+    "metal": 1,
+    "oxide": 30,
+    "si": 31
+  },
+  "profile_id": "illustrative_process_cross_section",
+  "recipe_id": "conformal_liner_recipe",
+  "render_mode_id": "illustrative_process",
+  "shape_count": 94,
+  "thin_layer_shape_count": 32,
+  "warnings": [
+    "RENDER_COMPRESSION_APPLIED",
+    "RENDER_CONFORMAL_THIN_LAYER_HINT_PRESENT",
+    "RENDER_PINCH_OFF_MARKER_PRESENT",
+    "RENDER_SIMPLIFICATION_APPLIED",
+    "RENDER_THIN_LAYER_EXAGGERATED"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "id": "isotropic_undercut_recipe",
+  "name": "Synthetic Isotropic Undercut",
+  "materials": [
+    {"id": "si", "name": "Silicon", "color": "#777777", "visible": true},
+    {"id": "sacrificial", "name": "Sacrificial Oxide", "color": "#c4e6ff", "visible": true},
+    {"id": "cap", "name": "Cap", "color": "#ffaa00", "visible": true}
+  ],
+  "steps": [
+    {"id": "substrate", "kind": "substrate", "material_id": "si", "thickness": {"target": 1000.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [], "parameters": {}, "notes": "Si substrate"},
+    {"id": "sacrificial-film", "kind": "blanket_deposition", "material_id": "sacrificial", "thickness": {"target": 120.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [], "parameters": {}, "notes": "Sacrificial release layer"},
+    {"id": "cap-film", "kind": "blanket_deposition", "material_id": "cap", "thickness": {"target": 60.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [], "parameters": {}, "notes": "Blocking cap"},
+    {"id": "release-etch", "kind": "isotropic_etch", "material_id": null, "thickness": {"target": 70.0, "unit": "um"}, "layer": {"source": "layout", "layer": 7, "datatype": 0, "name": "TRENCH"}, "mask_polarity": "direct", "target_material_ids": ["sacrificial"], "stop_material_ids": ["si", "cap"], "mask_intervals": [{"x_min": 4.0, "x_max": 6.0}], "parameters": {"lateral_attack": 70.0}, "notes": "Isotropic undercut from release opening"}
+  ],
+  "process_windows": [],
+  "metadata": {"fixture_target": "lateral undercut and exposed-boundary diagnostics", "accuracy_envelope": {"model": "sampled_2d_heuristic", "claim": "qualitative_cross_section", "covers": ["lateral attack parameter", "undercut diagnostics", "protected cap preservation"], "excludes": ["time-dependent etch kinetics", "crystal orientation effects", "fluid transport"]}}
+}

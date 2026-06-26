@@ -34,9 +34,12 @@ class CommandRegistryMetadataTests(unittest.TestCase):
             (
                 CommandId.OPEN_SETUP_GUIDE,
                 CommandId.OPEN_SESSION_EDITOR,
+                CommandId.OPEN_SESSION,
+                CommandId.NEW_SESSION,
                 CommandId.OPEN_RECIPE_EDITOR,
                 CommandId.END_ACTIVE_SESSION,
                 CommandId.OPEN_DIAGNOSTICS,
+                CommandId.OPEN_REPORTING_WORKBENCH,
             ),
             tuple(spec.command_id for spec in MENU_COMMANDS),
         )
@@ -60,6 +63,7 @@ class CommandRegistryMetadataTests(unittest.TestCase):
             CommandId.START_ORIGIN_POINT_CAPTURE,
             command_id_from_view_action("StartOriginPointCapture"),
         )
+        self.assertEqual(CommandId.DONE, command_id_from_view_action("Done"))
 
 
 if __name__ == "__main__":

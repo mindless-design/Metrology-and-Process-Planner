@@ -6,15 +6,18 @@ from collections.abc import Mapping
 from dataclasses import replace
 from typing import Any, Optional
 
-from metrology_process_planner.domains.session import CaptureRecord, SessionRecord
-from metrology_process_planner.workflows.editor.builder_artifact_refs import (
-    _artifact_refs,
-    _artifact_refs_for_owner,
+from metrology_process_planner.domains.session import ModeRegistry, SessionRecord
+from metrology_process_planner.workflows.editor.builder_artifact_health import (
+    artifact_details,
+    artifact_health,
 )
-from metrology_process_planner.workflows.editor.builder_canvas import (
-    capture_canvas_ids,
-    pending_canvas_ids,
+from metrology_process_planner.workflows.editor.builder_basics import (
+    dashboard_item,
+    mode_is_process_aware,
+    mode_uses_setup,
+    setup_item,
 )
+from metrology_process_planner.workflows.editor.builder_canvas import pending_canvas_ids
 from metrology_process_planner.workflows.editor.builder_drawings import (
     artifact_owned_drawing_items,
 )
@@ -22,9 +25,15 @@ from metrology_process_planner.workflows.editor.builder_features import (
     feature_items_for_capture,
 )
 from metrology_process_planner.workflows.editor.builder_measurements import measurement_item_for
+from metrology_process_planner.workflows.editor.builder_overviews import overview_roles
+from metrology_process_planner.workflows.editor.builder_record_items import (
+    capture_item,
+    pending_item,
+)
 from metrology_process_planner.workflows.editor.builder_views import (
     _grid_item,
     _groups,
+    _overview_item,
     _process_output_item,
     _report_item,
     _warning_item,
@@ -34,14 +43,15 @@ from metrology_process_planner.workflows.editor.document import (
     EditorSelectionState,
     SessionDocument,
     SessionItem,
-    SessionItemKind,
 )
-from metrology_process_planner.workflows.editor.references import RecordRef
 from metrology_process_planner.workflows.editor.view_models import WarningViewModel
 
 
 class SessionDocumentBuilder:
     """Build a normalized session editor document and item indexes."""
+
+    def __init__(self, mode_registry: ModeRegistry | None = None) -> None:
+        self._mode_registry = mode_registry
 
     def build(
         self,
@@ -50,20 +60,24 @@ class SessionDocumentBuilder:
     ) -> SessionDocument:
         """Return an editor document for a canonical session record."""
 
-        warnings = _warning_view_models(session)
+        warnings = _warning_view_models(session, self._mode_registry)
         warning_artifacts = {
             warning.artifact_path: warning for warning in warnings if warning.artifact_path
         }
-        items = _attach_children(_session_items(session, warnings, warning_artifacts))
+        items = _attach_children(
+            _session_items(session, warnings, warning_artifacts, self._mode_registry)
+        )
         selected = _default_selection(session)
         return SessionDocument(
             session=session,
             raw_payload=dict(raw_payload or {}),
             items_by_id=items,
             root_item_ids=tuple(items),
-            navigator_groups=_groups(items),
+            navigator_groups=_groups(items, _navigator_group_ids(session, self._mode_registry)),
             selection=selected,
             warning_view_models=warnings,
+            artifact_health=artifact_health(session, self._mode_registry),
+            artifact_details_by_item_id=artifact_details(items, session, self._mode_registry),
             pending_capture_item_id=selected.selected_item_id if session.pending_captures else None,
         )
 
@@ -72,15 +86,28 @@ def _add(items: dict[str, SessionItem], item: SessionItem) -> None:
     items[item.item_id] = item
 
 
+def _navigator_group_ids(
+    session: SessionRecord,
+    mode_registry: ModeRegistry | None,
+) -> tuple[str, ...]:
+    if mode_registry is None:
+        from metrology_process_planner.domains.session import built_in_mode_registry
+
+        mode_registry = built_in_mode_registry()
+    return mode_registry.definition(session.mode.value).editor.navigator_groups
+
+
 def _session_items(
     session: SessionRecord,
     warnings: tuple[WarningViewModel, ...],
     warning_artifacts: Mapping[str, WarningViewModel],
+    mode_registry: ModeRegistry | None,
 ) -> dict[str, SessionItem]:
     items: dict[str, SessionItem] = {}
-    _add(items, _dashboard_item(session))
-    _add(items, _setup_item())
-    _add_record_items(items, session, warning_artifacts)
+    _add(items, dashboard_item(session))
+    if mode_uses_setup(session, mode_registry):
+        _add(items, setup_item(session, mode_registry))
+    _add_record_items(items, session, warning_artifacts, mode_registry)
     for warning in warnings:
         _add(items, _warning_item(warning))
     return items
@@ -90,79 +117,61 @@ def _add_record_items(
     items: dict[str, SessionItem],
     session: SessionRecord,
     warning_artifacts: Mapping[str, WarningViewModel],
+    mode_registry: ModeRegistry | None,
 ) -> None:
-    for pending in session.pending_captures:
-        _add(items, _pending_item(session, pending.id, warning_artifacts))
-    for capture in session.captures:
-        _add(items, _capture_item(session, capture))
-        for feature_item in feature_items_for_capture(session, capture):
-            _add(items, feature_item)
-        for measurement in capture.measurements:
-            _add(items, measurement_item_for(session, capture.id, measurement))
-    for dataset in session.grid_datasets:
-        _add(items, _grid_item(session, dataset.id, dataset.label))
-    for item in artifact_owned_drawing_items(session):
+    for item in _record_items(session, warning_artifacts, mode_registry):
         _add(items, item)
-    for report in session.reports:
-        _add(items, _report_item(session, report.id, report.label or report.report_type))
-    for output in session.process_outputs:
-        _add(items, _process_output_item(session, output.id, output.label))
 
 
-def _dashboard_item(session: SessionRecord) -> SessionItem:
-    return SessionItem(
-        item_id="dashboard",
-        kind=SessionItemKind.DASHBOARD,
-        label=session.name,
-        role="dashboard",
-    )
-
-def _setup_item() -> SessionItem:
-    return SessionItem(
-        item_id="setup",
-        kind=SessionItemKind.SETUP,
-        label="Setup",
-        role="setup",
-    )
-
-def _pending_item(
+def _record_items(
     session: SessionRecord,
-    pending_id: str,
     warning_artifacts: Mapping[str, WarningViewModel],
-) -> SessionItem:
-    pending = next(item for item in session.pending_captures if item.id == pending_id)
-    artifact_refs = _artifact_refs(
-        (("crop", pending.image_artifact_path),),
-        warning_artifacts,
-    )
-    return SessionItem(
-        item_id=f"pending:{pending.id}",
-        kind=SessionItemKind.PENDING_CAPTURE,
-        label=f"Pending Capture {pending.id}",
-        role="pending_capture",
-        status="pending",
-        parent_id=pending.parent_id,
-        record_ref=RecordRef("pending_capture", pending.id, pending.parent_id),
-        canvas_object_ids=pending_canvas_ids(session, pending.canvas_object_id),
-        artifact_refs=artifact_refs,
-    )
+    mode_registry: ModeRegistry | None,
+) -> tuple[SessionItem, ...]:
+    items: list[SessionItem] = []
+    items.extend(_pending_items(session, warning_artifacts, mode_registry))
+    items.extend(_capture_items(session, mode_registry))
+    for dataset in session.grid_datasets:
+        items.append(_grid_item(session, dataset.id, dataset.label, mode_registry))
+    items.extend(artifact_owned_drawing_items(session, mode_registry))
+    for role in overview_roles(session, mode_registry):
+        items.append(_overview_item(session, role, role.replace("_", " ").title(), mode_registry))
+    for report in session.reports:
+        items.append(
+            _report_item(session, report.id, report.label or report.report_type, mode_registry)
+        )
+    if mode_is_process_aware(session, mode_registry):
+        items.extend(
+            _process_output_item(session, output.id, output.label, mode_registry)
+            for output in session.process_outputs
+        )
+    return tuple(items)
 
 
-def _capture_item(
+def _pending_items(
     session: SessionRecord,
-    capture: CaptureRecord,
-) -> SessionItem:
-    canvas_ids = capture_canvas_ids(session, capture.id)
-    artifact_refs = _artifact_refs_for_owner(session, "capture", capture.id)
-    return SessionItem(
-        item_id=f"capture:{capture.id}",
-        kind=SessionItemKind.SAVED_CAPTURE,
-        label=capture.label or capture.id,
-        role=capture.type,
-        record_ref=RecordRef("capture", capture.id),
-        canvas_object_ids=canvas_ids,
-        artifact_refs=artifact_refs,
+    warning_artifacts: Mapping[str, WarningViewModel],
+    mode_registry: ModeRegistry | None,
+) -> tuple[SessionItem, ...]:
+    return tuple(
+        pending_item(session, pending.id, warning_artifacts, mode_registry)
+        for pending in session.pending_captures
     )
+
+
+def _capture_items(
+    session: SessionRecord,
+    mode_registry: ModeRegistry | None,
+) -> tuple[SessionItem, ...]:
+    items: list[SessionItem] = []
+    for capture in session.captures:
+        items.append(capture_item(session, capture, mode_registry))
+        items.extend(feature_items_for_capture(session, capture, mode_registry))
+        items.extend(
+            measurement_item_for(session, capture.id, measurement, mode_registry)
+            for measurement in capture.measurements
+        )
+    return tuple(items)
 
 
 def _attach_children(items: dict[str, SessionItem]) -> dict[str, SessionItem]:

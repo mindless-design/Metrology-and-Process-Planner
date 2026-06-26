@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import cast
 
+from metrology_process_planner.domains.modes.mode_execution import ModeWorkflowPlanner
 from metrology_process_planner.domains.session import built_in_mode_registry
-from metrology_process_planner.domains.session.mode_execution import ModeWorkflowPlanner
 from metrology_process_planner.workflows.compound_capture_models import CompoundCaptureRequest
 
 

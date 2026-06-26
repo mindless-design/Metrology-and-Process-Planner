@@ -32,8 +32,19 @@ from metrology_process_planner.workflows.editor.render_bridge_models import (
     RenderRefreshResult,
     RenderTarget,
 )
-from metrology_process_planner.workflows.editor.store import SessionDocumentStore
+from metrology_process_planner.workflows.editor.store import (
+    NewSessionRequest,
+    RecentSessionRegistry,
+    SessionDocumentLoader,
+    SessionDocumentStore,
+    SessionDocumentWriter,
+    SessionMigrationService,
+    SessionStore,
+    SessionValidationService,
+)
 from metrology_process_planner.workflows.editor.view_models import (
+    ArtifactDetailViewModel,
+    ArtifactHealthViewModel,
     EditorAction,
     EditorActionType,
     MetadataField,
@@ -43,6 +54,8 @@ from metrology_process_planner.workflows.editor.view_models import (
 
 __all__ = [
     "ArtifactRef",
+    "ArtifactDetailViewModel",
+    "ArtifactHealthViewModel",
     "CrossSectionRenderInput",
     "DefaultSessionModeAdapter",
     "DirtyState",
@@ -58,14 +71,21 @@ __all__ = [
     "RenderRefreshRequest",
     "RenderRefreshResult",
     "RenderTarget",
+    "NewSessionRequest",
+    "RecentSessionRegistry",
     "SessionDocument",
     "SessionDocumentBuilder",
+    "SessionDocumentLoader",
     "SessionDocumentStore",
+    "SessionDocumentWriter",
     "SessionItem",
     "SessionItemGroup",
     "SessionItemKind",
+    "SessionMigrationService",
     "SessionModeAdapter",
     "SessionRenderBridge",
+    "SessionStore",
+    "SessionValidationService",
     "WarningViewModel",
     "apply_metadata_edits",
     "mark_clean",

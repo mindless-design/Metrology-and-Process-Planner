@@ -6,16 +6,17 @@ from collections.abc import Iterable
 from dataclasses import replace
 from typing import Optional
 
+from metrology_process_planner.domains.artifacts.artifact_ids import artifact_id
 from metrology_process_planner.domains.session import (
     ArtifactOwnerRef,
     ArtifactRecord,
     ArtifactRepairMetadata,
     ArtifactStatus,
+    ModeRegistry,
     SessionRecord,
     WarningRecord,
     utc_now_iso,
 )
-from metrology_process_planner.domains.session.artifact_ids import artifact_id
 from metrology_process_planner.persistence.drawing_store import (
     StoredDrawingExport,
     upsert_drawing_artifacts,
@@ -30,6 +31,7 @@ def _capture_success(
     session: SessionRecord,
     capture_id: str,
     stored: StoredDrawingExport,
+    mode_registry: ModeRegistry | None = None,
 ) -> RenderRefreshResult:
     owner = DrawingOwnerRef("capture", capture_id)
     session = _without_render_warnings(session, owner, stored.role)
@@ -37,7 +39,10 @@ def _capture_success(
         _warning(owner, stored.role, f"output-{index}", message)
         for index, message in enumerate(stored.export_result.warnings, start=1)
     )
-    session = _upsert_warnings(upsert_drawing_artifacts(session, stored), warnings)
+    session = _upsert_warnings(
+        upsert_drawing_artifacts(session, stored, mode_registry),
+        warnings,
+    )
     return RenderRefreshResult(
         status="warning" if warnings else "success",
         session=session,
@@ -51,13 +56,17 @@ def _session_drawing_success(
     owner: DrawingOwnerRef,
     role: str,
     stored: StoredDrawingExport,
+    mode_registry: ModeRegistry | None = None,
 ) -> RenderRefreshResult:
     session = _without_render_warnings(session, owner, role)
     warnings = tuple(
         _warning(owner, role, f"output-{index}", message)
         for index, message in enumerate(stored.export_result.warnings, start=1)
     )
-    session = _upsert_warnings(upsert_drawing_artifacts(session, stored), warnings)
+    session = _upsert_warnings(
+        upsert_drawing_artifacts(session, stored, mode_registry),
+        warnings,
+    )
     return RenderRefreshResult(
         status="warning" if warnings else "success",
         session=session,
@@ -92,11 +101,23 @@ def _warning(
         severity=severity,
         artifact_path=artifact_path,
         source="render_bridge",
-        code=f"render_{kind}",
+        code=_warning_code(role, kind),
         related_item_refs=(f"{owner.owner_type}:{owner.owner_id}",),
         technical_details=message,
         repair_suggestion="Regenerate the artifact from the session editor.",
     )
+
+
+def _warning_code(role: str, kind: str) -> str:
+    if "annotation" not in role and "line_image" not in role:
+        return f"render_{kind}"
+    if kind == "validation":
+        return "ANNOTATION_TRANSFORM_FAILED"
+    if kind == "missing-owner":
+        return "ANNOTATION_SOURCE_IMAGE_MISSING"
+    if kind == "export":
+        return "ANNOTATION_RENDER_FAILED"
+    return "ANNOTATION_RENDER_FAILED"
 
 
 def _message(status: str, updated_count: int, warning_count: int) -> str:

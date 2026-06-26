@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from metrology_process_planner.infrastructure.diagnostics import DiagnosticEvent
+from metrology_process_planner.diagnostics import DiagnosticEvent
 from metrology_process_planner.persistence.paths import SessionPaths
 from metrology_process_planner.ui.shell.view_models import EditorActionViewModel
 
@@ -35,6 +35,14 @@ def diagnostics_actions(
             has_paths,
             "No session folder is available for artifact scanning.",
         ),
+        _action(
+            "ExportArtifactHealthReport",
+            "Export Artifact Health Report",
+            has_paths,
+            "No session folder is available for artifact health export.",
+        ),
+        EditorActionViewModel("CopyRepairQueue", "Copy Repair Queue"),
+        EditorActionViewModel("ValidateArtifactRegistry", "Validate Artifact Registry"),
         EditorActionViewModel("ValidateSession", "Validate Session"),
         EditorActionViewModel("ValidateModes", "Validate Modes"),
     )

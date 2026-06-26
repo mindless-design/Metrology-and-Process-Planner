@@ -27,3 +27,4 @@ class ArtifactRef:
     message: str = ""
     warning_ids: tuple[str, ...] = ()
     repair_action: str = ""
+    repair_suggestion: str = ""

@@ -1,25 +1,28 @@
+import json
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
-from metrology_process_planner.domains.process import Material
-from metrology_process_planner.persistence.json_store import SessionJsonStore
+from metrology_process_planner.domains.session import (
+    ArtifactOwnerRef,
+    ArtifactRecord,
+    ArtifactStatus,
+)
 from metrology_process_planner.persistence.paths import SessionPaths
 from metrology_process_planner.workflows.editor import (
-    CrossSectionRenderInput,
     DefaultSessionModeAdapter,
-    DrawingOwnerRef,
     EditorAction,
     EditorActionDispatcher,
     EditorActionType,
-    RenderRefreshRequest,
+    RenderRefreshResult,
     SessionDocumentBuilder,
     SessionRenderBridge,
     apply_metadata_edits,
     mark_metadata_edit,
     select_item,
 )
-from tests.editor_render_fixtures import FakeRasterizer, empty_session, profile, session
+from tests.editor_render_fixtures import FakeRasterizer, session
 
 
 class EditorRenderBridgeTests(unittest.TestCase):
@@ -80,36 +83,83 @@ class EditorRenderBridgeTests(unittest.TestCase):
             )
             self.assertTrue(any(preview.role == "layout_annotation_svg" for preview in previews))
 
-    def test_cross_section_refresh_persists_session_level_drawing(self) -> None:
+    def test_render_refresh_ignores_hidden_process_display_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             paths = SessionPaths.for_folder(Path(temp_dir))
-            source = CrossSectionRenderInput(
-                owner=DrawingOwnerRef("process_frame", "frame-001"),
-                profile=profile(),
-                materials=(Material("si", "Silicon", "#999999"),),
-                title="Etch frame",
+            source = session()
+            hidden = ArtifactRecord(
+                "legacy-process-crop",
+                "process_output",
+                "Legacy Process Crop",
+                "process_outputs/cap-001-crop.png",
+                ArtifactOwnerRef("capture", "cap-001", "crop"),
+                status=ArtifactStatus.MISSING,
+            )
+            source = replace(
+                source,
+                artifacts={"legacy-process-crop": hidden, **dict(source.artifacts or {})},
+            )
+            document = select_item(SessionDocumentBuilder().build(source), "capture:cap-001")
+            dispatcher = EditorActionDispatcher(
+                paths=paths,
+                render_bridge=SessionRenderBridge(paths, rasterizer=FakeRasterizer()),
             )
 
-            result = SessionRenderBridge(paths, rasterizer=FakeRasterizer()).refresh(
-                empty_session(),
-                RenderRefreshRequest(cross_sections=(source,)),
+            result = dispatcher.dispatch(
+                document,
+                EditorAction(EditorActionType.SAVE_EDITS, "Save"),
             )
-            SessionJsonStore().save(result.session, paths)
-            loaded = SessionJsonStore().load(paths.folder)
-            document = SessionDocumentBuilder().build(loaded)
 
-            self.assertEqual("success", result.status)
-            self.assertEqual("5.0.0", loaded.schema_version)
-            self.assertIn("process_frame-frame-001-cross_section_svg", loaded.artifacts)
-            self.assertIn("drawing:process_frame:frame-001:cross_section", document.items_by_id)
-            self.assertTrue(
-                (
-                    Path(temp_dir)
-                    / loaded.artifacts[
-                        "process_frame-frame-001-cross_section_svg"
-                    ].relative_path
-                ).exists()
+            artifact = result.document.session.artifacts[
+                "capture-cap-001-layout_annotation_spec"
+            ]
+            spec = json.loads((Path(temp_dir) / artifact.relative_path).read_text())
+            self.assertEqual("images/cap-001.png", spec["image_layers"][0]["path"])
+
+    def test_regenerate_selected_artifact_rejects_mismatched_owner(self) -> None:
+        source = session()
+        source = replace(
+            source,
+            artifacts={
+                "capture-cap-002-layout_annotation_svg": ArtifactRecord(
+                    "capture-cap-002-layout_annotation_svg",
+                    "svg",
+                    "Other capture annotation",
+                    "images/cap-002-layout.svg",
+                    ArtifactOwnerRef("capture", "cap-002", "layout_annotation_svg"),
+                    status=ArtifactStatus.MISSING,
+                )
+            },
+        )
+        document = select_item(SessionDocumentBuilder().build(source), "capture:cap-001")
+        bridge = _RecordingRenderBridge()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            dispatcher = EditorActionDispatcher(
+                paths=SessionPaths.for_folder(Path(temp_dir)),
+                render_bridge=bridge,
             )
+
+            result = dispatcher.dispatch(
+                document,
+                EditorAction(
+                    EditorActionType.REGENERATE_ARTIFACT,
+                    "Regenerate Other Artifact",
+                    "capture:cap-001",
+                    payload=(("artifact_id", "capture-cap-002-layout_annotation_svg"),),
+                ),
+            )
+
+        self.assertEqual("unavailable", result.status)
+        self.assertEqual((), bridge.requests)
+
+
+class _RecordingRenderBridge:
+    def __init__(self) -> None:
+        self.requests = ()
+
+    def refresh(self, source, request):
+        self.requests = self.requests + (request,)
+        return RenderRefreshResult("success", source)
 
 
 if __name__ == "__main__":

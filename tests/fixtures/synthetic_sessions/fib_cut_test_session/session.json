@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "synthetic-fib-cut",
+  "name": "Synthetic FIB Cut",
+  "mode": "fib_planning",
+  "created_at": "2026-06-24T00:00:00Z",
+  "updated_at": "2026-06-24T00:00:00Z",
+  "setup": {"coordinate_mode": "global", "origin": null, "alignments": [], "is_capture_ready": true},
+  "captures": [{"id": "cap-fib", "label": "Full Stack Cut", "capture_type": "line", "geometry": {"kind": "line", "bounds": null, "start": {"x": 0.0, "y": 61.0}, "end": {"x": 30.0, "y": 61.0}, "point": null}, "images": [], "measurements": [], "metadata": {"structure": "fib_full_stack_test"}, "notes": "Compressed full stack", "created_at": "2026-06-24T00:00:00Z"}],
+  "grid_datasets": [],
+  "exports": [],
+  "warnings": [],
+  "metadata": {"source_layout": "../gds/process_planner_testchip.gds", "recipe": "../recipes/fib_full_stack_recipe.json", "artifacts": {"full_stack_compressed": "present"}}
+}

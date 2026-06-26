@@ -1,82 +1,83 @@
 """Session domain package with stable public re-exports."""
 
-from metrology_process_planner.domains.session.artifact_ids import artifact_id
-from metrology_process_planner.domains.session.artifact_registry import (
-    ArtifactDependencyRef,
-    ArtifactFileMetadata,
-    ArtifactOwnerRef,
-    ArtifactPathMode,
-    ArtifactRecord,
-    ArtifactRepairMetadata,
-    ArtifactStatus,
-)
-from metrology_process_planner.domains.session.canonical import (
-    CoordinateContext,
-    GeometryFeature,
-    SchemaRecord,
-    SessionIdentity,
-    SessionPathsRecord,
-    SourceLayoutContext,
-)
-from metrology_process_planner.domains.session.canvas import (
-    CanvasObject,
-    CanvasObjectType,
-    CanvasVisualFlag,
-    CanvasWorkflowState,
-    PendingCapture,
-    SourceViewBinding,
-)
-from metrology_process_planner.domains.session.capture_geometry import CaptureGeometry, GeometryKind
-from metrology_process_planner.domains.session.captures import CaptureRecord
-from metrology_process_planner.domains.session.constants import SESSION_SCHEMA_VERSION, utc_now_iso
-from metrology_process_planner.domains.session.grids import GridDatasetRecord
-from metrology_process_planner.domains.session.mode_execution import (
-    ModeExecutionContext,
-    ModeWorkflowPlanner,
-)
-from metrology_process_planner.domains.session.mode_loader import (
-    ModeRegistryLoadResult,
-    load_mode_registry_from_folder,
-    load_mode_registry_from_paths,
-)
-from metrology_process_planner.domains.session.mode_output_policies import (
-    ArtifactOutputDefinition,
-    ArtifactPolicy,
-    EditorPolicy,
-    ProcessPolicy,
-    ReportingPolicy,
-)
-from metrology_process_planner.domains.session.mode_policies import (
-    CaptureSequenceDefinition,
-    MeasurementPolicy,
-    MetadataFieldDefinition,
-    MetadataSchema,
-    ModeCapabilities,
-    SetupDefinition,
-)
-from metrology_process_planner.domains.session.mode_registry import (
-    ModeDefinition,
-    ModeRegistry,
-    built_in_mode_registry,
-)
-from metrology_process_planner.domains.session.mode_validation import (
-    ModeCompatibilityReport,
-    ModeValidator,
-)
-from metrology_process_planner.domains.session.process_outputs import (
-    ProcessContext,
-    ProcessOutputRecord,
-    ReportRecord,
-)
-from metrology_process_planner.domains.session.record import SessionMode, SessionRecord
-from metrology_process_planner.domains.session.setup import (
-    AlignmentRecord,
-    OriginRecord,
-    SetupItemRecord,
-    SetupState,
-)
-from metrology_process_planner.domains.session.warnings import WarningRecord
-from metrology_process_planner.domains.session.workflow import AuditEvent, WorkflowState
+from __future__ import annotations
+
+from importlib import import_module
+from typing import Any
+
+_EXPORTS = {
+    "AlignmentRecord": "metrology_process_planner.domains.session.setup",
+    "ArtifactDependencyRef": "metrology_process_planner.domains.artifacts.artifact_refs_metadata",
+    "ArtifactFileMetadata": "metrology_process_planner.domains.artifacts.artifact_refs_metadata",
+    "ArtifactOutputDefinition": "metrology_process_planner.domains.modes.mode_output_policies",
+    "ArtifactOwnerRef": "metrology_process_planner.domains.artifacts.artifact_refs_metadata",
+    "ArtifactPathMode": "metrology_process_planner.domains.artifacts.artifact_registry",
+    "ArtifactPolicy": "metrology_process_planner.domains.modes.mode_output_policies",
+    "ArtifactRecord": "metrology_process_planner.domains.artifacts.artifact_registry",
+    "ArtifactRepairMetadata": (
+        "metrology_process_planner.domains.artifacts.artifact_repair_metadata"
+    ),
+    "ArtifactStatus": "metrology_process_planner.domains.artifacts.artifact_registry",
+    "AuditEvent": "metrology_process_planner.domains.session.workflow",
+    "CanvasObject": "metrology_process_planner.domains.capture.canvas",
+    "CanvasObjectType": "metrology_process_planner.domains.capture.canvas",
+    "CanvasVisualFlag": "metrology_process_planner.domains.capture.canvas",
+    "CanvasWorkflowState": "metrology_process_planner.domains.capture.canvas",
+    "CaptureGeometry": "metrology_process_planner.domains.capture.capture_geometry",
+    "CaptureRecord": "metrology_process_planner.domains.capture.captures",
+    "CaptureSequenceDefinition": "metrology_process_planner.domains.modes.mode_policies",
+    "CoordinateContext": "metrology_process_planner.domains.session.canonical",
+    "EditorPolicy": "metrology_process_planner.domains.modes.mode_output_policies",
+    "GeometryFeature": "metrology_process_planner.domains.session.canonical_features",
+    "GeometryKind": "metrology_process_planner.domains.capture.capture_geometry",
+    "GridDatasetRecord": "metrology_process_planner.domains.capture.grids",
+    "MeasurementPolicy": "metrology_process_planner.domains.modes.mode_policies",
+    "MetadataFieldDefinition": "metrology_process_planner.domains.modes.mode_policies",
+    "MetadataSchema": "metrology_process_planner.domains.modes.mode_policies",
+    "ModeCapabilities": "metrology_process_planner.domains.modes.mode_policies",
+    "ModeCompatibilityReport": "metrology_process_planner.domains.modes.mode_validation",
+    "ModeDefinition": "metrology_process_planner.domains.modes.mode_registry",
+    "ModeExecutionContext": "metrology_process_planner.domains.modes.mode_execution",
+    "ModeRegistry": "metrology_process_planner.domains.modes.mode_registry",
+    "ModeRegistryLoadResult": "metrology_process_planner.domains.modes.mode_loader",
+    "ModeValidator": "metrology_process_planner.domains.modes.mode_validation",
+    "ModeWorkflowPlanner": "metrology_process_planner.domains.modes.mode_execution",
+    "OriginRecord": "metrology_process_planner.domains.session.setup",
+    "PendingCapture": "metrology_process_planner.domains.capture.canvas",
+    "ProcessContext": "metrology_process_planner.domains.session.process_outputs",
+    "ProcessOutputRecord": "metrology_process_planner.domains.session.process_outputs",
+    "ProcessPolicy": "metrology_process_planner.domains.modes.mode_output_policies",
+    "ReportRecord": "metrology_process_planner.domains.session.process_outputs",
+    "ReportingPolicy": "metrology_process_planner.domains.modes.mode_output_policies",
+    "SESSION_SCHEMA_VERSION": "metrology_process_planner.domains.session.constants",
+    "SchemaRecord": "metrology_process_planner.domains.session.canonical",
+    "SessionIdentity": "metrology_process_planner.domains.session.canonical",
+    "SessionMode": "metrology_process_planner.domains.session.record",
+    "SessionModeId": "metrology_process_planner.domains.session.record",
+    "SessionPathsRecord": "metrology_process_planner.domains.session.canonical",
+    "SessionRecord": "metrology_process_planner.domains.session.record",
+    "SetupDefinition": "metrology_process_planner.domains.modes.mode_policies",
+    "SetupItemRecord": "metrology_process_planner.domains.session.setup",
+    "SetupState": "metrology_process_planner.domains.session.setup",
+    "SourceLayoutContext": "metrology_process_planner.domains.session.canonical",
+    "SourceViewBinding": "metrology_process_planner.domains.capture.canvas",
+    "WarningRecord": "metrology_process_planner.domains.warnings.warnings",
+    "WorkflowState": "metrology_process_planner.domains.session.workflow",
+    "artifact_id": "metrology_process_planner.domains.artifacts.artifact_ids",
+    "artifact_visible_for_session": (
+        "metrology_process_planner.domains.artifacts.artifact_visibility"
+    ),
+    "built_in_mode_registry": "metrology_process_planner.domains.modes.mode_registry",
+    "is_process_artifact": "metrology_process_planner.domains.artifacts.artifact_visibility",
+    "is_process_warning": "metrology_process_planner.domains.warnings.warning_visibility",
+    "load_mode_registry_from_folder": "metrology_process_planner.domains.modes.mode_loader",
+    "load_mode_registry_from_paths": "metrology_process_planner.domains.modes.mode_loader",
+    "session_is_process_aware": "metrology_process_planner.domains.warnings.warning_visibility",
+    "session_mode_id": "metrology_process_planner.domains.session.record",
+    "session_mode_value": "metrology_process_planner.domains.session.record",
+    "utc_now_iso": "metrology_process_planner.domains.session.constants",
+    "warning_visible_for_session": "metrology_process_planner.domains.warnings.warning_visibility",
+}
 
 __all__ = [
     "AlignmentRecord",
@@ -90,11 +91,11 @@ __all__ = [
     "ArtifactRepairMetadata",
     "ArtifactStatus",
     "AuditEvent",
-    "CaptureGeometry",
     "CanvasObject",
     "CanvasObjectType",
     "CanvasVisualFlag",
     "CanvasWorkflowState",
+    "CaptureGeometry",
     "CaptureRecord",
     "CaptureSequenceDefinition",
     "CoordinateContext",
@@ -102,40 +103,59 @@ __all__ = [
     "GeometryFeature",
     "GeometryKind",
     "GridDatasetRecord",
-    "ModeDefinition",
+    "MeasurementPolicy",
+    "MetadataFieldDefinition",
+    "MetadataSchema",
     "ModeCapabilities",
     "ModeCompatibilityReport",
+    "ModeDefinition",
     "ModeExecutionContext",
     "ModeRegistry",
     "ModeRegistryLoadResult",
     "ModeValidator",
     "ModeWorkflowPlanner",
-    "MetadataFieldDefinition",
-    "MetadataSchema",
-    "MeasurementPolicy",
     "OriginRecord",
     "PendingCapture",
     "ProcessContext",
-    "ProcessPolicy",
     "ProcessOutputRecord",
-    "ReportingPolicy",
+    "ProcessPolicy",
     "ReportRecord",
+    "ReportingPolicy",
     "SESSION_SCHEMA_VERSION",
     "SchemaRecord",
     "SessionIdentity",
     "SessionMode",
+    "SessionModeId",
     "SessionPathsRecord",
     "SessionRecord",
+    "SetupDefinition",
     "SetupItemRecord",
     "SetupState",
-    "SetupDefinition",
     "SourceLayoutContext",
     "SourceViewBinding",
     "WarningRecord",
     "WorkflowState",
     "artifact_id",
+    "artifact_visible_for_session",
     "built_in_mode_registry",
+    "is_process_artifact",
+    "is_process_warning",
     "load_mode_registry_from_folder",
     "load_mode_registry_from_paths",
+    "session_is_process_aware",
+    "session_mode_id",
+    "session_mode_value",
     "utc_now_iso",
+    "warning_visible_for_session",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    """Load public session exports on first access."""
+
+    module_name = _EXPORTS.get(name)
+    if module_name is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    value = getattr(import_module(module_name), name)
+    globals()[name] = value
+    return value

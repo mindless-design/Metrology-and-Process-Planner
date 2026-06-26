@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "synthetic-optical-metrology",
+  "name": "Synthetic Optical Metrology",
+  "mode": "optical_metrology",
+  "created_at": "2026-06-24T00:00:00Z",
+  "updated_at": "2026-06-24T00:00:00Z",
+  "setup": {"coordinate_mode": "global", "origin": null, "alignments": [], "is_capture_ready": true},
+  "captures": [{"id": "cap-optical", "label": "Optical ROI", "capture_type": "layout_region", "geometry": {"kind": "box", "bounds": {"left": 0.0, "bottom": 30.0, "right": 28.0, "top": 45.0}, "start": null, "end": null, "point": null}, "images": [], "measurements": [], "metadata": {"structure": "conformal_liner_challenge"}, "notes": "Thin liner visual target", "created_at": "2026-06-24T00:00:00Z"}],
+  "grid_datasets": [],
+  "exports": [],
+  "warnings": [],
+  "metadata": {"source_layout": "../gds/process_planner_testchip.gds", "recipe": "../recipes/conformal_liner_recipe.json", "artifacts": {"annotated_line": "present"}}
+}

@@ -3,17 +3,29 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, cast
 
+from metrology_process_planner.app.diagnostics_artifact_summary import (
+    artifact_generator_summary,
+    artifact_repair_queue_summary,
+    artifact_summary,
+)
+from metrology_process_planner.app.diagnostics_artifact_summary import (
+    missing_artifact_count as _missing_artifact_count,
+)
+from metrology_process_planner.app.diagnostics_selection import editor_selection_rows
 from metrology_process_planner.app.diagnostics_state import workflow_state_rows
 from metrology_process_planner.app.diagnostics_windows import open_windows_summary
 from metrology_process_planner.app.window_registry import WindowRegistry
+from metrology_process_planner.diagnostics import DiagnosticEvent
 from metrology_process_planner.domains.session import (
-    ArtifactStatus,
+    ModeDefinition,
     ModeRegistry,
     SessionRecord,
 )
-from metrology_process_planner.infrastructure.diagnostics import DiagnosticEvent
+from metrology_process_planner.domains.warnings.warning_visibility import (
+    warning_visible_for_session,
+)
 from metrology_process_planner.workflows.editor.document import SessionDocument
 
 
@@ -31,14 +43,18 @@ def diagnostics_summary_rows(
         ("Message", "Advanced diagnostics resolved."),
         ("Session", f"{session.name} ({session.id})"),
         ("Mode", session.mode.value),
-        *workflow_state_rows(session),
+        ("Loaded Mode Definition", _loaded_mode_definition(session, mode_registry)),
+        *mode_policy_rows(session, mode_registry),
+        *workflow_state_rows(session, mode_registry),
         *editor_selection_rows(editor_document),
         ("Loaded Modes", _loaded_modes(session, mode_registry)),
         ("Mode Validation", mode_validation_summary(session)),
-        ("Artifacts", _artifact_summary(session)),
-        ("Warnings", str(len(session.warnings))),
-        ("Warning Codes", _warning_codes(session)),
-        ("Missing Artifacts", str(missing_artifact_count(session))),
+        ("Artifacts", artifact_summary(session, mode_registry)),
+        ("Artifact Repair Queue", artifact_repair_queue_summary(session, mode_registry)),
+        ("Artifact Generators", artifact_generator_summary()),
+        ("Warnings", str(_visible_warning_count(session, mode_registry))),
+        ("Warning Codes", _warning_codes(session, mode_registry)),
+        ("Missing Artifacts", str(missing_artifact_count(session, mode_registry))),
         ("Recent Commands", _recent_commands(recent_events)),
         ("Recent Failures", recent_failure_summary(recent_events)),
         ("Recent Events", _recent_event_names(recent_events)),
@@ -47,24 +63,38 @@ def diagnostics_summary_rows(
     )
 
 
-def editor_selection_rows(
-    document: SessionDocument | None,
-) -> tuple[tuple[str, str], ...]:
-    """Return selected editor and canvas state for diagnostics."""
+def missing_artifact_count(
+    session: SessionRecord,
+    mode_registry: ModeRegistry | None = None,
+) -> int:
+    """Return the visible missing artifact count for diagnostics callers."""
 
+    return _missing_artifact_count(session, mode_registry)
+
+
+def mode_policy_rows(
+    session: SessionRecord,
+    mode_registry: ModeRegistry,
+) -> tuple[tuple[str, str], ...]:
+    """Return active mode process-awareness diagnostics."""
+
+    mode = mode_registry.definition(session.mode.value)
+    recipe_required = mode.process.recipe_policy == "required"
+    process_aware = _mode_is_process_aware(mode)
+    process_visible = mode.editor.process_context_visible
     return (
-        ("Selected Editor Item", _selected_editor_item(document)),
-        ("Selected Canvas Object", _selected_canvas_objects(document)),
+        ("Mode Process Aware", str(process_aware).lower()),
+        ("Recipe Required", str(recipe_required).lower()),
+        ("Solver Operation", mode.process.solver_operation or "none"),
+        ("Process Context Visible", str(process_visible).lower()),
     )
 
 
-def missing_artifact_count(session: SessionRecord) -> int:
-    """Return the count of canonical artifacts marked missing."""
-
-    return sum(
-        1
-        for artifact in (session.artifacts or {}).values()
-        if artifact.status is ArtifactStatus.MISSING
+def _mode_is_process_aware(mode: ModeDefinition) -> bool:
+    return (
+        mode.family == "process_aware"
+        or mode.capabilities.supports_process_solver
+        or mode.process.recipe_policy not in {"forbidden", "optional_hidden"}
     )
 
 
@@ -90,21 +120,12 @@ def recent_failure_summary(events: tuple[DiagnosticEvent, ...]) -> str:
     return " | ".join(failures[-5:]) if failures else "none"
 
 
-def _selected_editor_item(document: SessionDocument | None) -> str:
-    if document is None:
-        return "none"
-    selected_id = document.selection.selected_item_id
-    item = document.items_by_id.get(selected_id)
-    if item is None:
-        return selected_id or "none"
-    return f"{item.label} ({item.item_id}, {item.status})"
-
-
-def _selected_canvas_objects(document: SessionDocument | None) -> str:
-    if document is None:
-        return "none"
-    canvas_ids = document.selection.selected_canvas_object_ids
-    return ", ".join(canvas_ids) if canvas_ids else "none"
+def _loaded_mode_definition(session: SessionRecord, mode_registry: ModeRegistry) -> str:
+    mode = mode_registry.definition(session.mode.value)
+    return (
+        f"{mode.mode_id} ({mode.display_name}, family={mode.family}, "
+        f"version={mode.version})"
+    )
 
 
 def _loaded_modes(session: SessionRecord, mode_registry: ModeRegistry) -> str:
@@ -116,20 +137,29 @@ def _loaded_modes(session: SessionRecord, mode_registry: ModeRegistry) -> str:
     return ", ".join(modes)
 
 
-def _artifact_summary(session: SessionRecord) -> str:
-    artifacts = tuple((session.artifacts or {}).values())
-    if not artifacts:
-        return "0 total"
-    counts: dict[str, int] = {}
-    for artifact in artifacts:
-        counts[artifact.status.value] = counts.get(artifact.status.value, 0) + 1
-    status_text = "; ".join(f"{key}={counts[key]}" for key in sorted(counts))
-    return f"{len(artifacts)} total; {status_text}"
-
-
-def _warning_codes(session: SessionRecord) -> str:
-    codes = sorted({warning.code for warning in session.warnings if warning.code})
+def _warning_codes(
+    session: SessionRecord,
+    mode_registry: ModeRegistry | None,
+) -> str:
+    codes = sorted(
+        {
+            warning.code
+            for warning in session.warnings
+            if warning.code and warning_visible_for_session(session, warning, mode_registry)
+        }
+    )
     return ", ".join(codes) if codes else "none"
+
+
+def _visible_warning_count(
+    session: SessionRecord,
+    mode_registry: ModeRegistry | None,
+) -> int:
+    return sum(
+        1
+        for warning in session.warnings
+        if warning_visible_for_session(session, warning, mode_registry)
+    )
 
 
 def _recent_commands(events: tuple[DiagnosticEvent, ...]) -> str:
@@ -156,4 +186,4 @@ def _failure_label(event: DiagnosticEvent) -> str:
     detail = event.exception_message or event.message
     if detail:
         return f"{label}: {detail}"
-    return label
+    return cast(str, label)

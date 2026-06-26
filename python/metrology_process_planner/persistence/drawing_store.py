@@ -3,18 +3,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import Optional
 
+from metrology_process_planner.domains.artifacts.artifact_ids import artifact_id
 from metrology_process_planner.domains.session import (
     ArtifactFileMetadata,
     ArtifactOwnerRef,
     ArtifactRecord,
     ArtifactStatus,
     CaptureRecord,
+    ModeRegistry,
     SessionRecord,
 )
-from metrology_process_planner.domains.session.artifact_ids import artifact_id
-from metrology_process_planner.domains.session.artifact_query import artifact_refs_for_owner
+from metrology_process_planner.persistence.artifact_ref_sync import visible_artifact_refs_for_owner
 from metrology_process_planner.persistence.paths import SessionPaths, artifact_path_to_disk
 from metrology_process_planner.rendering.export import (
     DrawingExporter,
@@ -44,7 +44,7 @@ class StoredDrawingExport:
 class SessionDrawingStore:
     """Write drawing specs and generated outputs into a session folder."""
 
-    def __init__(self, exporter: Optional[DrawingExporter] = None) -> None:
+    def __init__(self, exporter: DrawingExporter | None = None) -> None:
         self._exporter = exporter if exporter is not None else DrawingExporter()
 
     def export_capture_scene(
@@ -52,7 +52,7 @@ class SessionDrawingStore:
         paths: SessionPaths,
         capture_id: str,
         scene: DrawingScene,
-        rasterizer: Optional[SvgRasterizer] = None,
+        rasterizer: SvgRasterizer | None = None,
     ) -> StoredDrawingExport:
         """Export one capture drawing scene and return canonical metadata."""
 
@@ -64,7 +64,7 @@ class SessionDrawingStore:
         owner_type: str,
         owner_id: str,
         scene: DrawingScene,
-        rasterizer: Optional[SvgRasterizer] = None,
+        rasterizer: SvgRasterizer | None = None,
     ) -> StoredDrawingExport:
         """Export one owner drawing scene and return canonical artifact metadata."""
 
@@ -104,12 +104,13 @@ class SessionDrawingStore:
 def upsert_drawing_artifacts(
     session: SessionRecord,
     stored: StoredDrawingExport,
+    mode_registry: ModeRegistry | None = None,
 ) -> SessionRecord:
     """Return a session with one owner/role drawing artifact set replaced."""
 
     artifacts = _without_owner_role_artifacts(session, stored)
     artifacts.update({artifact.id: artifact for artifact in stored.artifacts})
-    captures = _captures_with_refs(session, stored, artifacts)
+    captures = _captures_with_refs(session, stored, artifacts, mode_registry)
     return replace(session, artifacts=artifacts, captures=captures)
 
 
@@ -141,10 +142,17 @@ def _captures_with_refs(
     session: SessionRecord,
     stored: StoredDrawingExport,
     artifacts: dict[str, ArtifactRecord],
+    mode_registry: ModeRegistry | None,
 ) -> tuple[CaptureRecord, ...]:
     if stored.owner_type != "capture":
         return session.captures
-    refs = artifact_refs_for_owner(artifacts, "capture", stored.owner_id)
+    refs = visible_artifact_refs_for_owner(
+        session,
+        artifacts,
+        "capture",
+        stored.owner_id,
+        mode_registry,
+    )
     return tuple(
         replace(capture, artifact_refs={**dict(capture.artifact_refs or {}), **refs})
         if capture.id == stored.owner_id

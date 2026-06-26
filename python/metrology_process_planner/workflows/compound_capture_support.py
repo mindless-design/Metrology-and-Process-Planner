@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
+from metrology_process_planner.domains.artifacts.artifact_ids import artifact_id
 from metrology_process_planner.domains.geometry import Box, Point
 from metrology_process_planner.domains.session import (
     ArtifactFileMetadata,
@@ -15,7 +16,6 @@ from metrology_process_planner.domains.session import (
     SessionRecord,
     WarningRecord,
 )
-from metrology_process_planner.domains.session.artifact_ids import artifact_id
 from metrology_process_planner.workflows.compound_capture_models import (
     CompoundCaptureRequest,
     PendingCompositeCapture,
@@ -50,6 +50,8 @@ def process_warnings(
 ) -> tuple[WarningRecord, ...]:
     """Return process warnings for a process-aware capture save."""
 
+    if not process_outputs_enabled(request):
+        return ()
     if session.process_context.recipe_id or session.process_context.recipe_path:
         return ()
     return (
@@ -61,6 +63,17 @@ def process_warnings(
             related_item_refs=(f"capture:{capture_id}",),
             repair_suggestion="Attach a process recipe and regenerate process outputs.",
         ),
+    )
+
+
+def process_outputs_enabled(request: CompoundCaptureRequest) -> bool:
+    """Return whether a compound capture request creates solver-backed outputs."""
+
+    return (
+        request.recipe_policy not in {"forbidden", "optional_hidden"}
+        or request.solver_operation not in {"", "none"}
+        or bool(request.process_artifact_roles)
+        or bool(request.process_output_key)
     )
 
 
@@ -154,7 +167,13 @@ def artifact(
         status=status,
         generator="compound_capture",
         file=ArtifactFileMetadata(content_type=content_type),
-        repair=ArtifactRepairMetadata("regenerate_process_output", "Regenerate process output."),
+        repair=ArtifactRepairMetadata(
+            "regenerate_process_output",
+            "Regenerate process output.",
+            regenerable=artifact_type == "process_output",
+            requires_recipe=artifact_type == "process_output",
+            requires_solver=artifact_type == "process_output",
+        ),
         warning_ids=warning_ids,
     )
 

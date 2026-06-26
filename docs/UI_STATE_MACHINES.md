@@ -225,6 +225,6 @@ a modeless navigation-active warning message rather than an exception.
 ## Known Limitations
 
 - The Qt shell remains minimal and does not yet render polished cards for every state snapshot.
-- General point capture remains explicit-unavailable outside the ellipsometry compound child path.
+- General point capture now creates standalone pending point captures outside the ellipsometry compound child path.
 - The post-measurement prompt policy is represented in command/state contracts, but the final Qt
   prompt shell is still a deferred polish item.

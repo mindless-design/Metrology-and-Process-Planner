@@ -1,0 +1,34 @@
+# Feature Matrix
+
+Last updated: 2026-06-25
+
+Statuses use: `implemented`, `implemented_with_polish_gaps`, `implemented_with_scope_limits`, `implemented_with_visual_qa_gaps`, `implemented_with_envelope`, `documented`, `deprecated`, `unknown`.
+
+| Feature | User-facing? | Process-aware? | Mode(s) | Status | Entrypoint | Session JSON support | UI support | Artifact support | Tests | Known gaps | Priority |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Simple Labeled Capture | yes | no | `simple_capture` | implemented | mode/new session, box capture | captures/canvas/metadata persist | generic editor/KLayout shell | site image/annotation refs | capture/session/path tests | visual polish | P2 |
+| Fast Batch Capture | yes | no | `fast_batch_capture` | implemented | mode/new session | capture records persist | low-friction repeat capture with shared start/exit controls and batch rename | site image refs | mode/header/batch tests | live visual QA | P2 |
+| CAD Review Capture | yes | no | `cad_review` | implemented | mode/new session | review metadata persists | editor metadata/actions | review annotation policy | mode/editor tests | final UI polish | P2 |
+| Optical Metrology | yes | no | `optical_metrology` | implemented | setup guide/capture | setup/capture/measurement persist | setup stages shown with live canvas-capture state | measurement annotation policy | setup/non-process tests | live visual QA | P2 |
+| CDSEM Measurement | yes | no | `cdsem_measurement`, hidden aliases `cdsem_capture` / `cdsem_planning` | implemented | setup guide/capture | persists | setup stages shown | measurement annotation policy | alias/non-process tests | aliases hidden from operators | P2 |
+| Grid Measurement | yes | no | `grid_measurement` | implemented_with_scope_limits | mode/new session | grid dataset record exists | navigator group exists | grid overview/detail roles | grid tests | two-anchor grid UX depth is future product depth | P2 |
+| Profilometry Planner | yes | yes | `profilometry_planner` | implemented | compound site-then-line | composite capture/process refs persist | unified pending review | line/profile/cross-section placeholders | compound/process tests | richer profile image generation | P1 |
+| Ellipsometry Planner | yes | yes | `ellipsometry_planner` | implemented | compound site-then-point | composite capture/process refs persist | unified pending review | point/stack placeholders | compound/process tests | richer stack image polish | P2 |
+| FIB Cut Planner | descoped | yes | not visible | documented | none | none as mode | none as mode | renderer profile exists indirectly | visible catalog tests | intentionally deferred until complete mode packet | P3 |
+| Process Flow Summary | report-only | yes | `process_flow_summary` | documented | reporting/load compatibility | mode id persists | hidden report-only policy | report template/process frame roles | render/report/mode tests | capture workflow intentionally absent | P2 |
+| New/Open Session | yes | both | all | implemented | menu/start screen | core implemented | path/mode adapter wired | folders created by core | lifecycle/path/KLayout adapter tests | live dialog smoke before release | P0 resolved |
+| Save/Save As/Close Session | yes | both | all | implemented_with_polish_gaps | menu/editor header | save/close implemented | Save As adapter wired | n/a | lifecycle/path tests | dirty prompt visual polish | P1 resolved |
+| Unified Session Editor | yes | both | all | implemented_with_polish_gaps | Session Editor | document-backed | KLayout-backed shell | artifact previews | editor/KLayout shell tests | production visual polish | P1 resolved |
+| Setup Guide | yes | both where configured | optical, CDSEM, process modes | implemented | Start / Resume Setup | setup state persists | KLayout-backed card shell | artifact/status badges | setup card/shell tests | live visual QA | P2 |
+| Box Capture | yes | both | most capture modes | implemented | Shift-drag box | pending/saved records | capture status presenter | site image refs | capture/KLayout tests | live release evidence | P1 resolved |
+| Line Capture | yes | standalone and child | measurement/profilometry/simple | implemented | Shift-drag line | standalone line captures and nested measurement/features persist | child workflow UI plus generic pending review | annotations/placeholders for measurements | standalone line, measurement, compound, KLayout boundary/UI tests | visual polish | P3 resolved |
+| Point Capture | yes | both | generic and ellipsometry | implemented | Shift-click point | standalone and child point persist | pending review and compound UI | point/stack placeholders | standalone point, boundary, compound, KLayout UI tests | visual polish | P3 resolved |
+| Generic Measurement | yes | both where enabled | supported modes | implemented | Add Measurement | nested record persists | editor pending review and modeless continuation choices | pending annotation artifact | measurement tests | broader visual QA | P1 resolved |
+| Artifact Repair | yes | both | all | implemented_with_scope_limits | editor/diagnostics actions | registry/warnings persist | repair actions | scanner/repair records | artifact/generator/repair tests | lower-priority handlers explicit unavailable | P1 resolved |
+| Recipe Attachment | yes | yes | process modes | implemented | Edit/Attach Recipe | process context persists | editor/setup actions | process refs | process context and recipe path adapter tests | live visual polish | P1 |
+| Process Solver | indirect | yes | process modes | implemented_with_envelope | regenerate process output | output records persist | editor action | JSON summaries | solver/golden/envelope tests | calibrated physics out of scope | P1 resolved |
+| Cross-Section Renderer | indirect | yes | process modes | implemented_with_visual_qa_gaps | render bridge/reporting | derived artifact refs | preview/report support | SVG/PNG capable | render/visual repair tests | broader galleries | P2 |
+| Overview Labeling | indirect | both | all with captures | implemented_with_visual_qa_gaps | overview generation/report | artifact records | report/editor integrated | SVG overview | overview/dense golden tests | screenshot gallery polish | P2 resolved |
+| Report Builder | yes | both | all | implemented_with_polish_gaps | Reporting Workbench | reads document | modeless workbench with output adapter | PPTX/PDF/CSV/images/manifest | reporting/workbench tests | final shell polish | P1 resolved |
+| Diagnostics Panel | yes | both | all | implemented | Advanced Diagnostics | inspects document | grouped dashboard shell | debug bundle/actions | diagnostics dashboard tests | live visual QA | P2 |
+| Release/Quality Gates | developer-facing | n/a | all | implemented | `tools.release_check` | fixture/schema validation | n/a | package build | release tests | KLayout lanes opt-in by design | P1 resolved |

@@ -1,0 +1,904 @@
+{
+  "database_unit_um": 0.001,
+  "gds": "process_planner_testchip.gds",
+  "layers": [
+    {
+      "datatype": 0,
+      "layer": 1,
+      "name": "ACTIVE",
+      "purpose": "active silicon and field shapes"
+    },
+    {
+      "datatype": 0,
+      "layer": 2,
+      "name": "POLY",
+      "purpose": "line-space and gate-like structures"
+    },
+    {
+      "datatype": 0,
+      "layer": 3,
+      "name": "CONTACT",
+      "purpose": "via openings and contact cuts"
+    },
+    {
+      "datatype": 0,
+      "layer": 4,
+      "name": "METAL1",
+      "purpose": "metal line features"
+    },
+    {
+      "datatype": 0,
+      "layer": 5,
+      "name": "METAL2",
+      "purpose": "upper metal and overlap tests"
+    },
+    {
+      "datatype": 0,
+      "layer": 6,
+      "name": "VIA",
+      "purpose": "via stack openings"
+    },
+    {
+      "datatype": 0,
+      "layer": 7,
+      "name": "TRENCH",
+      "purpose": "trench and directional etch masks"
+    },
+    {
+      "datatype": 0,
+      "layer": 8,
+      "name": "LINER_TEST",
+      "purpose": "conformal liner challenge geometry"
+    },
+    {
+      "datatype": 0,
+      "layer": 9,
+      "name": "CMP_DENSITY",
+      "purpose": "CMP density-window structures"
+    },
+    {
+      "datatype": 0,
+      "layer": 10,
+      "name": "ALIGN",
+      "purpose": "alignment and grid anchors"
+    },
+    {
+      "datatype": 0,
+      "layer": 11,
+      "name": "GRID",
+      "purpose": "site array capture geometry"
+    },
+    {
+      "datatype": 0,
+      "layer": 12,
+      "name": "FIB_CUT_TEST",
+      "purpose": "FIB full-stack cut targets"
+    },
+    {
+      "datatype": 0,
+      "layer": 13,
+      "name": "PROFILE_TEST",
+      "purpose": "profilometry surface targets"
+    },
+    {
+      "datatype": 0,
+      "layer": 14,
+      "name": "POINT_STACK_TEST",
+      "purpose": "ellipsometry point-stack targets"
+    },
+    {
+      "datatype": 0,
+      "layer": 15,
+      "name": "LABEL_STRESS_TEST",
+      "purpose": "dense labels and leader stress"
+    }
+  ],
+  "rectangles": [
+    {
+      "layer_name": "POLY",
+      "name": "isolated_1um",
+      "structure": "simple_line_space",
+      "x_max": 1,
+      "x_min": 0,
+      "y_max": 12,
+      "y_min": 0
+    },
+    {
+      "layer_name": "POLY",
+      "name": "isolated_3um",
+      "structure": "simple_line_space",
+      "x_max": 7,
+      "x_min": 4,
+      "y_max": 12,
+      "y_min": 0
+    },
+    {
+      "layer_name": "METAL1",
+      "name": "dense_line_0",
+      "structure": "simple_line_space",
+      "x_max": 12.5,
+      "x_min": 12.0,
+      "y_max": 12,
+      "y_min": 0
+    },
+    {
+      "layer_name": "METAL1",
+      "name": "dense_line_1",
+      "structure": "simple_line_space",
+      "x_max": 13.7,
+      "x_min": 13.2,
+      "y_max": 12,
+      "y_min": 0
+    },
+    {
+      "layer_name": "METAL1",
+      "name": "dense_line_2",
+      "structure": "simple_line_space",
+      "x_max": 14.9,
+      "x_min": 14.4,
+      "y_max": 12,
+      "y_min": 0
+    },
+    {
+      "layer_name": "METAL1",
+      "name": "dense_line_3",
+      "structure": "simple_line_space",
+      "x_max": 16.1,
+      "x_min": 15.6,
+      "y_max": 12,
+      "y_min": 0
+    },
+    {
+      "layer_name": "METAL1",
+      "name": "dense_line_4",
+      "structure": "simple_line_space",
+      "x_max": 17.3,
+      "x_min": 16.8,
+      "y_max": 12,
+      "y_min": 0
+    },
+    {
+      "layer_name": "METAL1",
+      "name": "dense_line_5",
+      "structure": "simple_line_space",
+      "x_max": 18.5,
+      "x_min": 18.0,
+      "y_max": 12,
+      "y_min": 0
+    },
+    {
+      "layer_name": "METAL1",
+      "name": "dense_line_6",
+      "structure": "simple_line_space",
+      "x_max": 19.7,
+      "x_min": 19.2,
+      "y_max": 12,
+      "y_min": 0
+    },
+    {
+      "layer_name": "METAL1",
+      "name": "dense_line_7",
+      "structure": "simple_line_space",
+      "x_max": 20.9,
+      "x_min": 20.4,
+      "y_max": 12,
+      "y_min": 0
+    },
+    {
+      "layer_name": "TRENCH",
+      "name": "wide_trench",
+      "structure": "trench_via_etch",
+      "x_max": 52,
+      "x_min": 40,
+      "y_max": 4,
+      "y_min": 0
+    },
+    {
+      "layer_name": "TRENCH",
+      "name": "narrow_trench",
+      "structure": "trench_via_etch",
+      "x_max": 50,
+      "x_min": 40,
+      "y_max": 8,
+      "y_min": 7
+    },
+    {
+      "layer_name": "CONTACT",
+      "name": "square_via_1",
+      "structure": "trench_via_etch",
+      "x_max": 57,
+      "x_min": 55,
+      "y_max": 2,
+      "y_min": 0
+    },
+    {
+      "layer_name": "VIA",
+      "name": "square_via_2",
+      "structure": "trench_via_etch",
+      "x_max": 62,
+      "x_min": 60,
+      "y_max": 2,
+      "y_min": 0
+    },
+    {
+      "layer_name": "ACTIVE",
+      "name": "sacrificial_strip",
+      "structure": "isotropic_undercut",
+      "x_max": 105,
+      "x_min": 80,
+      "y_max": 5,
+      "y_min": 0
+    },
+    {
+      "layer_name": "TRENCH",
+      "name": "release_opening",
+      "structure": "isotropic_undercut",
+      "x_max": 92,
+      "x_min": 88,
+      "y_max": 5,
+      "y_min": 0
+    },
+    {
+      "layer_name": "METAL1",
+      "name": "narrow_bridge",
+      "structure": "isotropic_undercut",
+      "x_max": 102,
+      "x_min": 96,
+      "y_max": 3.2,
+      "y_min": 1.8
+    },
+    {
+      "layer_name": "LINER_TEST",
+      "name": "narrow_gap",
+      "structure": "conformal_liner_challenge",
+      "x_max": 1,
+      "x_min": 0,
+      "y_max": 45,
+      "y_min": 30
+    },
+    {
+      "layer_name": "LINER_TEST",
+      "name": "wide_gap",
+      "structure": "conformal_liner_challenge",
+      "x_max": 12,
+      "x_min": 4,
+      "y_max": 45,
+      "y_min": 30
+    },
+    {
+      "layer_name": "ACTIVE",
+      "name": "step_left",
+      "structure": "conformal_liner_challenge",
+      "x_max": 22,
+      "x_min": 16,
+      "y_max": 38,
+      "y_min": 30
+    },
+    {
+      "layer_name": "ACTIVE",
+      "name": "step_right",
+      "structure": "conformal_liner_challenge",
+      "x_max": 28,
+      "x_min": 22,
+      "y_max": 45,
+      "y_min": 30
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "sparse_block",
+      "structure": "cmp_planarization_density",
+      "x_max": 55,
+      "x_min": 40,
+      "y_max": 45,
+      "y_min": 30
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_0_0",
+      "structure": "cmp_planarization_density",
+      "x_max": 61.0,
+      "x_min": 60.0,
+      "y_max": 31.0,
+      "y_min": 30.0
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_0_1",
+      "structure": "cmp_planarization_density",
+      "x_max": 62.5,
+      "x_min": 61.5,
+      "y_max": 31.0,
+      "y_min": 30.0
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_0_2",
+      "structure": "cmp_planarization_density",
+      "x_max": 64.0,
+      "x_min": 63.0,
+      "y_max": 31.0,
+      "y_min": 30.0
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_0_3",
+      "structure": "cmp_planarization_density",
+      "x_max": 65.5,
+      "x_min": 64.5,
+      "y_max": 31.0,
+      "y_min": 30.0
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_0_4",
+      "structure": "cmp_planarization_density",
+      "x_max": 67.0,
+      "x_min": 66.0,
+      "y_max": 31.0,
+      "y_min": 30.0
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_1_0",
+      "structure": "cmp_planarization_density",
+      "x_max": 61.0,
+      "x_min": 60.0,
+      "y_max": 32.5,
+      "y_min": 31.5
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_1_1",
+      "structure": "cmp_planarization_density",
+      "x_max": 62.5,
+      "x_min": 61.5,
+      "y_max": 32.5,
+      "y_min": 31.5
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_1_2",
+      "structure": "cmp_planarization_density",
+      "x_max": 64.0,
+      "x_min": 63.0,
+      "y_max": 32.5,
+      "y_min": 31.5
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_1_3",
+      "structure": "cmp_planarization_density",
+      "x_max": 65.5,
+      "x_min": 64.5,
+      "y_max": 32.5,
+      "y_min": 31.5
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_1_4",
+      "structure": "cmp_planarization_density",
+      "x_max": 67.0,
+      "x_min": 66.0,
+      "y_max": 32.5,
+      "y_min": 31.5
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_2_0",
+      "structure": "cmp_planarization_density",
+      "x_max": 61.0,
+      "x_min": 60.0,
+      "y_max": 34.0,
+      "y_min": 33.0
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_2_1",
+      "structure": "cmp_planarization_density",
+      "x_max": 62.5,
+      "x_min": 61.5,
+      "y_max": 34.0,
+      "y_min": 33.0
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_2_2",
+      "structure": "cmp_planarization_density",
+      "x_max": 64.0,
+      "x_min": 63.0,
+      "y_max": 34.0,
+      "y_min": 33.0
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_2_3",
+      "structure": "cmp_planarization_density",
+      "x_max": 65.5,
+      "x_min": 64.5,
+      "y_max": 34.0,
+      "y_min": 33.0
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_2_4",
+      "structure": "cmp_planarization_density",
+      "x_max": 67.0,
+      "x_min": 66.0,
+      "y_max": 34.0,
+      "y_min": 33.0
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_3_0",
+      "structure": "cmp_planarization_density",
+      "x_max": 61.0,
+      "x_min": 60.0,
+      "y_max": 35.5,
+      "y_min": 34.5
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_3_1",
+      "structure": "cmp_planarization_density",
+      "x_max": 62.5,
+      "x_min": 61.5,
+      "y_max": 35.5,
+      "y_min": 34.5
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_3_2",
+      "structure": "cmp_planarization_density",
+      "x_max": 64.0,
+      "x_min": 63.0,
+      "y_max": 35.5,
+      "y_min": 34.5
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_3_3",
+      "structure": "cmp_planarization_density",
+      "x_max": 65.5,
+      "x_min": 64.5,
+      "y_max": 35.5,
+      "y_min": 34.5
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_3_4",
+      "structure": "cmp_planarization_density",
+      "x_max": 67.0,
+      "x_min": 66.0,
+      "y_max": 35.5,
+      "y_min": 34.5
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_4_0",
+      "structure": "cmp_planarization_density",
+      "x_max": 61.0,
+      "x_min": 60.0,
+      "y_max": 37.0,
+      "y_min": 36.0
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_4_1",
+      "structure": "cmp_planarization_density",
+      "x_max": 62.5,
+      "x_min": 61.5,
+      "y_max": 37.0,
+      "y_min": 36.0
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_4_2",
+      "structure": "cmp_planarization_density",
+      "x_max": 64.0,
+      "x_min": 63.0,
+      "y_max": 37.0,
+      "y_min": 36.0
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_4_3",
+      "structure": "cmp_planarization_density",
+      "x_max": 65.5,
+      "x_min": 64.5,
+      "y_max": 37.0,
+      "y_min": 36.0
+    },
+    {
+      "layer_name": "CMP_DENSITY",
+      "name": "dense_4_4",
+      "structure": "cmp_planarization_density",
+      "x_max": 67.0,
+      "x_min": 66.0,
+      "y_max": 37.0,
+      "y_min": 36.0
+    },
+    {
+      "layer_name": "PROFILE_TEST",
+      "name": "surface_step_low",
+      "structure": "profilometry_surface_test",
+      "x_max": 94,
+      "x_min": 80,
+      "y_max": 40,
+      "y_min": 30
+    },
+    {
+      "layer_name": "PROFILE_TEST",
+      "name": "surface_step_high",
+      "structure": "profilometry_surface_test",
+      "x_max": 108,
+      "x_min": 94,
+      "y_max": 45,
+      "y_min": 30
+    },
+    {
+      "layer_name": "METAL1",
+      "name": "buried_change",
+      "structure": "profilometry_surface_test",
+      "x_max": 102,
+      "x_min": 85,
+      "y_max": 34,
+      "y_min": 32
+    },
+    {
+      "layer_name": "FIB_CUT_TEST",
+      "name": "cut_line_context",
+      "structure": "fib_full_stack_test",
+      "x_max": 30,
+      "x_min": 0,
+      "y_max": 62,
+      "y_min": 60
+    },
+    {
+      "layer_name": "METAL1",
+      "name": "thin_top_metal",
+      "structure": "fib_full_stack_test",
+      "x_max": 18,
+      "x_min": 6,
+      "y_max": 64,
+      "y_min": 58
+    },
+    {
+      "layer_name": "LINER_TEST",
+      "name": "thin_liner_marker",
+      "structure": "fib_full_stack_test",
+      "x_max": 22,
+      "x_min": 20,
+      "y_max": 64,
+      "y_min": 58
+    },
+    {
+      "layer_name": "POINT_STACK_TEST",
+      "name": "field_point",
+      "structure": "point_stack_ellipsometry",
+      "x_max": 43,
+      "x_min": 40,
+      "y_max": 63,
+      "y_min": 60
+    },
+    {
+      "layer_name": "METAL1",
+      "name": "metal_point",
+      "structure": "point_stack_ellipsometry",
+      "x_max": 52,
+      "x_min": 46,
+      "y_max": 66,
+      "y_min": 60
+    },
+    {
+      "layer_name": "METAL2",
+      "name": "overlap_point",
+      "structure": "point_stack_ellipsometry",
+      "x_max": 55,
+      "x_min": 49,
+      "y_max": 69,
+      "y_min": 63
+    },
+    {
+      "layer_name": "LABEL_STRESS_TEST",
+      "name": "narrow_feature_0",
+      "structure": "label_stress_test",
+      "x_max": 80.35,
+      "x_min": 80.0,
+      "y_max": 75,
+      "y_min": 60
+    },
+    {
+      "layer_name": "LABEL_STRESS_TEST",
+      "name": "narrow_feature_1",
+      "structure": "label_stress_test",
+      "x_max": 81.05,
+      "x_min": 80.7,
+      "y_max": 75,
+      "y_min": 60
+    },
+    {
+      "layer_name": "LABEL_STRESS_TEST",
+      "name": "narrow_feature_2",
+      "structure": "label_stress_test",
+      "x_max": 81.75,
+      "x_min": 81.4,
+      "y_max": 75,
+      "y_min": 60
+    },
+    {
+      "layer_name": "LABEL_STRESS_TEST",
+      "name": "narrow_feature_3",
+      "structure": "label_stress_test",
+      "x_max": 82.44999999999999,
+      "x_min": 82.1,
+      "y_max": 75,
+      "y_min": 60
+    },
+    {
+      "layer_name": "LABEL_STRESS_TEST",
+      "name": "narrow_feature_4",
+      "structure": "label_stress_test",
+      "x_max": 83.14999999999999,
+      "x_min": 82.8,
+      "y_max": 75,
+      "y_min": 60
+    },
+    {
+      "layer_name": "LABEL_STRESS_TEST",
+      "name": "narrow_feature_5",
+      "structure": "label_stress_test",
+      "x_max": 83.85,
+      "x_min": 83.5,
+      "y_max": 75,
+      "y_min": 60
+    },
+    {
+      "layer_name": "LABEL_STRESS_TEST",
+      "name": "narrow_feature_6",
+      "structure": "label_stress_test",
+      "x_max": 84.55,
+      "x_min": 84.2,
+      "y_max": 75,
+      "y_min": 60
+    },
+    {
+      "layer_name": "LABEL_STRESS_TEST",
+      "name": "narrow_feature_7",
+      "structure": "label_stress_test",
+      "x_max": 85.25,
+      "x_min": 84.9,
+      "y_max": 75,
+      "y_min": 60
+    },
+    {
+      "layer_name": "LABEL_STRESS_TEST",
+      "name": "narrow_feature_8",
+      "structure": "label_stress_test",
+      "x_max": 85.94999999999999,
+      "x_min": 85.6,
+      "y_max": 75,
+      "y_min": 60
+    },
+    {
+      "layer_name": "LABEL_STRESS_TEST",
+      "name": "narrow_feature_9",
+      "structure": "label_stress_test",
+      "x_max": 86.64999999999999,
+      "x_min": 86.3,
+      "y_max": 75,
+      "y_min": 60
+    },
+    {
+      "layer_name": "LABEL_STRESS_TEST",
+      "name": "narrow_feature_10",
+      "structure": "label_stress_test",
+      "x_max": 87.35,
+      "x_min": 87.0,
+      "y_max": 75,
+      "y_min": 60
+    },
+    {
+      "layer_name": "LABEL_STRESS_TEST",
+      "name": "narrow_feature_11",
+      "structure": "label_stress_test",
+      "x_max": 88.05,
+      "x_min": 87.7,
+      "y_max": 75,
+      "y_min": 60
+    },
+    {
+      "layer_name": "LABEL_STRESS_TEST",
+      "name": "narrow_feature_12",
+      "structure": "label_stress_test",
+      "x_max": 88.75,
+      "x_min": 88.4,
+      "y_max": 75,
+      "y_min": 60
+    },
+    {
+      "layer_name": "LABEL_STRESS_TEST",
+      "name": "narrow_feature_13",
+      "structure": "label_stress_test",
+      "x_max": 89.44999999999999,
+      "x_min": 89.1,
+      "y_max": 75,
+      "y_min": 60
+    },
+    {
+      "layer_name": "LABEL_STRESS_TEST",
+      "name": "narrow_feature_14",
+      "structure": "label_stress_test",
+      "x_max": 90.14999999999999,
+      "x_min": 89.8,
+      "y_max": 75,
+      "y_min": 60
+    },
+    {
+      "layer_name": "LABEL_STRESS_TEST",
+      "name": "narrow_feature_15",
+      "structure": "label_stress_test",
+      "x_max": 90.85,
+      "x_min": 90.5,
+      "y_max": 75,
+      "y_min": 60
+    },
+    {
+      "layer_name": "LABEL_STRESS_TEST",
+      "name": "narrow_feature_16",
+      "structure": "label_stress_test",
+      "x_max": 91.55,
+      "x_min": 91.2,
+      "y_max": 75,
+      "y_min": 60
+    },
+    {
+      "layer_name": "LABEL_STRESS_TEST",
+      "name": "narrow_feature_17",
+      "structure": "label_stress_test",
+      "x_max": 92.25,
+      "x_min": 91.9,
+      "y_max": 75,
+      "y_min": 60
+    },
+    {
+      "layer_name": "ALIGN",
+      "name": "anchor_a",
+      "structure": "grid_capture_test",
+      "x_max": 2,
+      "x_min": 0,
+      "y_max": 92,
+      "y_min": 90
+    },
+    {
+      "layer_name": "ALIGN",
+      "name": "anchor_b",
+      "structure": "grid_capture_test",
+      "x_max": 32,
+      "x_min": 30,
+      "y_max": 92,
+      "y_min": 90
+    },
+    {
+      "layer_name": "GRID",
+      "name": "site_r0_c0",
+      "structure": "grid_capture_test",
+      "x_max": 7,
+      "x_min": 5,
+      "y_max": 98,
+      "y_min": 96
+    },
+    {
+      "layer_name": "GRID",
+      "name": "site_r0_c1",
+      "structure": "grid_capture_test",
+      "x_max": 15,
+      "x_min": 13,
+      "y_max": 98,
+      "y_min": 96
+    },
+    {
+      "layer_name": "GRID",
+      "name": "site_r0_c2",
+      "structure": "grid_capture_test",
+      "x_max": 23,
+      "x_min": 21,
+      "y_max": 98,
+      "y_min": 96
+    },
+    {
+      "layer_name": "GRID",
+      "name": "site_r0_c3",
+      "structure": "grid_capture_test",
+      "x_max": 31,
+      "x_min": 29,
+      "y_max": 98,
+      "y_min": 96
+    },
+    {
+      "layer_name": "GRID",
+      "name": "site_r1_c0",
+      "structure": "grid_capture_test",
+      "x_max": 7,
+      "x_min": 5,
+      "y_max": 106,
+      "y_min": 104
+    },
+    {
+      "layer_name": "GRID",
+      "name": "site_r1_c1",
+      "structure": "grid_capture_test",
+      "x_max": 15,
+      "x_min": 13,
+      "y_max": 106,
+      "y_min": 104
+    },
+    {
+      "layer_name": "GRID",
+      "name": "site_r1_c2",
+      "structure": "grid_capture_test",
+      "x_max": 23,
+      "x_min": 21,
+      "y_max": 106,
+      "y_min": 104
+    },
+    {
+      "layer_name": "GRID",
+      "name": "site_r1_c3",
+      "structure": "grid_capture_test",
+      "x_max": 31,
+      "x_min": 29,
+      "y_max": 106,
+      "y_min": 104
+    },
+    {
+      "layer_name": "GRID",
+      "name": "site_r2_c0",
+      "structure": "grid_capture_test",
+      "x_max": 7,
+      "x_min": 5,
+      "y_max": 114,
+      "y_min": 112
+    },
+    {
+      "layer_name": "GRID",
+      "name": "site_r2_c1",
+      "structure": "grid_capture_test",
+      "x_max": 15,
+      "x_min": 13,
+      "y_max": 114,
+      "y_min": 112
+    },
+    {
+      "layer_name": "GRID",
+      "name": "site_r2_c2",
+      "structure": "grid_capture_test",
+      "x_max": 23,
+      "x_min": 21,
+      "y_max": 114,
+      "y_min": 112
+    },
+    {
+      "layer_name": "GRID",
+      "name": "site_r2_c3",
+      "structure": "grid_capture_test",
+      "x_max": 31,
+      "x_min": 29,
+      "y_max": 114,
+      "y_min": 112
+    }
+  ],
+  "structures": [
+    "cmp_planarization_density",
+    "conformal_liner_challenge",
+    "fib_full_stack_test",
+    "grid_capture_test",
+    "isotropic_undercut",
+    "label_stress_test",
+    "point_stack_ellipsometry",
+    "profilometry_surface_test",
+    "simple_line_space",
+    "trench_via_etch"
+  ],
+  "top_cell": "PROCESS_PLANNER_TESTCHIP",
+  "units": "um"
+}

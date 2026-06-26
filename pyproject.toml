@@ -16,6 +16,9 @@ dev = [
     "import-linter>=2.0",
     "interrogate>=1.7",
     "mypy>=1.8,<2",
+    "pypdf>=4.0",
+    "pypdfium2>=4.0",
+    "python-pptx>=0.6.23",
     "pytest>=7.4",
     "radon>=6.0",
     "ruff>=0.5",
@@ -50,6 +53,7 @@ ignore-init-module = true
 ignore-magic = true
 ignore-module = false
 ignore-private = true
+ignore-semiprivate = true
 ignore-nested-functions = true
 fail-under = 85
 verbose = 1
@@ -75,6 +79,15 @@ module = [
 disallow_any_expr = false
 disallow_any_decorated = false
 warn_return_any = false
+
+[[tool.mypy.overrides]]
+module = [
+    "interrogate.*",
+    "PIL",
+    "PIL.*",
+    "PyQt5.*",
+]
+ignore_missing_imports = true
 
 [tool.importlinter]
 root_package = "metrology_process_planner"

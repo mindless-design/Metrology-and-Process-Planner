@@ -16,6 +16,7 @@ from metrology_process_planner.workflows.editor import (
     EditorActionType,
     SessionDocumentBuilder,
 )
+from metrology_process_planner.workflows.editor.dispatcher_routes import _ACTION_HANDLERS
 from tests.compound_capture_fixtures import pending_parent
 
 
@@ -81,6 +82,11 @@ class CompoundFeatureEditorItemTests(unittest.TestCase):
 
         self.assertEqual("unavailable", result.status)
         self.assertIn("Replace Line", result.message)
+        self.assertIn("shared capture replacement workflow", result.message)
+
+    def test_saved_replacement_actions_have_explicit_dispatch_routes(self) -> None:
+        self.assertIn(EditorActionType.REPLACE_SITE_BOX, _ACTION_HANDLERS)
+        self.assertIn(EditorActionType.REPLACE_INNER_FEATURE, _ACTION_HANDLERS)
 
 
 def _save_pending(session):

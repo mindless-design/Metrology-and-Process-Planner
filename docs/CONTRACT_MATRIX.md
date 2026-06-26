@@ -1,0 +1,41 @@
+# Contract Matrix
+
+Last updated: 2026-06-25
+
+## Canonical State Rule
+
+`SessionDocument.session` wraps the canonical `SessionRecord`. Saved state lives in `session.json`
+through `SessionJsonStore`/document lifecycle services. UI state is transient. KLayout overlays are
+transient projections from durable `CanvasObject` records. Artifacts, reports, solver outputs, and
+render outputs are derived records with provenance and repair metadata.
+
+| Object | Canonical owner | Lifecycle | Created by | Mutated by | Read by | Persisted | Required fields | Optional fields | Stable IDs | Validation | Serialization |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `SessionDocument` | `workflows.editor.document` | In-memory editor document wrapping a session | Loader/builder/controller | Store/dispatcher returns replacements | Editor, diagnostics, commands | Not directly; wraps `SessionRecord` | `session`, item maps, raw payload | selection, dirty state, loaded path | Session ID from record | Builder/store invariants | Not serialized directly |
+| `SessionRecord` | `domains.session.record` | Canonical saved document | New session, migration, loader | Pure replacement helpers and services | All app/workflow/report services | `session.json` | id, name, mode, timestamps, schema | setup, captures, artifacts, warnings, extensions | `id` | Schema and record validation | `to_dict`/`from_dict` |
+| `CaptureRecord` | `domains.capture.captures` | Reviewed saved capture | Pending save/composite save | Replacement helpers and metadata edits | Editor, overlays, reports, artifacts | `captures[]` | id, label, geometry, created_at | notes, artifact_refs, metadata, measurements | `id` | Geometry and nested measurement bounds | Explicit dict methods |
+| `MeasurementRecord` | `domains.measurement.records` | Child measurement under capture | Measurement workflow | Save/edit measurement workflow | Capture/editor/report/artifact services | Nested in capture | id, geometry/value fields | metadata, notes, artifact refs | `id` scoped under capture | Bounds/type validation | Explicit dict methods |
+| `GeometryFeature` | `domains.session.canonical_features` | Child geometry in compound captures | Compound capture save | Not mutated directly; replace owning capture | Editor, overlays, render/process services | Capture extensions/features | feature id/type/geometry | labels, metadata | feature id | Geometry validation | Explicit dict methods |
+| `CanvasObject` | `domains.capture.canvas` | Durable overlay source | Capture/measurement workflows | Overlay/selection workflow replacement | Overlay manager, editor, diagnostics | `extensions.canvas.canvas_objects` | id, object type, geometry | parent, record refs, visual flags | `id` | Geometry and record refs | Explicit dict methods |
+| `ArtifactRecord` | `domains.artifacts.artifact_registry` | Central derived artifact record | Render/report/export/generator services | Artifact repair/regeneration | Editor, reports, diagnostics | `artifacts` map | id, owner, role, relative_path, status | signature, repair, metadata | artifact id | Path/status/provenance checks | Explicit dict methods |
+| `WarningRecord` | `domains.warnings.warnings` | Durable warning/audit item | Validators, repair, render/report services | Ignore/resolve workflows | Editor, diagnostics, reports | `warnings[]` | id, code, severity, message | owner, repair action, status | warning id | Severity/status values | Explicit dict methods |
+| `ModeDefinition` | `domains.modes.mode_registry` | Inert declarative mode config | Built-ins/custom JSON loader | Registry load only | Setup, capture, metadata, report planners | Built-in code or external JSON, referenced by mode id | mode_id, label, policy blocks | custom policies/extensions | `mode_id` | Mode validation service | JSON loader for custom modes |
+| `SetupStage` | `domains.session.setup`, `workflows.setup_guide_models` | Derived/setup workflow state | Setup policy presenter | Setup commands update `SetupState` | Setup guide/editor/diagnostics | Setup state fields, not view model rows | stage id/status | badge/action metadata | stage id | Required/optional policy checks | State serialized in session |
+| `CaptureRequest` | `workflows.compound_capture_requests` | Transient command request | Mode workflow planner | Not mutated | Canvas/capture workflow | No | mode/capture primitive data | process/render hints | Request ids where supplied | Geometry/policy checks | Not serialized |
+| `CaptureResult` | `workflows.canvas_interaction_models` | Transient command result | Canvas engine | Not mutated | App commands/editor | No | status/session/message | pending ids, commands | Result ids from records | Status contract | Not serialized |
+| `PendingCapture` | `domains.capture.canvas` | Durable unreviewed simple capture | Canvas workflow | Pending review actions | Editor/overlay restore | `extensions.canvas.pending_captures` | id, geometry, mode/type | metadata | pending id | Geometry validation | Explicit dict methods |
+| `PendingCompositeCapture` | `workflows.compound_capture_models` | Durable unreviewed compound capture | Compound capture workflow | Retake/discard/save composite | Editor/overlay restore | Workflow/extensions pending state | parent and feature geometry | process metadata | composite id | Parent/child geometry checks | Explicit dict methods |
+| `ProcessContext` | `domains.session.process_outputs` | Session/capture recipe attachment | Attach/validate commands | Process context workflow | Solver, editor, diagnostics | `process_context` / capture extensions | active refs when attached | fingerprints, status | recipe/context refs | Missing/stale/backend checks | Explicit dict methods |
+| `RecipeReference` | `domains.session.process_context_io` | Reference to recipe file/version | Attach recipe workflow | Validate/refresh fingerprint | Solver/process UI | Process context block | path/id/fingerprint equivalent | label/version metadata | recipe id/path | Existence/fingerprint validation | JSON-compatible mapping |
+| `SolverInput` | `solver.solver_models` | Transient solver request | Process regeneration | Not mutated | Solver/validator | No | recipe/options/backend data | geometry context, variants | input hash derived | `validate_solver_input` | Not serialized as canonical state |
+| `SolverResult` | `solver.solver_models` | Derived solver output | Solver backend | Not mutated | Renderer/process outputs | Process output JSON artifact when exported | solver/backend ids, recipe id, outputs | metrics, diagnostics | solver result id/hash | Solver and projection validation | JSON artifact/export helpers |
+| `RenderProjection` | `solver.geometry_models` | Renderer-facing solver projection | Solver result builders | Not mutated | Cross-section pipeline | In process output artifact when exported | projection id/type/materials/regions | hints, labels, warnings | projection id | `validate_render_projection` | JSON-compatible model |
+| `CrossSectionScene` | `rendering.specs` and `rendering.cross_section.scene_models` | Derived render scene | Cross-section pipeline | Not mutated | SVG/raster renderer, tests | Scene JSON/debug artifacts where requested | scene id/profile/primitives | annotations/style | scene/render id | Scene/profile checks | Scene IO helpers |
+| `OverviewDiagramScene` | `rendering.overview.models` | Derived overview scene | Overview pipeline | Not mutated | Overview renderer/reporting | Overview scene/artifact as derived output | view, labels, leaders | warnings/style | overview artifact id | Layout/collision checks | `scene_to_dict` |
+| `ReportDocument` | `reporting.models` | Derived report model | Report builder/service | Not mutated | Backends/artifact registry | Report files and artifact records | sections, manifest/export metadata | placeholders/warnings | report id/artifact ids | Readiness validation | Backend-specific exports |
+
+## Audit Result
+
+The contract shape supports a coherent document workflow. The main enforcement improvements from
+this pass are the new dependency integration test and moving `CommandId` into a pure domain module
+so workflow results can remain typed without importing the app layer.

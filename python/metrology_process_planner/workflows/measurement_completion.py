@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from enum import Enum
 
+from metrology_process_planner.domains.measurement.records import MeasurementRecord
 from metrology_process_planner.domains.session import (
     CanvasObjectType,
     CanvasVisualFlag,
@@ -47,7 +48,7 @@ class MeasurementCompletionResult:
 def measurement_completion_prompt(session: SessionRecord) -> PostActionPrompt | None:
     """Return the allowed post-measurement prompt when a measurement was just saved."""
 
-    measurement = _last_saved_measurement(session)
+    measurement = _completion_measurement(session)
     if measurement is None:
         return None
     measurement_id, capture_id = measurement
@@ -71,7 +72,7 @@ def apply_measurement_completion_choice(
 ) -> MeasurementCompletionResult:
     """Apply one allowed post-measurement completion choice."""
 
-    latest = _last_saved_measurement(session)
+    latest = _completion_measurement(session)
     if latest is None:
         return MeasurementCompletionResult(
             "unavailable",
@@ -79,6 +80,7 @@ def apply_measurement_completion_choice(
             "No saved measurement is available for a completion choice.",
         )
     measurement_id, capture_id = latest
+    session = _clear_completion_marker(session, measurement_id)
     if choice is MeasurementCompletionChoice.TAKE_ANOTHER:
         return MeasurementCompletionResult(
             "success",
@@ -112,19 +114,42 @@ def pending_measurement_count(session: SessionRecord) -> int:
     )
 
 
-def _last_saved_measurement(session: SessionRecord) -> tuple[str, str] | None:
-    for capture in session.captures:
-        latest = _latest_saved_measurement(capture)
+def _completion_measurement(session: SessionRecord) -> tuple[str, str] | None:
+    for capture in reversed(session.captures):
+        latest = _latest_completion_measurement(capture)
         if latest is not None:
             return latest, capture.id
     return None
 
 
-def _latest_saved_measurement(capture: CaptureRecord) -> str | None:
+def _latest_completion_measurement(capture: CaptureRecord) -> str | None:
     for measurement in reversed(capture.measurements):
-        if dict(measurement.metadata or {}).get("workflow_state") == "saved":
+        metadata = dict(measurement.metadata or {})
+        if (
+            metadata.get("workflow_state") == "saved"
+            and metadata.get("completion_prompt_pending") is True
+        ):
             return measurement.id
     return None
+
+
+def _clear_completion_marker(session: SessionRecord, measurement_id: str) -> SessionRecord:
+    captures = []
+    for capture in session.captures:
+        measurements = tuple(
+            _without_completion_marker(measurement)
+            if measurement.id == measurement_id
+            else measurement
+            for measurement in capture.measurements
+        )
+        captures.append(replace(capture, measurements=measurements))
+    return replace(session, captures=tuple(captures))
+
+
+def _without_completion_marker(measurement: MeasurementRecord) -> MeasurementRecord:
+    metadata = dict(measurement.metadata or {})
+    metadata.pop("completion_prompt_pending", None)
+    return replace(measurement, metadata=metadata)
 
 
 def _clear_measurement_workflow(session: SessionRecord) -> SessionRecord:

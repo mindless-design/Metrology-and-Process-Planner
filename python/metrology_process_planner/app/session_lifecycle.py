@@ -65,8 +65,7 @@ class SessionLifecycleService:
     def _close_session_editor(self, session_id: str) -> None:
         if session_id:
             self._window_registry.close(f"session-editor:{session_id}")
-        self._session_editor.current_document = None
-        self._session_editor.current_window = None
+        self._session_editor.close_current_session("discard")
         self._session_editor.last_action_result = None
 
     def _close_setup_guide(self) -> None:

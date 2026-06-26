@@ -5,7 +5,11 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any, Protocol
 
-from metrology_process_planner.infrastructure.diagnostics import DiagnosticEvent
+from metrology_process_planner.diagnostics import DiagnosticEvent
+from metrology_process_planner.ui.diagnostics.dashboard import (
+    DiagnosticsDashboardModel,
+    diagnostics_dashboard,
+)
 from metrology_process_planner.ui.shell.view_models import EditorActionViewModel
 
 
@@ -17,6 +21,9 @@ class DiagnosticsWidgetFactory(Protocol):
 
     def set_summary(self, window: Any, entries: tuple[tuple[str, str], ...]) -> None:
         """Render active session/workflow summary rows."""
+
+    def set_dashboard(self, window: Any, dashboard: DiagnosticsDashboardModel) -> None:
+        """Render grouped diagnostics dashboard sections."""
 
     def set_events(self, window: Any, events: tuple[DiagnosticEvent, ...]) -> None:
         """Render recent diagnostic events."""
@@ -62,6 +69,7 @@ class DiagnosticsShell:
         """Render diagnostics content into an existing shell window."""
 
         self._factory.set_summary(window, _summary_rows(result))
+        self._factory.set_dashboard(window, diagnostics_dashboard(result))
         self._factory.set_events(window, recent_events)
         self._factory.set_actions(window, getattr(result, "actions", ()))
 
@@ -92,6 +100,15 @@ class InMemoryDiagnosticsWidgetFactory:
         """Store recent event rows."""
 
         window["events"] = events
+
+    def set_dashboard(
+        self,
+        window: dict[str, Any],
+        dashboard: DiagnosticsDashboardModel,
+    ) -> None:
+        """Store structured dashboard sections."""
+
+        window["dashboard"] = dashboard
 
     def set_actions(
         self,

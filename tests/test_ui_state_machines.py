@@ -2,12 +2,11 @@ import unittest
 from dataclasses import replace
 
 from metrology_process_planner.domains.geometry import Point
-from metrology_process_planner.domains.measurements import MeasurementRecord
+from metrology_process_planner.domains.measurement.records import MeasurementRecord
 from metrology_process_planner.domains.session import (
     ArtifactStatus,
     CanvasObjectType,
     ProcessContext,
-    WorkflowState,
 )
 from metrology_process_planner.workflows import (
     ArtifactRepairStateMachine,
@@ -20,8 +19,11 @@ from metrology_process_planner.workflows import (
 )
 from tests.editor_render_fixtures import session, session_without_pending
 
+if __name__ == "__main__":
+    unittest.main()
 
-class UiStateMachineTests(unittest.TestCase):
+
+class UiStateMachineTestsPart1(unittest.TestCase):
     def test_session_state_reports_pending_review(self) -> None:
         snapshot = SessionUIStateMachine().evaluate(session())
 
@@ -79,12 +81,11 @@ class UiStateMachineTests(unittest.TestCase):
             snapshot.action_ids,
         )
 
-    def test_recipe_and_artifact_repair_states_are_visible(self) -> None:
-        current = session_without_pending()
-        artifact_id, artifact = next(iter((current.artifacts or {}).items()))
+    def test_recipe_context_is_hidden_for_recipe_free_sessions(self) -> None:
+        artifact_id, artifact = next(iter((session_without_pending().artifacts or {}).items()))
         current = replace(
-            current,
-            process_context=ProcessContext(recipe_id="recipe-001", warning_ids=("warn-recipe",)),
+            session_without_pending(),
+            process_context=ProcessContext(recipe_id="legacy-recipe", warning_ids=("warn-recipe",)),
             artifacts={
                 artifact_id: replace(
                     artifact,
@@ -97,27 +98,7 @@ class UiStateMachineTests(unittest.TestCase):
         recipe = RecipeContextStateMachine().evaluate(current)
         repair = ArtifactRepairStateMachine().evaluate(current)
 
-        self.assertEqual("warning", recipe.state)
-        self.assertEqual(("warn-recipe",), recipe.warning_ids)
-        self.assertEqual("open_tasks", repair.state)
-        self.assertEqual(("warn-artifact",), repair.warning_ids)
-
-    def test_session_workflow_state_reports_active_resume_data(self) -> None:
-        current = replace(
-            session_without_pending(),
-            workflow=WorkflowState(
-                active=True,
-                stage="measurement_line",
-                pending_item_ref="capture:cap-001",
-            ),
-        )
-
-        session_snapshot = SessionUIStateMachine().evaluate(current)
-        measurement_snapshot = MeasurementWorkflowStateMachine().evaluate(current)
-
-        self.assertEqual("measurement_line", session_snapshot.state)
-        self.assertEqual("armed_line", measurement_snapshot.state)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        self.assertEqual("hidden", recipe.state)
+        self.assertEqual((), recipe.action_ids)
+        self.assertEqual((), recipe.warning_ids)
+        self.assertNotIn("RegenerateProcessOutput", repair.action_ids)

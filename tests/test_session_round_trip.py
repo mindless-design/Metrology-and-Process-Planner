@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 from metrology_process_planner.domains.geometry import Box, Point
-from metrology_process_planner.domains.measurements import MeasurementRecord
+from metrology_process_planner.domains.measurement.records import MeasurementRecord
 from metrology_process_planner.domains.session import (
     CaptureGeometry,
     CaptureRecord,
@@ -35,7 +35,7 @@ class SessionRoundTripTests(unittest.TestCase):
             loaded.captures[0].measurements[0].id,
         )
         self.assertIn("capture-cap-001-crop", loaded.artifacts)
-        self.assertTrue(any(warning.code == "artifact_missing" for warning in loaded.warnings))
+        self.assertTrue(any(warning.code == "ARTIFACT_MISSING" for warning in loaded.warnings))
 
     def test_capture_csv_export_contains_summary_row(self) -> None:
         session = _sample_session()

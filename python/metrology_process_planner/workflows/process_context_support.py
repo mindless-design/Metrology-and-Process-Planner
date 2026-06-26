@@ -44,7 +44,14 @@ def with_warnings(
         warnings=existing + tuple(incoming.values()),
         process_context=replace(session.process_context, warning_ids=warning_ids),
     )
-    return ProcessContextResult(session, tuple(incoming.values()), status, message)
+    return ProcessContextResult(
+        session,
+        tuple(incoming.values()),
+        status,
+        message,
+        warning_ids=tuple(incoming),
+        next_ui_hint="review_warnings" if incoming else "",
+    )
 
 
 def process_warning(

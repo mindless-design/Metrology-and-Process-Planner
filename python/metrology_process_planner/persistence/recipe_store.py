@@ -8,9 +8,9 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Union
 
+from metrology_process_planner.diagnostics.diagnostics_exceptions import emit_exception_event
+from metrology_process_planner.diagnostics.diagnostics_sinks import DiagnosticSink
 from metrology_process_planner.domains.process import ProcessRecipe
-from metrology_process_planner.infrastructure.diagnostics_exceptions import emit_exception_event
-from metrology_process_planner.infrastructure.diagnostics_sinks import DiagnosticSink
 
 JsonPath = Union[str, Path]
 

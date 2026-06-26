@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from metrology_process_planner.domains.geometry import Box, Point
-from metrology_process_planner.domains.measurements import MeasurementRecord
+from metrology_process_planner.domains.measurement.records import MeasurementRecord
 from metrology_process_planner.domains.session import (
     CaptureGeometry,
     CaptureRecord,

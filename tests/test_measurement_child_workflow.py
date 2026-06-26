@@ -11,6 +11,8 @@ from metrology_process_planner.domains.session import (
     CanvasObjectType,
     CanvasVisualFlag,
     CanvasWorkflowState,
+    ModeDefinition,
+    ModeRegistry,
 )
 from metrology_process_planner.persistence.paths import SessionPaths
 from metrology_process_planner.workflows import CanvasInteractionEngine, InteractionContext
@@ -32,7 +34,14 @@ from tests.measurement_child_fixtures import (
 )
 
 
-class MeasurementChildWorkflowTests(unittest.TestCase):
+def _recipe_free_registry_for(mode_id: str) -> ModeRegistry:
+    return ModeRegistry((ModeDefinition(mode_id, "Recipe Free Override"),))
+
+if __name__ == "__main__":
+    unittest.main()
+
+
+class MeasurementChildWorkflowTestsPart1(unittest.TestCase):
     def test_shift_drag_line_adds_pending_measurement_under_active_parent(self) -> None:
         engine = CanvasInteractionEngine()
         context = engine.arm_line_capture(InteractionContext(), "canvas-cap")
@@ -76,6 +85,7 @@ class MeasurementChildWorkflowTests(unittest.TestCase):
         canvas_object = saved.document.session.canvas_objects[1]
         self.assertEqual("success", saved.status)
         self.assertEqual("saved", measurement.metadata["workflow_state"])
+        self.assertEqual("cd", measurement.metadata["measurement_type"])
         self.assertEqual("Gate CD", measurement.label)
         self.assertEqual(3.0, measurement.target)
         self.assertEqual(2.5, measurement.lower_spec_limit)
@@ -85,6 +95,7 @@ class MeasurementChildWorkflowTests(unittest.TestCase):
         self.assertEqual(4.0, measurement.line_weight)
         self.assertEqual(CanvasWorkflowState.SAVED, canvas_object.workflow_state)
         self.assertIn("annotation", measurement.artifact_refs)
+        self.assertIn("measurement_detail", measurement.artifact_refs)
         self.assertIn("measurement_annotation_svg", measurement.artifact_refs)
         self.assertTrue(svg_exists)
         self.assertIn("measurement:meas-001", saved.document.items_by_id)
@@ -117,11 +128,10 @@ class MeasurementChildWorkflowTests(unittest.TestCase):
 
         self.assertEqual("success", result.status)
         self.assertTrue(svg_exists)
+        measurement = result.document.session.captures[0].measurements[0]
         roles = {
             artifact.role
             for artifact in result.document.items_by_id["measurement:meas-001"].artifact_refs
         }
+        self.assertIn("measurement_detail", measurement.artifact_refs)
         self.assertIn("measurement_annotation_svg", roles)
-
-if __name__ == "__main__":
-    unittest.main()

@@ -1,0 +1,15 @@
+{
+  "id": "tapered_etch_recipe",
+  "name": "Synthetic Tapered Etch",
+  "materials": [
+    {"id": "si", "name": "Silicon", "color": "#777777", "visible": true},
+    {"id": "dielectric", "name": "Dielectric", "color": "#98d8c8", "visible": true}
+  ],
+  "steps": [
+    {"id": "substrate", "kind": "substrate", "material_id": "si", "thickness": {"target": 1000.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [], "parameters": {}, "notes": "Si substrate"},
+    {"id": "blanket-dielectric", "kind": "blanket_deposition", "material_id": "dielectric", "thickness": {"target": 300.0, "unit": "um"}, "layer": null, "mask_polarity": "direct", "target_material_ids": [], "stop_material_ids": [], "mask_intervals": [], "parameters": {}, "notes": "Taper target film"},
+    {"id": "tapered-via", "kind": "tapered_etch", "material_id": null, "thickness": {"target": 220.0, "unit": "um"}, "layer": {"source": "layout", "layer": 3, "datatype": 0, "name": "CONTACT"}, "mask_polarity": "direct", "target_material_ids": ["dielectric"], "stop_material_ids": ["si"], "mask_intervals": [{"x_min": 4.0, "x_max": 6.0}], "parameters": {"sidewall_angle_deg": 82.0, "top_cd_bias": 0.2, "bottom_cd_bias": -0.1}, "notes": "Tapered via approximation"}
+  ],
+  "process_windows": [],
+  "metadata": {"fixture_target": "sidewall angle metadata, CD bias, tapered render", "accuracy_envelope": {"model": "sampled_2d_heuristic", "claim": "qualitative_cross_section", "covers": ["sidewall-angle metadata", "top and bottom CD bias", "taper diagnostics"], "excludes": ["profile calibration", "etch chemistry", "3D corner rounding"]}}
+}

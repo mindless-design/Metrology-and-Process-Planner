@@ -40,6 +40,7 @@ from metrology_process_planner.workflows.compound_capture_requests import (
 from metrology_process_planner.workflows.compound_capture_support import (
     composite_artifacts,
     process_output,
+    process_outputs_enabled,
     process_warnings,
 )
 from metrology_process_planner.workflows.compound_capture_validation import (
@@ -138,14 +139,18 @@ def save_composite_capture(
         artifacts,
         warning_ids,
     )
+    process_outputs = session.process_outputs
+    if process_outputs_enabled(composite.request):
+        process_outputs = process_outputs + (
+            process_output(capture_id, composite, artifacts, warning_ids),
+        )
     session = replace(
         session,
         captures=session.captures + (capture,),
         pending_captures=without_pending(session, pending.id),
         canvas_objects=saved_canvas_objects(session, pending, capture_id, feature.id),
         artifacts={**dict(session.artifacts or {}), **{item.id: item for item in artifacts}},
-        process_outputs=session.process_outputs
-        + (process_output(capture_id, composite, artifacts, warning_ids),),
+        process_outputs=process_outputs,
         warnings=session.warnings + warnings,
         workflow=WorkflowState(last_saved_capture_id=capture_id),
         updated_at=utc_now_iso(),

@@ -4,9 +4,12 @@ from __future__ import annotations
 
 from typing import Optional, Protocol
 
-from metrology_process_planner.domains.session import SessionRecord
+from metrology_process_planner.domains.session import ModeRegistry, SessionRecord
 from metrology_process_planner.persistence.paths import SessionPaths
 from metrology_process_planner.workflows.editor.builder import SessionDocumentBuilder
+from metrology_process_planner.workflows.editor.dispatcher_rendering_artifacts import (
+    regenerate_artifact as _regenerate_artifact_action,
+)
 from metrology_process_planner.workflows.editor.dispatcher_results import EditorActionResult
 from metrology_process_planner.workflows.editor.dispatcher_support import (
     _empty_context,
@@ -17,7 +20,6 @@ from metrology_process_planner.workflows.editor.dispatcher_support import (
 )
 from metrology_process_planner.workflows.editor.document import SessionDocument
 from metrology_process_planner.workflows.editor.editing import apply_metadata_edits
-from metrology_process_planner.workflows.editor.references import RecordRef
 from metrology_process_planner.workflows.editor.render_bridge import SessionRenderBridge
 from metrology_process_planner.workflows.editor.render_bridge_models import (
     CrossSectionRenderInput,
@@ -32,6 +34,10 @@ from metrology_process_planner.workflows.measurement_completion import (
     measurement_completion_prompt,
     pending_measurement_count,
 )
+from metrology_process_planner.workflows.measurement_validation import (
+    measurement_metadata_edit_errors,
+    measurement_validation_errors,
+)
 from metrology_process_planner.workflows.measurement_workflow import save_pending_measurements
 from metrology_process_planner.workflows.pending_capture_review import PendingCaptureReviewService
 
@@ -45,6 +51,7 @@ class _RenderingDispatcher(Protocol):
     _pending: PendingCaptureReviewService
     _render_bridge: Optional[SessionRenderBridge]
     _cross_section_inputs: dict[str, CrossSectionRenderInput]
+    _mode_registry: ModeRegistry | None
 
     def _rebuild(self, session: SessionRecord, document: SessionDocument) -> SessionDocument:
         """Rebuild a document after workflow state changes."""
@@ -58,13 +65,21 @@ def _save_document(
         return EditorActionResult("unavailable", document, "No session folder is configured.")
     original = document
     pending_measurements_before_save = pending_measurement_count(document.session)
-    document = apply_metadata_edits(document)
-    document = _with_session(dispatcher, document, save_pending_measurements(document.session))
+    if edit_errors := measurement_metadata_edit_errors(document):
+        return EditorActionResult("blocked", document, "; ".join(edit_errors))
+    document = apply_metadata_edits(document, dispatcher._mode_registry)
+    if errors := measurement_validation_errors(document.session):
+        return EditorActionResult("blocked", document, "; ".join(errors))
+    document = _with_session(
+        dispatcher,
+        document,
+        save_pending_measurements(document.session, dispatcher._mode_registry),
+    )
     render_result = _refresh_on_save(dispatcher, document.session)
     document = _with_session(dispatcher, document, render_result.session)
     try:
         saved = dispatcher._store.save(document, dispatcher._paths)
-    except OSError as exc:
+    except (OSError, ValueError) as exc:
         return EditorActionResult("error", original, str(exc))
     saved = _with_session(dispatcher, original, saved.session)
     status = "success" if render_result.status == "success" else render_result.status
@@ -82,11 +97,12 @@ def _pending_save(
     document: SessionDocument,
     action: EditorAction,
 ) -> EditorActionResult:
-    document = apply_metadata_edits(document)
+    document = apply_metadata_edits(document, dispatcher._mode_registry)
     pending_id = _record_id(document, action.item_id)
     pending_metadata = _pending_metadata(document.session, pending_id)
     label = _payload_value(action, "label") or pending_metadata.get("label", "")
     notes = _payload_value(action, "notes") or pending_metadata.get("notes", "")
+    replacement_id = pending_metadata.get("replacement_for", "")
     before_capture_ids = {capture.id for capture in document.session.captures}
     result = dispatcher._pending.save_pending_box(
         document.session,
@@ -97,12 +113,12 @@ def _pending_save(
     )
     session = result.session
     render_result = None
-    new_capture_id = _new_capture_id(before_capture_ids, session)
-    if new_capture_id is not None and dispatcher._paths is not None:
+    refresh_capture_id = replacement_id or _new_capture_id(before_capture_ids, session)
+    if refresh_capture_id is not None and dispatcher._paths is not None:
         render_result = _refresh_targets(
             dispatcher,
             session,
-            (RenderTarget(DrawingOwnerRef("capture", new_capture_id)),),
+            (RenderTarget(DrawingOwnerRef("capture", refresh_capture_id)),),
         )
         session = render_result.session
     message = "Saved pending capture."
@@ -118,50 +134,7 @@ def _regenerate_artifact(
     document: SessionDocument,
     action: EditorAction,
 ) -> EditorActionResult:
-    if dispatcher._paths is None:
-        return EditorActionResult("unavailable", document, "No session folder is configured.")
-    item = document.items_by_id.get(action.item_id)
-    if item is None or item.record_ref is None:
-        return EditorActionResult("unavailable", document, "No refreshable item is selected.")
-    record_ref = item.record_ref
-    if record_ref.record_type in {"capture", "measurement"}:
-        render_result = _refresh_targets(dispatcher, document.session, (_target_for(record_ref),))
-    elif record_ref.record_type == "session_drawing":
-        cross_section = _cross_section_input_for(
-            dispatcher,
-            action.item_id,
-            record_ref.record_id,
-        )
-        if cross_section is None:
-            return EditorActionResult(
-                "unavailable",
-                document,
-                "No cross-section render input is available for this drawing.",
-            )
-        render_result = _render_bridge_for_paths(dispatcher).refresh(
-            document.session,
-            RenderRefreshRequest(cross_sections=(cross_section,)),
-        )
-    else:
-        return EditorActionResult(
-            "unavailable",
-            document,
-            f"{item.label} does not have a refreshable drawing.",
-        )
-    return EditorActionResult(
-        render_result.status,
-        _rebuild_document(dispatcher, render_result.session, document),
-        render_result.message,
-    )
-
-
-def _target_for(record_ref: RecordRef) -> RenderTarget:
-    if record_ref.record_type == "measurement":
-        return RenderTarget(
-            DrawingOwnerRef("measurement", record_ref.record_id),
-            "measurement_annotation",
-        )
-    return RenderTarget(DrawingOwnerRef("capture", record_ref.record_id))
+    return _regenerate_artifact_action(dispatcher, document, action)
 
 
 def _refresh_on_save(
@@ -190,17 +163,7 @@ def _render_bridge_for_paths(dispatcher: _RenderingDispatcher) -> SessionRenderB
         return dispatcher._render_bridge
     if dispatcher._paths is None:
         raise RuntimeError("Session paths are required for rendering.")
-    return SessionRenderBridge(dispatcher._paths)
-
-
-def _cross_section_input_for(
-    dispatcher: _RenderingDispatcher,
-    item_id: str,
-    drawing_id: str,
-) -> Optional[CrossSectionRenderInput]:
-    return dispatcher._cross_section_inputs.get(item_id) or dispatcher._cross_section_inputs.get(
-        drawing_id
-    )
+    return SessionRenderBridge(dispatcher._paths, mode_registry=dispatcher._mode_registry)
 
 
 def _pending_metadata(session: SessionRecord, pending_id: str) -> dict[str, str]:

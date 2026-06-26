@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "fixture-process-flow-rendering",
+  "name": "Process-Flow Rendering Fixture",
+  "mode": "process_flow_summary",
+  "created_at": "2026-06-24T00:00:00Z",
+  "updated_at": "2026-06-24T00:00:00Z",
+  "setup": {"coordinate_mode": "global", "origin": null, "alignments": [], "is_capture_ready": true},
+  "captures": [],
+  "grid_datasets": [],
+  "exports": [],
+  "warnings": [],
+  "metadata": {"fixture": "process_flow_rendering"}
+}

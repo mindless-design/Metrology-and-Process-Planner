@@ -8,12 +8,25 @@ from metrology_process_planner.domains.process.steps import (
     ProcessStepKind,
     ProcessWindow,
 )
+from metrology_process_planner.domains.process.validation_messages import (
+    RecipeValidationMessage as RecipeValidationMessage,
+)
+from metrology_process_planner.domains.process.validation_service import (
+    RecipeValidationService as RecipeValidationService,
+)
+from metrology_process_planner.domains.process.validation_steps import DEPOSITION_KINDS
 
-_DEPOSITION_KINDS = {
-    ProcessStepKind.BLANKET_DEPOSITION,
-    ProcessStepKind.PATTERNED_DEPOSITION,
-    ProcessStepKind.CONFORMAL_COATING,
-}
+__all__ = [
+    "RecipeValidationMessage",
+    "RecipeValidationService",
+    "validate_recipe",
+    "validate_recipe_shape",
+    "validate_step",
+    "validate_material_references",
+    "validate_step_thickness",
+    "validate_deposition_step",
+    "validate_patterned_step",
+]
 
 
 def validate_recipe(
@@ -23,13 +36,16 @@ def validate_recipe(
 ) -> tuple[str, ...]:
     """Return warnings for an ordered process recipe."""
 
-    material_ids = {material.id for material in materials}
-    warnings = [*validate_recipe_shape(materials, steps)]
-    for step in steps:
-        warnings.extend(validate_step(step, material_ids))
-    for window in windows:
-        warnings.extend(f"Window {window.name}: {message}" for message in window.validate())
-    return tuple(warnings)
+    from metrology_process_planner.domains.process.recipe import ProcessRecipe
+
+    messages = RecipeValidationService().validate(
+        ProcessRecipe("validation", "Validation", materials, steps, windows)
+    )
+    return tuple(
+        message.message
+        for message in messages
+        if message.severity != "info" and message.id != "recipe-missing-substrate"
+    )
 
 
 def validate_recipe_shape(
@@ -78,7 +94,7 @@ def validate_step_thickness(step: ProcessStep) -> tuple[str, ...]:
 def validate_deposition_step(step: ProcessStep) -> tuple[str, ...]:
     """Return warnings for deposition-specific requirements."""
 
-    if step.kind not in _DEPOSITION_KINDS:
+    if step.kind not in DEPOSITION_KINDS:
         return ()
     checks = (
         (step.material_id is None, f"Step {step.id} requires a material."),
@@ -93,4 +109,3 @@ def validate_patterned_step(step: ProcessStep) -> tuple[str, ...]:
     if step.kind is ProcessStepKind.PATTERNED_DEPOSITION and step.layer is None:
         return (f"Step {step.id} requires a layer reference.",)
     return ()
-

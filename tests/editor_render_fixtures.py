@@ -1,7 +1,8 @@
 from pathlib import Path
+from typing import Optional
 
 from metrology_process_planner.domains.geometry import Box, Point
-from metrology_process_planner.domains.measurements import MeasurementRecord
+from metrology_process_planner.domains.measurement.records import MeasurementRecord
 from metrology_process_planner.domains.process import (
     CrossSectionProfile,
     MaterialInterval,
@@ -17,6 +18,7 @@ from metrology_process_planner.domains.session import (
     SessionMode,
     SessionRecord,
 )
+from metrology_process_planner.persistence.paths import SessionPaths
 from tests.artifact_helpers import capture_crop_artifact
 
 
@@ -43,10 +45,23 @@ class FailingRasterizer:
 
 
 class FailingDrawingStore:
-    def export_capture_scene(self, paths, capture_id, scene, rasterizer=None):
+    def export_capture_scene(
+        self,
+        paths: SessionPaths,
+        capture_id: str,
+        scene: object,
+        rasterizer: Optional[object] = None,
+    ) -> None:
         raise OSError("disk full")
 
-    def export_owner_scene(self, paths, owner_type, owner_id, scene, rasterizer=None):
+    def export_owner_scene(
+        self,
+        paths: SessionPaths,
+        owner_type: str,
+        owner_id: str,
+        scene: object,
+        rasterizer: Optional[object] = None,
+    ) -> None:
         raise OSError("disk full")
 
 

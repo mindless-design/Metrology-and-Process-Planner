@@ -36,7 +36,7 @@ class SetupGuidePresenter:
         """Return the current setup guide view model."""
 
         mode = self._mode_registry.definition(session.mode.value) if session is not None else None
-        snapshot = self._state_machine.evaluate(session, mode)
+        snapshot = self._state_machine.evaluate(session, mode, self._mode_registry)
         active = _active_snapshot_stage(snapshot)
         return SetupGuideViewModel(
             session.name if session is not None else "No active session",

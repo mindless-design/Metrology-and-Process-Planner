@@ -6,69 +6,32 @@ import csv
 from pathlib import Path
 from typing import Any
 
-from metrology_process_planner.domains.session import SessionRecord
-from metrology_process_planner.domains.session.artifact_query import artifacts_for_owner
-from metrology_process_planner.infrastructure.diagnostics_sinks import DiagnosticSink
-from metrology_process_planner.infrastructure.trace_context import TraceContext
-
-CAPTURE_SUMMARY_FIELDS: tuple[str, ...] = (
-    "session_id",
-    "session_name",
-    "session_mode",
-    "capture_id",
-    "label",
-    "type",
-    "created_at",
-    "geometry_kind",
-    "left",
-    "bottom",
-    "right",
-    "top",
-    "measurement_count",
-    "image_paths",
-    "notes",
-)
+from metrology_process_planner.diagnostics.diagnostics_sinks import DiagnosticSink
+from metrology_process_planner.diagnostics.trace_context import TraceContext
+from metrology_process_planner.domains.session import ModeRegistry, SessionRecord
+from metrology_process_planner.persistence.csv_capture_rows import capture_row
+from metrology_process_planner.persistence.csv_capture_schema import CAPTURE_SUMMARY_FIELDS
+from metrology_process_planner.persistence.csv_grid_rows import grid_site_rows
 
 
 class CaptureCsvExporter:
     """Build and write spreadsheet-friendly capture summaries."""
 
-    def __init__(self, diagnostic_sink: DiagnosticSink | None = None) -> None:
+    def __init__(
+        self,
+        diagnostic_sink: DiagnosticSink | None = None,
+        mode_registry: ModeRegistry | None = None,
+    ) -> None:
         self._diagnostics = diagnostic_sink
+        self._mode_registry = mode_registry
 
     def rows_for_session(self, session: SessionRecord) -> list[dict[str, Any]]:
         """Return CSV rows for all captures in a session."""
 
         rows: list[dict[str, Any]] = []
         for capture in session.captures:
-            bounds = capture.geometry.bounds
-            rows.append(
-                {
-                    "session_id": session.id,
-                    "session_name": session.name,
-                    "session_mode": session.mode.value,
-                    "capture_id": capture.id,
-                    "label": capture.label,
-                    "type": capture.type,
-                    "created_at": capture.created_at,
-                    "geometry_kind": capture.geometry.kind.value,
-                    "left": bounds.left if bounds is not None else "",
-                    "bottom": bounds.bottom if bounds is not None else "",
-                    "right": bounds.right if bounds is not None else "",
-                    "top": bounds.top if bounds is not None else "",
-                    "measurement_count": len(capture.measurements),
-                    "image_paths": ";".join(
-                        artifact.relative_path
-                        for artifact in artifacts_for_owner(
-                            session.artifacts or {},
-                            "capture",
-                            capture.id,
-                        )
-                        if artifact.type in {"image", "svg"}
-                    ),
-                    "notes": capture.notes,
-                }
-            )
+            rows.append(capture_row(session, capture, self._mode_registry))
+        rows.extend(grid_site_rows(session, self._mode_registry))
         return rows
 
     def export(self, session: SessionRecord, destination: Path) -> Path:

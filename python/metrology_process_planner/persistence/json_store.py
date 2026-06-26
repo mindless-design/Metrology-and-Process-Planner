@@ -9,10 +9,10 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Union
 
+from metrology_process_planner.diagnostics.diagnostics_exceptions import emit_exception_event
+from metrology_process_planner.diagnostics.diagnostics_sinks import DiagnosticSink
+from metrology_process_planner.diagnostics.trace_context import TraceContext
 from metrology_process_planner.domains.session import SessionRecord
-from metrology_process_planner.infrastructure.diagnostics_exceptions import emit_exception_event
-from metrology_process_planner.infrastructure.diagnostics_sinks import DiagnosticSink
-from metrology_process_planner.infrastructure.trace_context import TraceContext
 from metrology_process_planner.persistence.paths import SESSION_JSON_NAME, SessionPaths
 from metrology_process_planner.persistence.repair import validate_artifact_files
 from metrology_process_planner.persistence.schema import validate_session_payload

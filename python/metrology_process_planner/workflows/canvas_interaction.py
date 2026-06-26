@@ -5,14 +5,15 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import Optional
 
+from metrology_process_planner.diagnostics.diagnostics_sinks import DiagnosticSink
+from metrology_process_planner.diagnostics.trace_context import TraceContext
 from metrology_process_planner.domains.geometry import Point
 from metrology_process_planner.domains.session import (
     CanvasObjectType,
+    ModeRegistry,
     SessionRecord,
     SourceViewBinding,
 )
-from metrology_process_planner.infrastructure.diagnostics_sinks import DiagnosticSink
-from metrology_process_planner.infrastructure.trace_context import TraceContext
 from metrology_process_planner.workflows.canvas_interaction_box import release_box
 from metrology_process_planner.workflows.canvas_interaction_measurement import release_line
 from metrology_process_planner.workflows.canvas_interaction_models import (
@@ -34,8 +35,13 @@ from metrology_process_planner.workflows.diagnostic_helpers import emit_trace_ev
 class CanvasInteractionEngine:
     """Coordinate armed capture gestures and persistent canvas records."""
 
-    def __init__(self, diagnostic_sink: Optional[DiagnosticSink] = None) -> None:
+    def __init__(
+        self,
+        diagnostic_sink: Optional[DiagnosticSink] = None,
+        mode_registry: ModeRegistry | None = None,
+    ) -> None:
         self._diagnostics = diagnostic_sink
+        self._mode_registry = mode_registry
 
     def arm_box_capture(
         self,
@@ -139,6 +145,7 @@ class CanvasInteractionEngine:
             end,
             shift_pressed,
             trace_context,
+            self._mode_registry,
         )
 
     def exit_capture(

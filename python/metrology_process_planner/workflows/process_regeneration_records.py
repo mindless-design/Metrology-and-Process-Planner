@@ -12,6 +12,9 @@ from metrology_process_planner.domains.session import (
     CaptureRecord,
     ProcessOutputRecord,
 )
+from metrology_process_planner.rendering.cross_section.profile_defaults import (
+    default_render_profile_id,
+)
 from metrology_process_planner.workflows.process_capture_extensions import process_solver_request
 from metrology_process_planner.workflows.process_regeneration_summary import (
     result_metadata,
@@ -36,7 +39,11 @@ def ready_output(capture: CaptureRecord, result: SolverResult) -> ProcessOutputR
         output.output_type,
         status="ready",
         artifact_refs=output.artifact_refs,
-        metadata={**dict(output.metadata or {}), **result_metadata(result)},
+        metadata={
+            **dict(output.metadata or {}),
+            "render_profile_id": default_render_profile_id(output.output_type),
+            **result_metadata(result),
+        },
         extensions={**dict(output.extensions or {}), "solver_result": result_summary(result)},
         warning_ids=(),
     )
@@ -91,7 +98,7 @@ def mark_output_artifacts(
 
     refs = set(dict(existing_output(capture).artifact_refs or {}).values())
     for artifact_id, artifact in tuple(artifacts.items()):
-        if artifact_id not in refs or artifact.type != "process_output":
+        if artifact_id not in refs:
             continue
         warning_ids = (warning_id,) if warning_id else ()
         artifacts[artifact_id] = replace(
@@ -101,6 +108,9 @@ def mark_output_artifacts(
             repair=ArtifactRepairMetadata(
                 "regenerate_process_output",
                 "Regenerate process output.",
+                regenerable=True,
+                requires_recipe=True,
+                requires_solver=True,
             ),
         )
     return artifacts

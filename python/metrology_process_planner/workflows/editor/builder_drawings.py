@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from metrology_process_planner.domains.session import ArtifactRecord, SessionRecord
+from metrology_process_planner.domains.artifacts.artifact_visibility import (
+    artifact_visible_for_session,
+)
+from metrology_process_planner.domains.session import ArtifactRecord, ModeRegistry, SessionRecord
 from metrology_process_planner.workflows.editor.builder_artifact_refs import (
     _artifact_refs_for_owner,
 )
@@ -10,18 +13,23 @@ from metrology_process_planner.workflows.editor.document import SessionItem, Ses
 from metrology_process_planner.workflows.editor.references import RecordRef
 
 
-def artifact_owned_drawing_items(session: SessionRecord) -> tuple[SessionItem, ...]:
+def artifact_owned_drawing_items(
+    session: SessionRecord,
+    mode_registry: ModeRegistry | None = None,
+) -> tuple[SessionItem, ...]:
     """Return editor items for drawing artifacts without concrete owner records."""
 
     artifact_groups: dict[tuple[str, str, str], None] = {}
     existing_record_refs = _existing_record_refs(session)
     for artifact in (session.artifacts or {}).values():
+        if not artifact_visible_for_session(session, artifact, mode_registry):
+            continue
         if not _is_artifact_owned_drawing(artifact, existing_record_refs):
             continue
         drawing_role = artifact.owner.role.rsplit("_", 1)[0]
         artifact_groups[(artifact.owner.owner_type, artifact.owner.owner_id, drawing_role)] = None
     return tuple(
-        _artifact_owned_drawing_item(session, owner_type, owner_id, role)
+        _artifact_owned_drawing_item(session, owner_type, owner_id, role, mode_registry)
         for owner_type, owner_id, role in sorted(artifact_groups)
     )
 
@@ -50,6 +58,7 @@ def _artifact_owned_drawing_item(
     owner_type: str,
     owner_id: str,
     role: str,
+    mode_registry: ModeRegistry | None,
 ) -> SessionItem:
     kind = SessionItemKind.CROSS_SECTION if role == "cross_section" else SessionItemKind.REPORT
     return SessionItem(
@@ -60,7 +69,7 @@ def _artifact_owned_drawing_item(
         record_ref=RecordRef(owner_type, owner_id),
         artifact_refs=tuple(
             ref
-            for ref in _artifact_refs_for_owner(session, owner_type, owner_id)
+            for ref in _artifact_refs_for_owner(session, owner_type, owner_id, mode_registry)
             if ref.role.startswith(f"{role}_")
         ),
     )
